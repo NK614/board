@@ -122,6 +122,14 @@ button{font-family:inherit}
 .sendbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;
   stroke-linecap:round;stroke-linejoin:round}
 .sendbtn:disabled{opacity:.5;cursor:default}
+.logbtn{margin-left:auto;appearance:none;flex:none;height:36px;padding:0 14px;border-radius:999px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--ink);
+  border:1px solid var(--hairline-2);font:700 13px/1 var(--display);letter-spacing:.02em}
+.logbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.logbtn:hover{border-color:rgba(45,226,255,.45)}
+.logbtn.done{color:var(--good-text);border-color:rgba(39,232,156,.45);background:var(--good-soft)}
+.logbtn:disabled{cursor:default}
+.logbtn + .sendbtn{margin-left:0}
 
 .toast{
   position:fixed;left:50%;top:72px;transform:translateX(-50%);z-index:60;
