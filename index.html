@@ -153,6 +153,44 @@ select:hover{border-color:rgba(45,226,255,.35)}
 select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,226,255,.16)}
 select option{background:#0c111c;color:var(--ink)}
 
+/* ---- multi-select (Games) ------------------------------------------------ */
+.mp{position:relative}
+.mp-btn{width:100%;text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;
+  padding:13px 40px 13px 15px;border-radius:14px;border:1px solid var(--hairline-2);color:var(--ink);
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232de2ff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 15px center,
+    var(--glass);
+  font:600 14.5px/1.2 var(--ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:border-color .15s, box-shadow .15s}
+.mp-btn:hover{border-color:rgba(45,226,255,.35)}
+.mp-btn:focus-visible,.mp.open .mp-btn{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,226,255,.16)}
+.mp-panel{position:absolute;left:0;top:calc(100% + 6px);z-index:40;width:max(100%,320px);max-width:calc(100vw - 32px);
+  max-height:min(62vh,460px);overflow-y:auto;padding:6px;border-radius:16px;
+  background:#0c111c;border:1px solid var(--hairline-2);box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.mp-panel[hidden]{display:none}
+.mp-tools{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:6px 8px 8px;
+  border-bottom:1px solid rgba(148,163,209,.12);margin-bottom:4px;position:sticky;top:-6px;background:#0c111c;z-index:1}
+.mp-tools button{appearance:none;border:0;background:none;cursor:pointer;padding:6px 4px;
+  font:700 11px/1 var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.mp-tools .mp-done{margin-left:auto;padding:7px 12px;border-radius:10px;background:rgba(45,226,255,.12)}
+.mp-sport{padding:10px 8px 4px;font:700 10px/1 var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.mp-row{display:flex;align-items:center;gap:11px;padding:10px 8px;border-radius:10px;cursor:pointer;
+  font-size:14px;color:var(--ink);line-height:1.3}
+.mp-row:hover{background:rgba(45,226,255,.06)}
+.mp-row.grp{font-weight:700;margin-top:2px}
+.mp-row.item{padding-left:34px;color:var(--secondary)}
+.field .mp-row{display:flex;margin:0;font:500 14px/1.3 var(--ui);letter-spacing:0;text-transform:none;color:var(--ink)}
+.field .mp-row.grp{font-weight:700}
+.field .mp-row.item{color:var(--secondary)}
+.mp-row em{display:block;margin-top:3px;font:500 12.5px/1.3 var(--ui);font-style:normal;color:var(--secondary)}
+.mp-row small{margin-left:auto;padding-left:10px;font:600 12px/1 var(--num);color:var(--muted);white-space:nowrap}
+.mp-row input{appearance:none;-webkit-appearance:none;flex:none;width:18px;height:18px;margin:0;border-radius:5px;
+  border:1.5px solid rgba(148,163,209,.45);background:transparent;display:grid;place-items:center;cursor:pointer}
+.mp-row input:checked,.mp-row input:indeterminate{background:var(--accent);border-color:var(--accent)}
+.mp-row input:checked::after{content:"";width:9px;height:5px;border:2.2px solid #05070d;border-top:0;border-right:0;
+  transform:translateY(-1px) rotate(-45deg)}
+.mp-row input:indeterminate::after{content:"";width:8px;height:2.2px;background:#05070d;border-radius:2px}
+
 /* ---- parlay generator entry ------------------------------------------------ */
 .pg-open{
   position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
@@ -356,6 +394,19 @@ body.has-slip{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
   background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .pg-sub{margin:6px 0 16px;font-size:13px;color:var(--secondary);line-height:1.5}
 .pg-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 12px}
+.pg-toggle{display:flex;align-items:center;gap:13px;margin:14px 0 2px;padding:12px 14px;border-radius:14px;cursor:pointer;
+  border:1px solid var(--hairline-2);background:var(--glass);transition:border-color .15s, background .15s}
+.pg-toggle:has(input:checked){border-color:rgba(39,232,156,.4);background:var(--good-soft)}
+.pg-toggle input{position:absolute;opacity:0;width:1px;height:1px}
+.pg-toggle .sw{flex:none;position:relative;width:44px;height:26px;border-radius:99px;background:rgba(148,163,209,.28);transition:background .18s}
+.pg-toggle .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+  background:#eef2ff;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:transform .18s}
+.pg-toggle input:checked + .sw{background:var(--good)}
+.pg-toggle input:checked + .sw::after{transform:translateX(18px)}
+.pg-toggle input:focus-visible + .sw{box-shadow:0 0 0 3px rgba(39,232,156,.35)}
+.pg-toggle b{display:block;font:700 14.5px/1.2 var(--ui);color:var(--ink)}
+.pg-toggle input:checked ~ span b{color:var(--good-text)}
+.pg-toggle small{display:block;margin-top:3px;font-size:12.5px;line-height:1.4;color:var(--secondary)}
 .btn{
   appearance:none;border:0;border-radius:14px;padding:13px 18px;cursor:pointer;
   background:var(--grad);color:var(--accent-ink);font:750 14.5px/1 var(--display);letter-spacing:.01em;
@@ -448,7 +499,7 @@ body.has-slip{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 <div class="wrap">
 
   <div class="filters">
-    <div class="field"><label for="f-game">Game</label><select id="f-game"></select></div>
+    <div class="field"><label id="f-game-l">Games</label><div class="mp" id="f-game"></div></div>
     <div class="field"><label for="f-market">Stat</label><select id="f-market"></select></div>
     <div class="field"><label for="f-book">Sportsbook</label><select id="f-book"></select></div>
   </div>
@@ -475,11 +526,12 @@ body.has-slip{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
       <div class="field"><label for="pg-legs">Legs</label><select id="pg-legs"></select></div>
       <div class="field"><label for="pg-odds">Target odds</label><select id="pg-odds"></select></div>
       <div class="field"><label for="pg-book">Sportsbook</label><select id="pg-book"></select></div>
-      <div class="field"><label for="pg-scope">Games</label><select id="pg-scope">
-        <option value="all">All games</option>
-        <option value="sport">This sport</option>
-        <option value="game">Games on screen</option></select></div>
+      <div class="field"><label id="pg-scope-l">Games</label><div class="mp" id="pg-scope"></div></div>
     </div>
+    <label class="pg-toggle"><input type="checkbox" id="pg-clean" checked><span class="sw" aria-hidden="true"></span>
+      <span><b>Green flags only</b><small>Every leg has only green flags — anything with an amber
+        warning (tough matchup, shrinking role, questionable…) is skipped. Off: the most likely
+        parlay, warnings allowed.</small></span></label>
     <button class="btn pg-go" id="pg-go">Build my parlay</button>
     <div id="pg-out"></div>
   </div>
@@ -709,36 +761,109 @@ function slotsFor(sportKey){
   out.forEach(x => x.games.sort(byKick));
   return out;
 }
-function buildGameSelect(){
-  const sel = $("f-game"), prev = sel.value, slots = slotsFor(SPORT);
-  sel.innerHTML = "";
-  const values = [];
-  slots.forEach(sl => {
-    const grp = document.createElement("optgroup");
-    grp.label = sl.label;
-    if(sl.games.length > 1){
-      grp.appendChild(new Option(`All ${sl.name} games (${sl.games.length})`, "slot:" + sl.key));
-      values.push("slot:" + sl.key);
+/* MULTI-SELECT. A button that opens a checklist: a checkbox per TV window
+   (ticks every game in it) and one per game. Used for the board's Games
+   filter and the generator's Games. `groups` is [{sport, label, items:
+   [{value, label, sub}]}]; `sel` is a Set of item values, changed in place. */
+function multiPick(root, groups, sel, onChange, noun){
+  const all = groups.flatMap(g => g.items.map(i => i.value));
+  const summary = () => {
+    if(!sel.size) return `No ${noun}s`;
+    if(sel.size === all.length) return `All ${noun}s (${all.length})`;
+    const whole = groups.filter(g => g.items.every(i => sel.has(i.value)));
+    const covered = whole.reduce((n, g) => n + g.items.length, 0);
+    if(whole.length && covered === sel.size) return whole.map(g => g.short || g.label).join(" + ");
+    if(sel.size === 1) return [...sel][0];
+    return `${sel.size} ${noun}s`;
+  };
+  let lastSport = null;
+  const rows = groups.map((g, gi) => {
+    let head = "";
+    if(g.sport && g.sport !== lastSport && groups.some(x => x.sport && x.sport !== g.sport)){
+      head = `<div class="mp-sport">${esc(g.sport)}</div>`;
     }
-    sl.games.forEach(g => {
-      const d = kickOf(g);
-      grp.appendChild(new Option(d ? `${g} · ${etParts(d).time}` : g, g));
-      values.push(g);
+    lastSport = g.sport;
+    // A window with one game (TNF, SNF, MNF) is one row: window, then game.
+    const one = g.items.length === 1 ? g.items[0] : null;
+    return head + `<label class="mp-row grp"><input type="checkbox" data-g="${gi}">`
+      + `<span>${esc(g.label)}${one ? `<em>${esc(one.label)}</em>` : ""}</span>`
+      + `<small>${one ? esc(one.sub || "") : g.items.length + " games"}</small></label>`
+      + (!one ? g.items.map(i =>
+          `<label class="mp-row item"><input type="checkbox" data-v="${esc(i.value)}">`
+          + `<span>${esc(i.label)}</span>${i.sub ? `<small>${esc(i.sub)}</small>` : ""}</label>`).join("") : "");
+  }).join("");
+  root.innerHTML = `<button type="button" class="mp-btn" aria-haspopup="true" aria-expanded="false"></button>
+    <div class="mp-panel" hidden><div class="mp-tools"><button type="button" data-act="all">Select all</button>
+    <button type="button" data-act="none">Clear</button><button type="button" class="mp-done" data-act="done">Done</button></div>
+    ${rows}</div>`;
+  const btn = root.querySelector(".mp-btn"), panel = root.querySelector(".mp-panel");
+  const sync = () => {
+    root.querySelectorAll("input[data-v]").forEach(x => { x.checked = sel.has(x.dataset.v); });
+    root.querySelectorAll("input[data-g]").forEach(x => {
+      const items = groups[+x.dataset.g].items, n = items.filter(i => sel.has(i.value)).length;
+      x.checked = n === items.length; x.indeterminate = n > 0 && n < items.length;
     });
-    sel.appendChild(grp);
+    btn.textContent = summary();
+  };
+  const open = on => {
+    panel.hidden = !on; root.classList.toggle("open", on);
+    if(on){
+      // Wider than a narrow column: open toward whichever side has room.
+      panel.style.left = ""; panel.style.right = "";
+      if(panel.getBoundingClientRect().right > innerWidth - 8){ panel.style.left = "auto"; panel.style.right = "0"; }
+    }
+    btn.setAttribute("aria-expanded", String(on));
+  };
+  btn.onclick = () => open(panel.hidden);
+  panel.addEventListener("change", ev => {
+    const x = ev.target;
+    if(x.dataset.v != null){ x.checked ? sel.add(x.dataset.v) : sel.delete(x.dataset.v); }
+    else if(x.dataset.g != null){
+      groups[+x.dataset.g].items.forEach(i => x.checked ? sel.add(i.value) : sel.delete(i.value));
+    }
+    sync(); onChange();
   });
-  if(values.includes(prev)){ sel.value = prev; return; }
-  // Default: the next window that has not finished (kicked off under ~4h ago).
-  const soon = slots.find(sl => sl.t > Date.now() - 4 * 3600e3) || slots[0];
-  if(soon) sel.value = soon.games.length > 1 ? "slot:" + soon.key : soon.games[0];
+  panel.addEventListener("click", ev => {
+    const act = ev.target.dataset && ev.target.dataset.act;
+    if(act === "all"){ all.forEach(v => sel.add(v)); sync(); onChange(); }
+    else if(act === "none"){ sel.clear(); sync(); onChange(); }
+    else if(act === "done"){ open(false); }
+  });
+  if(root._outside) document.removeEventListener("click", root._outside);
+  root._outside = ev => { if(!root.contains(ev.target)) open(false); };
+  document.addEventListener("click", root._outside);
+  root.onkeydown = ev => { if(ev.key === "Escape"){ open(false); btn.focus(); } };
+  sync();
+}
+
+function slotGroups(sportKey){
+  const sportLabel = (SPORTS[sportKey] || {}).label || sportKey.toUpperCase();
+  return slotsFor(sportKey).map(sl => ({
+    sport: sportLabel, label: sl.label, short: sl.name,
+    items: sl.games.map(g => {
+      const d = kickOf(g);
+      return {value: g, label: g, sub: d ? etParts(d).time : ""};
+    }),
+  }));
+}
+
+/* The board's Games filter. Remembered per sport; starts on the next TV
+   window that has not finished (kicked off under ~4 hours ago). */
+const GAME_SEL = {};
+function buildGameSelect(){
+  const slots = slotsFor(SPORT);
+  if(!GAME_SEL[SPORT]){
+    const soon = slots.find(sl => sl.t > Date.now() - 4 * 3600e3) || slots[0];
+    GAME_SEL[SPORT] = new Set(soon ? soon.games : []);
+  }
+  const valid = new Set(slots.flatMap(sl => sl.games));
+  [...GAME_SEL[SPORT]].forEach(g => { if(!valid.has(g)) GAME_SEL[SPORT].delete(g); });
+  multiPick($("f-game"), slotGroups(SPORT), GAME_SEL[SPORT], () => render(), "game");
 }
 function selectedGames(){
-  const v = $("f-game").value || "";
-  if(v.startsWith("slot:")){
-    const sl = slotsFor(SPORT).find(x => "slot:" + x.key === v);
-    return sl ? sl.games : [];
-  }
-  return v ? [v] : [];
+  // In kickoff order, whatever order they were ticked in.
+  const sel = GAME_SEL[SPORT] || new Set();
+  return slotsFor(SPORT).flatMap(sl => sl.games).filter(g => sel.has(g));
 }
 
 function buildFilters(){
@@ -757,6 +882,10 @@ function render(){
   const rows = (s.rows || []).filter(r =>
     games.includes(r.game) && r.market === market && r.book === book);
 
+  if(!games.length){
+    board.innerHTML = `<div class="empty">Pick at least one game above.</div>`;
+    return;
+  }
   if(!rows.length){
     // One sentence, in the reader's terms. The previous version explained the
     // internals and printed a terminal command, which is a developer's answer
@@ -1243,24 +1372,14 @@ function rateLeg(sportKey, r){
    player. Options that are both less likely AND pay less than another rung of
    the same player can never be part of the best parlay, so they are dropped. */
 function pgPool(book, scope, exclude, strict){
-  // Scope: "all", "sport" (the one on screen), "sport:<key>", "game" (the
-  // games on screen), or "slot:<sport>::<slot>" -- a TV window such as
-  // Sun 1 PM or SNF.
-  let onlySport = null, onlyGames = null;
-  if(scope === "game"){ onlySport = SPORT; onlyGames = new Set(selectedGames()); }
-  else if(scope === "sport"){ onlySport = SPORT; }
-  else if(scope.startsWith("sport:")){ onlySport = scope.slice(6); }
-  else if(scope.startsWith("slot:")){
-    const [sk, slotKey] = scope.slice(5).split("::");
-    const sl = slotsFor(sk).find(x => x.key === slotKey);
-    onlySport = sk; onlyGames = new Set(sl ? sl.games : []);
-  }
+  // Scope: a Set of "sport|game" keys ticked in the Games picker.
+  const pick = scope instanceof Set ? scope : null;
   const players = new Map();
   for(const [key, sp] of Object.entries(SPORTS)){
-    if(onlySport && key !== onlySport) continue;
+    if(pick && ![...pick].some(k => k.startsWith(key + "|"))) continue;
     for(const r of (sp.rows || [])){
       if(r.book !== book || !legId(r)) continue;
-      if(onlyGames && !onlyGames.has(r.game)) continue;
+      if(pick && !pick.has(key + "|" + r.game)) continue;
       const rated = rateLeg(key, r);
       if(!rated) continue;
       // CLEAN LEGS ONLY. A pick the board itself flags with a caution --
@@ -1358,7 +1477,12 @@ function buildParlay(nLegs, targetAmer, book, scope, exclude, strict){
 
 /* Clean legs first. Only when there are not enough of them for the legs
    asked for does it fall back to the whole pool -- and says so. */
-function buildBest(nLegs, targetAmer, book, scope, exclude){
+function buildBest(nLegs, targetAmer, book, scope, exclude, green){
+  if(green === false){
+    const r = buildParlay(nLegs, targetAmer, book, scope, exclude, false);
+    if(!r.error) r.green = false;
+    return r;
+  }
   const res = buildParlay(nLegs, targetAmer, book, scope, exclude, true);
   if(!res.error) return res;
   const any = buildParlay(nLegs, targetAmer, book, scope, exclude, false);
@@ -1372,7 +1496,7 @@ function buildBest(nLegs, targetAmer, book, scope, exclude){
    the best parlay using NONE of the players in any option so far -- new
    people, not just new rungs -- and the estimate shows what that variety
    costs. Every option is kept, so Back and Next move between them. */
-let PG_LAST = null, PG_HIST = [], PG_IDX = -1;
+let PG_LAST = null, PG_HIST = [], PG_IDX = -1, PG_SCOPE = null;
 function pgShow(i){
   PG_IDX = i;
   pgRender(PG_HIST[i]);
@@ -1381,13 +1505,13 @@ function pgRegenerate(){
   const base = PG_HIST[0];
   if(!base) return;
   const used = new Set(PG_HIST.flatMap(h => h.legs.map(o => o.pk)));
-  let res = buildBest(base.nLegs, base.target, base.book, base.scope, used);
+  let res = buildBest(base.nLegs, base.target, base.book, base.scope, used, base.green !== false);
   let reused = false;
   if(res.error){
     // Out of fresh players: allow earlier options' players back, keeping
     // only the one on screen out, so the next option still differs from it.
     const cur = new Set(PG_HIST[PG_IDX].legs.map(o => o.pk));
-    res = buildBest(base.nLegs, base.target, base.book, base.scope, cur);
+    res = buildBest(base.nLegs, base.target, base.book, base.scope, cur, base.green !== false);
     reused = true;
   }
   if(res.error){
@@ -1438,9 +1562,9 @@ function pgRender(res){
       <div class="row"><span>Board estimate it hits: <b>${(res.prob * 100).toFixed(res.prob < 0.01 ? 2 : 1)}%</b></span>
         <span>$10 pays $${(10 * res.d).toFixed(2)}</span></div>
     </div>
-    ${res.mixed ? `<div class="pg-warn">Not enough legs without a caution flag for
-      ${res.legs.length} legs here, so some below carry one (in amber). Use fewer legs
-      or widen the games for an all-clear parlay.</div>` : ""}
+    ${res.mixed ? `<div class="pg-warn">Not enough green-flag legs for ${res.legs.length}
+      legs here, so some below carry an amber warning. Use fewer legs or tick more games
+      for an all-green parlay.</div>` : ""}
     ${res.inBand ? "" : `<div class="pg-warn">Nothing on this board lands within 10% of
       ${fmtAmer(target)} with ${res.legs.length} leg${res.legs.length === 1 ? "" : "s"}.
       This is the closest it can build.</div>`}
@@ -1457,9 +1581,9 @@ function pgRender(res){
       10 games, then nudged a little for role changes, matchup, game script,
       injuries and questionable tags. Games missing from a player's record count
       partly as misses, low-volume receivers are marked down, and players with
-      under six recorded games are left out. Only legs the board has no caution
-      on are used — anything with an amber flag (tough matchup, shrinking role,
-      unrecorded games, questionable) is skipped. It maximises the chance every leg hits at
+      under six recorded games are left out. With Green flags only on, anything
+      with an amber warning (tough matchup, shrinking role, unrecorded games,
+      questionable) is skipped. It maximises the chance every leg hits at
       the odds you chose. It is an estimate from past games, not a prediction —
       a parlay only pays if every leg hits.</p>`;
 }
@@ -1482,23 +1606,14 @@ function pgFillForm(){
       .forEach(a => odds.add(new Option(fmtAmer(a), a)));
     odds.value = "500";
   }
-  const scope = $("pg-scope"), prevScope = scope.value;
-  const keys = Object.keys(SPORTS);
-  let html = `<option value="all">All games</option>`;
-  keys.forEach(k => {
-    const label = SPORTS[k].label || k.toUpperCase();
-    const slots = slotsFor(k).filter(sl => sl.key !== "tbd");
-    html += `<optgroup label="${esc(label)}">`;
-    if(keys.length > 1) html += `<option value="sport:${k}">All ${esc(label)} games</option>`;
-    slots.forEach(sl => {
-      html += `<option value="slot:${k}::${esc(sl.key)}">${esc(sl.label)}`
-        + ` (${sl.games.length} game${sl.games.length === 1 ? "" : "s"})</option>`;
-    });
-    html += `</optgroup>`;
-  });
-  html += `<option value="game">Games on screen</option>`;
-  scope.innerHTML = html;
-  scope.value = [...scope.options].some(o => o.value === prevScope) ? prevScope : "all";
+  // Games: every TV window of every sport on the board, soonest first.
+  // All ticked the first time; kept as left after that.
+  const groups = Object.keys(SPORTS).flatMap(k => slotGroups(k).map(g => Object.assign(g, {
+    items: g.items.map(i => Object.assign({}, i, {value: k + "|" + i.value}))})));
+  const allKeys = groups.flatMap(g => g.items.map(i => i.value));
+  if(!PG_SCOPE){ PG_SCOPE = new Set(allKeys); }
+  else { [...PG_SCOPE].forEach(v => { if(!allKeys.includes(v)) PG_SCOPE.delete(v); }); }
+  multiPick($("pg-scope"), groups, PG_SCOPE, () => {}, "game");
 
   const books = BOOKS.filter(([b]) => Object.values(SPORTS).some(sp =>
     (sp.rows || []).some(r => r.book === b && legId(r))));
@@ -1516,8 +1631,13 @@ $("pg-go").onclick = () => {
   $("pg-go").textContent = "Building…";
   setTimeout(() => {
     const t0 = performance.now();
+    if(!PG_SCOPE || !PG_SCOPE.size){
+      $("pg-go").textContent = "Build my parlay";
+      $("pg-out").innerHTML = `<div class="pg-warn">Pick at least one game.</div>`;
+      return;
+    }
     const res = buildBest(Number($("pg-legs").value), Number($("pg-odds").value),
-                            $("pg-book").value, $("pg-scope").value);
+                          $("pg-book").value, new Set(PG_SCOPE), null, $("pg-clean").checked);
     PG_HIST = res.error ? [] : [res];
     PG_IDX = res.error ? -1 : 0;
     pgRender(res);
@@ -1545,7 +1665,6 @@ $("pg-out").addEventListener("click", ev => {
 
 buildSportSeg();
 buildFilters();
-$("f-game").onchange = render;
 $("f-market").onchange = render;
 $("f-book").onchange = render;
 
