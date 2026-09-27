@@ -691,7 +691,8 @@ function slotOf(game, sportKey){
     name = e.h < 12 ? "Sun morning" : e.h < 16 ? "Sun 1 PM" : e.h < 20 ? "Sun 4 PM" : "SNF";
   }else{ name = e.wd + (e.h >= 19 ? " night" : ""); }
   const date = `${e.mon} ${e.day}`;
-  return {key: `${name}|${date}`, name, label: `${name} · ${e.wd} ${date}`, t: d.getTime()};
+  const label = name.startsWith(e.wd) ? `${name} · ${date}` : `${name} · ${e.wd} ${date}`;
+  return {key: `${name}|${date}`, name, label, t: d.getTime()};
 }
 function slotsFor(sportKey){
   const games = ((SPORTS[sportKey] || {}).games) || [];
@@ -942,7 +943,7 @@ function render(){
           <div class="st hl"><span class="k">${({fanduel: "FD", draftkings: "DK"})[p.book] || bookName(p.book)} line</span><span class="v">${p.std_line != null ? p.std_line : "—"}</span></div>
           <div class="st"><span class="k">Games</span><span class="v">${p.games}<small>/${p.eligible}</small></span></div>
         </div>
-        <div class="pmeta">${unit ? `${unit[0].toUpperCase() + unit.slice(1)} · ` : ""}back to <b>${p.since || "—"}</b>${missed > 0 ? ` · ${missed} game${missed === 1 ? "" : "s"} not recorded` : ""}${elsewhere > 0 ? ` · <b>${withTeam}</b> with ${p.team}, ${elsewhere} with ${prior.join("/")}` : ""}</div>
+        <div class="pmeta">${unit ? `${unit[0].toUpperCase() + unit.slice(1)} · ` : ""}back to <b>${p.since || "—"}</b>${p.dnp > 0 ? ` · sat out ${p.dnp} (not counted)` : ""}${missed > 0 ? ` · ${missed} game${missed === 1 ? "" : "s"} not recorded` : ""}${elsewhere > 0 ? ` · <b>${withTeam}</b> with ${p.team}, ${elsewhere} with ${prior.join("/")}` : ""}</div>
       </div>
       ${notes.join("")}
       <div class="tablewrap"><table class="${addable ? "c5" : "c4"}">
@@ -1242,13 +1243,24 @@ function rateLeg(sportKey, r){
    player. Options that are both less likely AND pay less than another rung of
    the same player can never be part of the best parlay, so they are dropped. */
 function pgPool(book, scope, exclude, strict){
-  const onScreen = new Set(selectedGames());
+  // Scope: "all", "sport" (the one on screen), "sport:<key>", "game" (the
+  // games on screen), or "slot:<sport>::<slot>" -- a TV window such as
+  // Sun 1 PM or SNF.
+  let onlySport = null, onlyGames = null;
+  if(scope === "game"){ onlySport = SPORT; onlyGames = new Set(selectedGames()); }
+  else if(scope === "sport"){ onlySport = SPORT; }
+  else if(scope.startsWith("sport:")){ onlySport = scope.slice(6); }
+  else if(scope.startsWith("slot:")){
+    const [sk, slotKey] = scope.slice(5).split("::");
+    const sl = slotsFor(sk).find(x => x.key === slotKey);
+    onlySport = sk; onlyGames = new Set(sl ? sl.games : []);
+  }
   const players = new Map();
   for(const [key, sp] of Object.entries(SPORTS)){
-    if(scope !== "all" && key !== SPORT) continue;
+    if(onlySport && key !== onlySport) continue;
     for(const r of (sp.rows || [])){
       if(r.book !== book || !legId(r)) continue;
-      if(scope === "game" && !onScreen.has(r.game)) continue;
+      if(onlyGames && !onlyGames.has(r.game)) continue;
       const rated = rateLeg(key, r);
       if(!rated) continue;
       // CLEAN LEGS ONLY. A pick the board itself flags with a caution --
@@ -1470,6 +1482,24 @@ function pgFillForm(){
       .forEach(a => odds.add(new Option(fmtAmer(a), a)));
     odds.value = "500";
   }
+  const scope = $("pg-scope"), prevScope = scope.value;
+  const keys = Object.keys(SPORTS);
+  let html = `<option value="all">All games</option>`;
+  keys.forEach(k => {
+    const label = SPORTS[k].label || k.toUpperCase();
+    const slots = slotsFor(k).filter(sl => sl.key !== "tbd");
+    html += `<optgroup label="${esc(label)}">`;
+    if(keys.length > 1) html += `<option value="sport:${k}">All ${esc(label)} games</option>`;
+    slots.forEach(sl => {
+      html += `<option value="slot:${k}::${esc(sl.key)}">${esc(sl.label)}`
+        + ` (${sl.games.length} game${sl.games.length === 1 ? "" : "s"})</option>`;
+    });
+    html += `</optgroup>`;
+  });
+  html += `<option value="game">Games on screen</option>`;
+  scope.innerHTML = html;
+  scope.value = [...scope.options].some(o => o.value === prevScope) ? prevScope : "all";
+
   const books = BOOKS.filter(([b]) => Object.values(SPORTS).some(sp =>
     (sp.rows || []).some(r => r.book === b && legId(r))));
   const prev = book.value;
