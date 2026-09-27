@@ -337,6 +337,8 @@ td.verdict{text-align:right}
   border-radius:8px;padding:8px 11px;line-height:1.45}
 .pg-leg{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--hairline)}
 .pg-leg:first-child{border-top:0}
+.pg-pos{font:600 10.5px/1 var(--ui);letter-spacing:.04em;color:var(--muted);margin-left:4px}
+.leg-prop{font-size:13.5px;color:var(--ink);margin-top:2px}
 .pg-leg .p{flex:none;width:48px;font:600 14px/1.2 var(--num);text-align:right}
 .pg-leg .why{margin-top:3px;display:flex;flex-wrap:wrap;gap:4px}
 .pg-chip{font:600 10px/1 var(--ui);letter-spacing:.03em;padding:3px 6px;border-radius:5px;
@@ -1030,6 +1032,12 @@ function esc(t){
    a book prices legs from different games. Legs from the same game are
    correlated and the book prices them together (a same-game parlay), so for
    those the tally is an estimate and says so. */
+/* "5+ rushing yards", "1+ catches" -- the market's own label, so a yards line
+   always says WHICH yards. */
+function propText(r){
+  const label = ((SHARED.labels || {})[r.market] || (SHARED.units || {})[r.market] || "").toLowerCase();
+  return `${Math.ceil(r.threshold)}+ ${esc(label)}`;
+}
 const decOf = a => a > 0 ? 1 + a / 100 : 1 + 100 / (-a);
 const amerOf = d => d >= 2 ? Math.round((d - 1) * 100) : -Math.round(100 / (d - 1));
 const fmtAmer = a => (a > 0 ? "+" : "") + a.toLocaleString("en-US");
@@ -1063,7 +1071,8 @@ function renderSlip(){
     const unit = (SHARED.units || {})[r.market] || "";
     return `<div class="leg">
       <div class="leg-main">
-        <div class="leg-what">${esc(r.player)} ${Math.ceil(r.threshold)}+ ${esc(unit)}</div>
+        <div class="leg-what">${esc(r.player)} <span class="pg-pos">${esc(r.pos || "")}</span></div>
+        <div class="leg-prop">${propText(r)}</div>
         <div class="leg-where">${esc(r.game)}</div>
       </div>
       <span class="leg-price">${american(r.price)}</span>
@@ -1102,10 +1111,11 @@ function renderSlip(){
       role growing/shrinking, matchup softer/tougher than his usual, game
       script, a teammate ruled out, and questionable status. These sizes are
       judgment, not fitted -- there is no settled-results backtest behind them.
-   Excluded: anyone listed Out or Doubtful, and "role changed" lines, where
-   the book knows something the history does not.
+   Excluded: anyone listed Out or Doubtful, "role changed" lines (the book
+   knows something the history does not), and short histories (under six
+   recorded games).
    ========================================================================= */
-const PG_K = 16, PG_TILT_CAP = 0.35;
+const PG_K = 16, PG_TILT_CAP = 0.35, PG_MISS = 0.5;
 const logit = p => Math.log(p / (1 - p)), sigm = x => 1 / (1 + Math.exp(-x));
 const clampP = p => Math.min(0.985, Math.max(0.015, p));
 
@@ -1119,15 +1129,52 @@ function rateLeg(sportKey, r){
     const s = S(), prof = (s.profiles || {})[normName(r.player)] || {};
     const status = prof.status && prof.status.status;
     if(status === "Out" || status === "Doubtful" || r.verdict === "role") return null;
+    // Fewer than six recorded games is flagged "Short history" on the board.
+    // Two good games can rate a leg near-certain; a parlay built on that is
+    // built on noise, so those players are left out of the generator.
+    if(r.short || prof.short) return null;
     const meta = (SHARED.marketMeta || {})[r.market] || {}, stat = meta.stat;
     const q = impliedFrom(r.price) / 1.045;          // strip a typical ~4.5% hold
     const k = prof.short ? 2 * PG_K : PG_K;
-    const pFull = (r.hits + k * q) / (r.n + k);
+    let tilt = 0; const why = [];
+
+    // UNRECORDED GAMES. The stats feeds list a player only in games where he
+    // recorded a stat, so a game he played and caught nothing is simply
+    // absent -- indistinguishable from a game he sat out. Counting only
+    // recorded games makes "1+ catches" look near-certain (Inniss: 19 for 19,
+    // with 5 of Ohio State's 24 games missing). Half of the missing games are
+    // counted as misses: some were injuries, some were zeros, and the feed
+    // cannot say which.
+    const missing = Math.max(0, (r.eligible || 0) - (r.games || 0));
+    const nAdj = r.n + PG_MISS * missing;
+    if(missing >= 2) why.push([`${missing} games unrecorded`, "down"]);
+
+    const pFull = (r.hits + k * q) / (nAdj + k);
     const vals = ((prof.stats || {})[stat] || {}).values || [];
     const l10 = vals.slice(-10), h10 = l10.filter(v => v > r.threshold).length;
     let p = l10.length ? 0.75 * pFull + 0.25 * (h10 + k * q) / (l10.length + k) : pFull;
 
-    let tilt = 0; const why = [];
+    // VOLUME. Catches are a count: a receiver averaging 2.5 a game goes
+    // catchless roughly one game in twelve however many games in a row he
+    // has recorded one. His average (with the unrecorded games partly as
+    // zeros) gives that directly, and it is blended in at half weight.
+    const recVals = ((prof.stats || {}).receptions || {}).values || [];
+    const recMean = recVals.length ? recVals.reduce((a, v) => a + v, 0) / (recVals.length + PG_MISS * missing) : null;
+    if(stat === "receptions" && recMean != null){
+      const need = Math.floor(r.threshold) + 1;
+      let cdf = 0, term = Math.exp(-recMean);
+      for(let i = 0; i < need; i++){ cdf += term; term *= recMean / (i + 1); }
+      p = 0.5 * p + 0.5 * (1 - cdf);
+    }
+    // USAGE. Low-volume receivers on yardage lines: target share where the
+    // feed has it (NFL), catches a game where it does not (college).
+    if(stat === "receiving_yards"){
+      const t = (prof.usage || {}).tgt;
+      const share = t ? t.base : null;
+      if(share != null && share < 0.12){ tilt -= 0.10; why.push([`Low usage (${Math.round(share * 100)}% of targets)`, "down"]); }
+      else if(share == null && recMean != null && recMean < 2.5){
+        tilt -= 0.10; why.push([`Low volume (${recMean.toFixed(1)} catches a game)`, "down"]); }
+    }
     const kind = stat === "passing_yards" ? "att" : volumeKind(stat);
     const u = (prof.usage || {})[kind];
     if(u && u.dir === "up"){ tilt += 0.15; why.push(["Role growing", "up"]); }
@@ -1270,15 +1317,14 @@ function pgRender(res){
   if(res.error){ out.innerHTML = `<div class="pg-warn">${esc(res.error)}</div>`; return; }
   PG_LAST = res;
   const target = Number($("pg-odds").value), name = bookName(res.book);
-  const odds = amerOf(res.d), implied = 1 / res.d;
+  const odds = amerOf(res.d);
   const sgp = sameGame(res.legs.map(o => o.r));
   const legsHtml = res.legs.map(o => {
-    const unit = (SHARED.units || {})[o.r.market] || "";
     const chips = o.why.map(([t, cls]) => `<span class="pg-chip ${cls}">${esc(t)}</span>`).join("");
     return `<div class="pg-leg">
       <div class="leg-main">
-        <div class="leg-what">${esc(o.r.player)} ${Math.ceil(o.r.threshold)}+ ${esc(unit)}
-          <span class="leg-price">${american(o.r.price)}</span></div>
+        <div class="leg-what">${esc(o.r.player)} <span class="pg-pos">${esc(o.r.pos)} · ${esc(o.r.team)}</span></div>
+        <div class="leg-prop">${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span></div>
         <div class="leg-where">${esc(o.r.game)}</div>
         ${chips ? `<div class="why">${chips}</div>` : ""}
       </div>
@@ -1290,7 +1336,6 @@ function pgRender(res){
       <div class="row"><span class="big">${fmtAmer(odds)}</span>
         <span>${res.legs.length} leg${res.legs.length === 1 ? "" : "s"} at ${name} · target ${fmtAmer(target)}</span></div>
       <div class="row"><span>Board estimate it hits: <b>${(res.prob * 100).toFixed(res.prob < 0.01 ? 2 : 1)}%</b></span>
-        <span>Price implies: ${(implied * 100).toFixed(implied < 0.01 ? 2 : 1)}%</span>
         <span>$10 pays $${(10 * res.d).toFixed(2)}</span></div>
     </div>
     ${res.inBand ? "" : `<div class="pg-warn">Nothing on this board lands within 10% of
@@ -1307,7 +1352,9 @@ function pgRender(res){
     <p class="pg-fine">How it picks: each line's hit rate is pulled toward the
       book's own price (so small samples can't run wild), blended with the last
       10 games, then nudged a little for role changes, matchup, game script,
-      injuries and questionable tags. It maximises the chance every leg hits at
+      injuries and questionable tags. Games missing from a player's record count
+      partly as misses, low-volume receivers are marked down, and players with
+      under six recorded games are left out. It maximises the chance every leg hits at
       the odds you chose. It is an estimate from past games, not a prediction —
       a parlay only pays if every leg hits.</p>`;
 }
