@@ -446,6 +446,22 @@ body.has-slip{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
   padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.04);color:var(--secondary);
   border:1px solid var(--hairline-2)}
 .pg-chip.up{color:var(--good-text);border-color:rgba(39,232,156,.4)}
+button.pg-chip{appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background .15s}
+button.pg-chip.up:hover,button.pg-chip.up[aria-expanded="true"]{background:rgba(39,232,156,.14)}
+button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:rgba(255,191,71,.14)}
+.pg-hint{margin:12px 0 0;font-size:12px;color:var(--muted)}
+.pg-tip{position:relative;margin-top:10px;padding:12px 14px 13px;border-radius:12px;
+  background:#121a29;border:1px solid var(--hairline-2);box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.pg-tip[hidden]{display:none}
+.pg-tip::before{content:"";position:absolute;top:-7px;left:var(--x,20px);width:12px;height:12px;
+  background:#121a29;border-left:1px solid var(--hairline-2);border-top:1px solid var(--hairline-2);transform:rotate(45deg)}
+.pg-tip.up{border-color:rgba(39,232,156,.4)} .pg-tip.up::before{border-color:rgba(39,232,156,.4)}
+.pg-tip.down{border-color:rgba(255,191,71,.4)} .pg-tip.down::before{border-color:rgba(255,191,71,.4)}
+.pg-tip b{font:700 14px/1.2 var(--ui);color:var(--ink)}
+.pg-tip .pg-tip-k{margin-left:8px;font:700 10px/1 var(--display);letter-spacing:.12em;text-transform:uppercase}
+.pg-tip.up .pg-tip-k{color:var(--good-text)} .pg-tip.down .pg-tip-k{color:var(--warn-text)}
+.pg-tip p{margin:7px 0 0;font-size:13px;line-height:1.5;color:var(--secondary)}
 .pg-chip.down{color:var(--warn-text);border-color:rgba(255,191,71,.4)}
 .pg-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
 .pg-actions .btn{flex:1;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;text-align:center}
@@ -1309,7 +1325,9 @@ function rateLeg(sportKey, r){
     // cannot say which.
     const missing = Math.max(0, (r.eligible || 0) - (r.games || 0));
     const nAdj = r.n + PG_MISS * missing;
-    if(missing >= 2) why.push([`${missing} games unrecorded`, "down"]);
+    if(missing >= 2) why.push([`${missing} games unrecorded`, "down",
+      `${missing} of his team's games have no record of him, and the data can't tell whether he played `
+      + `and recorded nothing or sat out. To be safe, the estimate counts half of them as misses.`]);
 
     const pFull = (r.hits + k * q) / (nAdj + k);
     const vals = ((prof.stats || {})[stat] || {}).values || [];
@@ -1333,47 +1351,78 @@ function rateLeg(sportKey, r){
     if(stat === "receiving_yards"){
       const t = (prof.usage || {}).tgt;
       const share = t ? t.base : null;
-      if(share != null && share < 0.12){ tilt -= 0.10; why.push([`Low usage (${Math.round(share * 100)}% of targets)`, "down"]); }
+      if(share != null && share < 0.12){ tilt -= 0.10; why.push([`Low usage (${Math.round(share * 100)}% of targets)`, "down",
+        `He gets only ${Math.round(share * 100)}% of his team's targets. With few looks, one quiet game `
+        + `leaves him short, so yardage lines are riskier than his hit rate suggests. Marked down.`]); }
       else if(share == null && recMean != null && recMean < 2.5){
-        tilt -= 0.10; why.push([`Low volume (${recMean.toFixed(1)} catches a game)`, "down"]); }
+        tilt -= 0.10; why.push([`Low volume (${recMean.toFixed(1)} catches a game)`, "down",
+        `He averages ${recMean.toFixed(1)} catches a game. With that few, one quiet game leaves him short, `
+        + `so yardage lines are riskier than his hit rate suggests. Marked down.`]); }
     }
     const kind = stat === "passing_yards" ? "att" : volumeKind(stat);
     const u = (prof.usage || {})[kind];
-    if(u && u.dir === "up"){ tilt += 0.15; why.push(["Role growing", "up"]); }
-    if(u && u.dir === "down"){ tilt -= 0.15; why.push(["Role shrinking", "down"]); }
+    const roleTxt = () => {
+      const what = {tgt: "share of the team's targets", car: "share of the team's carries", att: "pass attempts"}[kind];
+      const f = kind === "att" ? (x => `${fmtNum(x)} a game`) : (x => `${Math.round(x * 100)}%`);
+      return `His ${what}: ${f(u.recent)} over his last ${u.n} games, ${u.dir === "up" ? "up" : "down"} from `
+        + `${f(u.base)} in the ${u.nbase} before. His hit rate is built mostly on the old role, `
+        + (u.dir === "up" ? "so it may understate him now. Nudged up." : "so it may overstate him now. Marked down.");
+    };
+    if(u && u.dir === "up"){ tilt += 0.15; why.push(["Role growing", "up", roleTxt()]); }
+    if(u && u.dir === "down"){ tilt -= 0.15; why.push(["Role shrinking", "down", roleTxt()]); }
 
     const dfn = defenseFor(r), faced = (prof.faced || {})[r.market];
     if(dfn && faced != null){
       const gap = dfn.rank - faced;
-      if(gap >= 6){ tilt += 0.10; why.push(["Soft matchup", "up"]); }
-      else if(gap <= -6){ tilt -= 0.10; why.push(["Tough matchup", "down"]); }
+      const unit = (SHARED.units || {})[r.market] || "";
+      const base = `${dfn.team} ranks ${ordinal(dfn.rank)} of ${dfn.of} against ${r.pos}s in ${unit} allowed `
+        + `(${dfn.perGame} a game; 1st allows the least). The defenses behind his hit rate averaged ${ordinal(Math.round(faced))}`;
+      if(gap >= 6){ tilt += 0.10; why.push(["Soft matchup", "up",
+        base + ` — this one is easier than he usually sees. Nudged up.`]); }
+      else if(gap <= -6){ tilt -= 0.10; why.push(["Tough matchup", "down",
+        base + ` — this one is harder than he usually sees, so read his hit rate as a ceiling. Marked down.`]); }
     }
 
     const gl = (s.lines || {})[r.game];
     if(gl && gl.fav){
       const big = sportKey === "cfb" ? 14 : 7;
       const passing = ["passing_yards", "receptions", "receiving_yards"].includes(stat);
-      if(sportKey === "cfb" && r.team === gl.fav && gl.spread >= 21){ tilt -= 0.15; why.push(["Blowout risk", "down"]); }
-      else if(gl.spread >= big && r.team === gl.fav && stat === "rushing_yards"){ tilt += 0.10; why.push(["Run-heavy script", "up"]); }
-      else if(gl.spread >= big && r.team === gl.dog && passing){ tilt += 0.10; why.push(["Trailing script", "up"]); }
-      else if(gl.spread >= big && r.team === gl.dog && stat === "rushing_yards"){ tilt -= 0.10; why.push(["Trailing script", "down"]); }
+      const sp = fmtNum(gl.spread);
+      if(sportKey === "cfb" && r.team === gl.fav && gl.spread >= 21){ tilt -= 0.15; why.push(["Blowout risk", "down",
+        `${r.team} is favored by ${sp}. In a blowout, starters often sit in the fourth quarter, which cuts into overs. Marked down.`]); }
+      else if(gl.spread >= big && r.team === gl.fav && stat === "rushing_yards"){ tilt += 0.10; why.push(["Run-heavy script", "up",
+        `${r.team} is favored by ${sp}, so likely playing with a lead. Teams protecting a lead run the ball more late, which means more carries. Nudged up.`]); }
+      else if(gl.spread >= big && r.team === gl.dog && passing){ tilt += 0.10; why.push(["Trailing script", "up",
+        `${r.team} is a ${sp}-point underdog, so likely playing from behind. Teams that are behind throw more, especially late — more pass attempts, targets and catches. Nudged up.`]); }
+      else if(gl.spread >= big && r.team === gl.dog && stat === "rushing_yards"){ tilt -= 0.10; why.push(["Trailing script", "down",
+        `${r.team} is a ${sp}-point underdog, so likely playing from behind. Teams that are behind run less, which means fewer carries. Marked down.`]); }
     }
 
     const vk = volumeKind(stat), vmin = vk === "car" ? 0.25 : 0.10;
     const gone = ((s.outs || {})[r.team] || []).filter(o =>
       normName(o.player) !== normName(r.player) && (o[vk] || 0) >= vmin);
     if(gone.length){
-      if(stat === "passing_yards"){ tilt -= 0.05; why.push(["Top target out", "down"]); }
-      else { tilt += 0.05; why.push(["Teammate out", "up"]); }
+      const who = gone.map(o => `${o.player} (${o.pos}, ${o.status.toLowerCase()})`).join(", ");
+      if(stat === "passing_yards"){ tilt -= 0.05; why.push(["Top target out", "down",
+        `${who} won't play. Fewer proven receivers to throw to. Marked down slightly.`]); }
+      else { tilt += 0.05; why.push(["Teammate out", "up",
+        `${who} won't play, leaving ${gone.map(o => Math.round((o[vk] || 0) * 100) + "%").join(" + ")} of the team's `
+        + `${vk === "car" ? "carries" : "targets"} to go to someone else. Nudged up slightly.`]); }
     }
-    if(status === "Questionable"){ tilt -= 0.30; why.push(["Questionable", "down"]); }
+    if(status === "Questionable"){ tilt -= 0.30; why.push(["Questionable", "down",
+      `Listed questionable${prof.status.injury ? ` (${prof.status.injury.toLowerCase()})` : ""}. Check the inactives about 90 minutes `
+      + `before kickoff — and even if he plays, he may play less. Marked down.`]); }
     // Two more cautions the board shows on the card. No nudge to the rate;
     // they matter because the generator only uses legs without a caution.
     const medV = median(vals);
     if(stat !== "receptions" && medV != null && r.std_line != null && medV < r.std_line && r.mean > r.std_line)
-      why.push(["Big-game average", "down"]);
+      why.push(["Big-game average", "down",
+        `His average (${r.mean.toFixed(1)}) clears the ${r.std_line} line, but his typical game — the median — is ${fmtNum(medV)}. `
+        + `A few big games pull the average up; in most games he has finished under the line.`]);
     const withTeam = r.with_team == null ? r.games : r.with_team;
-    if(r.games - withTeam > 0 && withTeam < r.games / 2) why.push(["Mostly with another team", "down"]);
+    if(r.games - withTeam > 0 && withTeam < r.games / 2) why.push(["Mostly with another team", "down",
+      `Only ${withTeam} of his ${r.games} games were with ${r.team}; the rest came with ${(r.prior_teams || []).join(" and ") || "another team"}. `
+      + `Talent travels between teams, but how much he's used doesn't.`]);
 
     tilt = Math.max(-PG_TILT_CAP, Math.min(PG_TILT_CAP, tilt));
     p = sigm(logit(clampP(p)) + tilt);
@@ -1384,6 +1433,7 @@ function rateLeg(sportKey, r){
 /* Every line the chosen book can put on a slip, rated, one option-list per
    player. Options that are both less likely AND pay less than another rung of
    the same player can never be part of the best parlay, so they are dropped. */
+const RATE_CACHE = new WeakMap();
 function pgPool(book, scope, exclude, strict){
   // Scope: a Set of "sport|game" keys ticked in the Games picker.
   const pick = scope instanceof Set ? scope : null;
@@ -1393,7 +1443,10 @@ function pgPool(book, scope, exclude, strict){
     for(const r of (sp.rows || [])){
       if(r.book !== book || !legId(r)) continue;
       if(pick && !pick.has(key + "|" + r.game)) continue;
-      const rated = rateLeg(key, r);
+      // A line's rating never changes while the page is open, so it is
+      // worked out once and reused by every search (and Regenerate).
+      let rated = RATE_CACHE.get(r);
+      if(rated === undefined){ rated = rateLeg(key, r); RATE_CACHE.set(r, rated); }
       if(!rated) continue;
       // CLEAN LEGS ONLY. A pick the board itself flags with a caution --
       // tough matchup, shrinking role, unrecorded games, questionable --
@@ -1556,14 +1609,15 @@ function pgRender(res){
         : "All-new players. Rated a little lower than the best pick — that's the price of variety."}</div>` : ""}</div>`;
   const odds = amerOf(res.d);
   const sgp = sameGame(res.legs.map(o => o.r));
-  const legsHtml = res.legs.map(o => {
-    const chips = o.why.map(([t, cls]) => `<span class="pg-chip ${cls}">${esc(t)}</span>`).join("");
+  const legsHtml = res.legs.map((o, li) => {
+    const chips = o.why.map(([t, cls], ci) => `<button type="button" class="pg-chip ${cls}" data-tip="${li}:${ci}"
+      aria-expanded="false">${esc(t)}</button>`).join("");
     return `<div class="pg-leg">
       <div class="leg-main">
         <div class="leg-what">${esc(o.r.player)} <span class="pg-pos">${esc(o.r.pos)} · ${esc(o.r.team)}</span></div>
         <div class="leg-prop">${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span></div>
         <div class="leg-where">${esc(o.r.game)}${kickOf(o.r.game) ? ` · ${kickText(o.r.game)}` : ""}</div>
-        ${chips ? `<div class="why">${chips}</div>` : ""}
+        ${chips ? `<div class="why">${chips}</div><div class="pg-tip" hidden></div>` : ""}
       </div>
       <span class="p" title="Board estimate for this leg">${Math.round(o.p * 100)}%</span>
     </div>`;
@@ -1583,6 +1637,7 @@ function pgRender(res){
       This is the closest it can build.</div>`}
     ${sgp ? `<div class="pg-warn">Some legs share a game. ${name} prices same-game legs
       together, so its price will differ from ${fmtAmer(odds)}.</div>` : ""}
+    ${res.legs.some(o => o.why.length) ? `<p class="pg-hint">Tap a flag to see what it means.</p>` : ""}
     <div style="margin-top:6px">${legsHtml}</div>
     <div class="pg-actions">
       <button class="btn" id="pg-add">Add to slip</button>
@@ -1658,9 +1713,32 @@ $("pg-go").onclick = () => {
     $("pg-go").dataset.ms = Math.round(performance.now() - t0);
   }, 20);
 };
+function pgTip(chip){
+  const leg = chip.closest(".pg-leg"), tip = leg.querySelector(".pg-tip");
+  const wasOpen = chip.getAttribute("aria-expanded") === "true";
+  $("pg-out").querySelectorAll('.pg-chip[aria-expanded="true"]').forEach(c => c.setAttribute("aria-expanded", "false"));
+  $("pg-out").querySelectorAll(".pg-tip").forEach(t => { t.hidden = true; });
+  if(wasOpen) return;
+  const [li, ci] = chip.dataset.tip.split(":").map(Number);
+  const [label, dir, text] = PG_LAST.legs[li].why[ci];
+  tip.className = "pg-tip " + dir;
+  tip.innerHTML = `<b>${esc(label)}</b><span class="pg-tip-k">${dir === "up"
+      ? "Green · helps this leg" : "Amber · works against this leg"}</span>`
+    + `<p>${esc(text || "")}</p>`;
+  // Point the arrow at the chip that was tapped.
+  tip.hidden = false;
+  const cr = chip.getBoundingClientRect(), tr = tip.getBoundingClientRect();
+  tip.style.setProperty("--x", Math.max(12, cr.left - tr.left + cr.width / 2 - 7) + "px");
+  chip.setAttribute("aria-expanded", "true");
+}
 $("pg-out").addEventListener("click", ev => {
   const t = ev.target.closest("button, a");
-  if(!t) return;
+  if(!t){
+    $("pg-out").querySelectorAll(".pg-tip").forEach(x => { x.hidden = true; });
+    $("pg-out").querySelectorAll('.pg-chip[aria-expanded="true"]').forEach(c => c.setAttribute("aria-expanded", "false"));
+    return;
+  }
+  if(t.classList.contains("pg-chip")){ pgTip(t); return; }
   if(t.id === "pg-prev" && PG_IDX > 0){ pgShow(PG_IDX - 1); return; }
   if(t.id === "pg-next" && PG_IDX < PG_HIST.length - 1){ pgShow(PG_IDX + 1); return; }
   if(t.id === "pg-regen"){
