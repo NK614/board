@@ -358,6 +358,21 @@ body.has-slip{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 }
 .btn.ghost{background:rgba(255,255,255,.04);color:var(--ink);border:1px solid var(--hairline-2);box-shadow:none}
 .pg-go{width:100%;margin-top:16px;padding:15px}
+.pg-nav{display:flex;align-items:center;gap:8px;margin-top:18px}
+.pg-arrow{appearance:none;width:38px;height:38px;border-radius:12px;cursor:pointer;flex:none;
+  border:1px solid var(--hairline-2);background:rgba(255,255,255,.04);color:var(--ink);
+  font:500 24px/1 var(--ui);display:inline-flex;align-items:center;justify-content:center}
+.pg-arrow:disabled{opacity:.3;cursor:default}
+.pg-count{font:750 14px/1.1 var(--display);color:var(--ink);min-width:0}
+.pg-count small{font:500 12px/1 var(--ui);color:var(--muted)}
+.pg-regen{margin-left:auto;appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+  padding:10px 14px;border-radius:12px;color:var(--ink);font:750 13.5px/1 var(--display);
+  background:linear-gradient(var(--surface),var(--surface)) padding-box,var(--grad) border-box;
+  border:1.5px solid transparent;box-shadow:0 0 22px -10px rgba(45,226,255,.7)}
+.pg-regen svg{width:15px;height:15px;fill:none;stroke:var(--accent);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.pg-regen:disabled{opacity:.6;cursor:wait}
+.pg-info{margin-top:10px;font-size:12.5px;line-height:1.45;color:var(--secondary);
+  background:rgba(255,255,255,.03);border:1px solid var(--hairline);border-radius:12px;padding:9px 12px}
 .pg-sum{margin-top:18px;padding:15px 16px;border-radius:16px;font-size:13.5px;line-height:1.6;
   background:linear-gradient(135deg,rgba(45,226,255,.10),rgba(165,123,255,.08));border:1px solid rgba(45,226,255,.22)}
 .pg-sum .big{font:750 30px/1.05 var(--num);letter-spacing:-.02em;
@@ -1114,7 +1129,7 @@ function rateLeg(sportKey, r){
 /* Every line the chosen book can put on a slip, rated, one option-list per
    player. Options that are both less likely AND pay less than another rung of
    the same player can never be part of the best parlay, so they are dropped. */
-function pgPool(book, scope){
+function pgPool(book, scope, exclude){
   const curGame = $("f-game").value;
   const players = new Map();
   for(const [key, sp] of Object.entries(SPORTS)){
@@ -1127,8 +1142,9 @@ function pgPool(book, scope){
       const d = decOf(r.price);
       if(d <= 1.0001) continue;
       const pk = key + "|" + normName(r.player) + "|" + r.team;
+      if(exclude && exclude.has(pk)) continue;
       if(!players.has(pk)) players.set(pk, []);
-      players.get(pk).push({r, sport: key, p: rated.p, q: rated.q, why: rated.why,
+      players.get(pk).push({r, sport: key, pk, p: rated.p, q: rated.q, why: rated.why,
                             d, lp: Math.log(rated.p), ld: Math.log(d)});
     }
   }
@@ -1145,8 +1161,8 @@ function pgPool(book, scope){
 /* Exact 0/1 knapsack over players: n legs, one per player, combined log-odds
    binned at 0.01, maximising the summed log-probability. The exact sum of
    the best path is carried per bin, so rounding never accumulates. */
-function buildParlay(nLegs, targetAmer, book, scope){
-  const players = pgPool(book, scope);
+function buildParlay(nLegs, targetAmer, book, scope, exclude){
+  const players = pgPool(book, scope, exclude);
   if(players.length < nLegs){
     return {error: `Only ${players.length} player${players.length === 1 ? " has" : "s have"} `
       + `${bookName(book)} lines in this selection. Pick ${players.length} leg${players.length === 1 ? "" : "s"} or fewer, `
@@ -1207,15 +1223,59 @@ function buildParlay(nLegs, targetAmer, book, scope){
   legs.reverse();
   const d = legs.reduce((a, o) => a * o.d, 1);
   const prob = legs.reduce((a, o) => a * o.p, 1);
-  return {legs, d, prob, inBand, book};
+  return {legs, d, prob, inBand, book, target: targetAmer, nLegs, scope};
 }
 
-let PG_LAST = null;
+/* REGENERATE. The first build is the best parlay the board can make; it is
+   deterministic, so asking again gives the same answer. Regenerate asks for
+   the best parlay using NONE of the players in any option so far -- new
+   people, not just new rungs -- and the estimate shows what that variety
+   costs. Every option is kept, so Back and Next move between them. */
+let PG_LAST = null, PG_HIST = [], PG_IDX = -1;
+function pgShow(i){
+  PG_IDX = i;
+  pgRender(PG_HIST[i]);
+}
+function pgRegenerate(){
+  const base = PG_HIST[0];
+  if(!base) return;
+  const used = new Set(PG_HIST.flatMap(h => h.legs.map(o => o.pk)));
+  let res = buildParlay(base.nLegs, base.target, base.book, base.scope, used);
+  let reused = false;
+  if(res.error){
+    // Out of fresh players: allow earlier options' players back, keeping
+    // only the one on screen out, so the next option still differs from it.
+    const cur = new Set(PG_HIST[PG_IDX].legs.map(o => o.pk));
+    res = buildParlay(base.nLegs, base.target, base.book, base.scope, cur);
+    reused = true;
+  }
+  if(res.error){
+    $("pg-note").innerHTML = `<div class="pg-warn">That's every distinct parlay this
+      selection can make. Widen the games or use fewer legs for more options.</div>`;
+    return;
+  }
+  res.reused = reused;
+  PG_HIST.push(res);
+  pgShow(PG_HIST.length - 1);
+}
+
 function pgRender(res){
   const out = $("pg-out");
   if(res.error){ out.innerHTML = `<div class="pg-warn">${esc(res.error)}</div>`; return; }
   PG_LAST = res;
-  const target = Number($("pg-odds").value), name = bookName(res.book);
+  const target = res.target, name = bookName(res.book);
+  const n = PG_HIST.length, i = PG_IDX;
+  const nav = `<div class="pg-nav">
+      <button class="pg-arrow" id="pg-prev" ${i <= 0 ? "disabled" : ""} aria-label="Previous option">&#8249;</button>
+      <span class="pg-count">${i === 0 ? "Best pick" : `Option ${i + 1}`}<small> · ${i + 1} of ${n}</small></span>
+      <button class="pg-arrow" id="pg-next" ${i >= n - 1 ? "disabled" : ""} aria-label="Next option">&#8250;</button>
+      <button class="pg-regen" id="pg-regen">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+        Regenerate</button>
+    </div>
+    <div id="pg-note">${i > 0 ? `<div class="pg-info">${res.reused
+        ? "No fresh players left, so this one reuses players from earlier options — but none from the one before."
+        : "All-new players. Rated a little lower than the best pick — that's the price of variety."}</div>` : ""}</div>`;
   const odds = amerOf(res.d);
   const sgp = sameGame(res.legs.map(o => o.r));
   const legsHtml = res.legs.map(o => {
@@ -1230,7 +1290,7 @@ function pgRender(res){
       <span class="p" title="Board estimate for this leg">${Math.round(o.p * 100)}%</span>
     </div>`;
   }).join("");
-  out.innerHTML = `
+  out.innerHTML = nav + `
     <div class="pg-sum">
       <div class="row"><span class="big">${fmtAmer(odds)}</span>
         <span>${res.legs.length} leg${res.legs.length === 1 ? "" : "s"} at ${name} · target ${fmtAmer(target)}</span></div>
@@ -1292,14 +1352,27 @@ $("pg-go").onclick = () => {
   $("pg-go").textContent = "Building…";
   setTimeout(() => {
     const t0 = performance.now();
-    pgRender(buildParlay(Number($("pg-legs").value), Number($("pg-odds").value),
-                         $("pg-book").value, $("pg-scope").value));
+    const res = buildParlay(Number($("pg-legs").value), Number($("pg-odds").value),
+                            $("pg-book").value, $("pg-scope").value);
+    PG_HIST = res.error ? [] : [res];
+    PG_IDX = res.error ? -1 : 0;
+    pgRender(res);
     $("pg-go").textContent = "Build my parlay";
     $("pg-go").dataset.ms = Math.round(performance.now() - t0);
   }, 20);
 };
 $("pg-out").addEventListener("click", ev => {
-  if(ev.target.id !== "pg-add" || !PG_LAST) return;
+  const t = ev.target.closest("button, a");
+  if(!t) return;
+  if(t.id === "pg-prev" && PG_IDX > 0){ pgShow(PG_IDX - 1); return; }
+  if(t.id === "pg-next" && PG_IDX < PG_HIST.length - 1){ pgShow(PG_IDX + 1); return; }
+  if(t.id === "pg-regen"){
+    t.disabled = true; t.lastChild.textContent = " Finding…";
+    setTimeout(() => { pgRegenerate(); const b = $("pg-regen");
+      if(b){ b.disabled = false; b.lastChild.textContent = " Regenerate"; } }, 20);
+    return;
+  }
+  if(t.id !== "pg-add" || !PG_LAST) return;
   for(const [k, v] of [...SLIP]) if(v.book === PG_LAST.book) SLIP.delete(k);
   PG_LAST.legs.forEach(o => SLIP.set(legId(o.r), o.r));
   saveSlip(); render(); renderSlip();
