@@ -312,6 +312,45 @@ td.hit{font-weight:600}
 .vb.blocked{background:var(--surface-2);color:var(--muted);border-color:var(--hairline-2)}
 td.verdict{text-align:right}
 
+/* ---- parlay generator ---- */
+.pg-open{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  margin:0 0 14px;padding:12px 16px;border-radius:var(--radius);cursor:pointer;
+  border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);
+  font:600 14px/1 var(--ui);
+}
+.pg-open svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pg[hidden]{display:none}
+.pg{position:fixed;inset:0;z-index:50;background:rgba(10,14,20,.55);
+  display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:28px 16px}
+.pg-card{background:var(--surface);color:var(--ink);border-radius:14px;width:100%;max-width:640px;
+  padding:18px 18px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.pg-head{display:flex;justify-content:space-between;align-items:center}
+.pg-head h2{margin:0;font-size:18px;letter-spacing:-.01em}
+.pg-sub{margin:4px 0 14px;font-size:13px;color:var(--secondary);line-height:1.45}
+.pg-form{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.pg-go{width:100%;margin-top:14px;padding:12px}
+.pg-sum{margin-top:16px;padding:12px 14px;border-radius:10px;background:var(--surface-2);font-size:13.5px;line-height:1.55}
+.pg-sum .big{font:600 22px/1.15 var(--num);color:var(--ink)}
+.pg-sum .row{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline}
+.pg-warn{margin-top:10px;font-size:12.5px;color:var(--warn-text);background:var(--warn-soft);
+  border-radius:8px;padding:8px 11px;line-height:1.45}
+.pg-leg{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--hairline)}
+.pg-leg:first-child{border-top:0}
+.pg-leg .p{flex:none;width:48px;font:600 14px/1.2 var(--num);text-align:right}
+.pg-leg .why{margin-top:3px;display:flex;flex-wrap:wrap;gap:4px}
+.pg-chip{font:600 10px/1 var(--ui);letter-spacing:.03em;padding:3px 6px;border-radius:5px;
+  background:var(--surface-2);color:var(--secondary);border:1px solid var(--hairline)}
+.pg-chip.up{color:var(--good-text);border-color:var(--good)}
+.pg-chip.down{color:var(--warn-text);border-color:#e0a83c}
+.pg-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.pg-actions .btn{flex:1;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;text-align:center}
+.pg-fine{margin-top:12px;font-size:11.5px;line-height:1.5;color:var(--muted)}
+@media (max-width:640px){
+  .pg{padding:0}
+  .pg-card{border-radius:0;min-height:100%;padding:16px 14px 90px}
+}
+
 /* ---- game line bar: spread, total, implied points ---- */
 .gameline{
   display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;
@@ -395,7 +434,9 @@ body.has-slip{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 /* Two books, two buttons. DraftKings in its own green so the two are told
    apart at a glance and nobody opens the wrong app. */
 .slip-go.dk{background:#1b7a3e}
-.leg-book{font:600 10px/1 var(--ui);letter-spacing:.05em;text-transform:uppercase;
+.parlay-odds{font:600 13px/1 var(--num);color:var(--ink);text-transform:none;letter-spacing:0}
+.parlay-odds .payout{font:500 11px/1 var(--ui);color:var(--muted);margin-left:6px}
+.leg-book{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:600 10px/1 var(--ui);letter-spacing:.05em;text-transform:uppercase;
   color:var(--muted);margin:12px 0 2px}
 @media (max-width:640px){ .slip-go{padding:11px 12px;font-size:13px} }
 .slip-list{
@@ -492,11 +533,37 @@ body.has-slip{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
     <div class="field"><label for="f-book">Sportsbook</label><select id="f-book"></select></div>
   </div>
 
+  <button class="pg-open" id="pg-open">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/><path d="M17 15l3 3-3 3"/></svg>
+    Parlay Generator</button>
+
   <div id="board"></div>
 
 </div>
 
 
+
+<div class="pg" id="pg" hidden role="dialog" aria-modal="true" aria-labelledby="pg-title">
+  <div class="pg-card">
+    <div class="pg-head">
+      <h2 id="pg-title">Parlay Generator</h2>
+      <button class="leg-x" id="pg-close" aria-label="Close">&times;</button>
+    </div>
+    <p class="pg-sub">Pick how many legs and roughly what odds. It searches every line on
+      this board for the combination most likely to hit at that price.</p>
+    <div class="pg-form">
+      <div class="field"><label for="pg-legs">Legs</label><select id="pg-legs"></select></div>
+      <div class="field"><label for="pg-odds">Target odds</label><select id="pg-odds"></select></div>
+      <div class="field"><label for="pg-book">Sportsbook</label><select id="pg-book"></select></div>
+      <div class="field"><label for="pg-scope">Games</label><select id="pg-scope">
+        <option value="all">All games</option>
+        <option value="sport">This sport</option>
+        <option value="game">Selected game</option></select></div>
+    </div>
+    <button class="btn pg-go" id="pg-go">Build my parlay</button>
+    <div id="pg-out"></div>
+  </div>
+</div>
 
 <div class="slip" id="slip" hidden>
   <div class="slip-in">
@@ -958,6 +1025,17 @@ function esc(t){
     c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 }
 
+/* ---- parlay math ----
+   A parlay pays the PRODUCT of each leg's decimal odds. That is exactly how
+   a book prices legs from different games. Legs from the same game are
+   correlated and the book prices them together (a same-game parlay), so for
+   those the tally is an estimate and says so. */
+const decOf = a => a > 0 ? 1 + a / 100 : 1 + 100 / (-a);
+const amerOf = d => d >= 2 ? Math.round((d - 1) * 100) : -Math.round(100 / (d - 1));
+const fmtAmer = a => (a > 0 ? "+" : "") + a.toLocaleString("en-US");
+const parlayDec = legs => legs.reduce((d, r) => d * decOf(r.price), 1);
+const sameGame = legs => new Set(legs.map(r => r.game)).size < legs.length;
+
 function renderSlip(){
   const bar = $("slip"), n = SLIP.size;
   bar.hidden = n === 0;
@@ -968,15 +1046,20 @@ function renderSlip(){
   $("slip-label").textContent = n === 1 ? "leg" : "legs";
   const used = BOOKS.filter(([b]) => [...SLIP.values()].some(r => r.book === b));
   $("slip-gos").innerHTML = used.map(([b, name]) => {
-    const k = [...SLIP.values()].filter(r => r.book === b).length;
-    const text = used.length === 1 ? `Open in ${name}` : `${name} (${k})`;
+    const bl = [...SLIP.values()].filter(r => r.book === b), k = bl.length;
+    const odds = fmtAmer(amerOf(parlayDec(bl)));
+    const text = used.length === 1 ? `${name} ${odds}` : `${name} (${k}) ${odds}`;
     return `<a class="slip-go${b === "draftkings" ? " dk" : ""}" data-book="${b}"
       href="${esc(slipUrl(b))}" target="_blank" rel="noopener">${text}</a>`;
   }).join("");
 
-  const legs = used.map(([b, name]) =>
-    (used.length > 1 ? `<div class="leg-book">${name}</div>` : "")
-    + [...SLIP.entries()].filter(([, r]) => r.book === b).map(([id, r]) => {
+  const legs = used.map(([b, name]) => {
+    const bl = [...SLIP.values()].filter(r => r.book === b), d = parlayDec(bl);
+    const sgp = sameGame(bl);
+    const head = `<div class="leg-book"><span>${name} · ${bl.length} leg${bl.length === 1 ? "" : "s"}</span>
+      <span class="parlay-odds">${fmtAmer(amerOf(d))}${sgp ? "*" : ""}
+      <span class="payout">$10 pays $${(10 * d).toFixed(2)}</span></span></div>`;
+    return head + [...SLIP.entries()].filter(([, r]) => r.book === b).map(([id, r]) => {
     const unit = (SHARED.units || {})[r.market] || "";
     return `<div class="leg">
       <div class="leg-main">
@@ -986,14 +1069,296 @@ function renderSlip(){
       <span class="leg-price">${american(r.price)}</span>
       <button class="leg-x" data-leg="${esc(id)}" aria-label="Remove ${esc(r.player)}">&times;</button>
     </div>`;
-  }).join("")).join("");
+  }).join("");
+  }).join("");
+  const anySgp = used.some(([b]) => sameGame([...SLIP.values()].filter(r => r.book === b)));
   $("slip-list").innerHTML = legs + `<div class="slip-foot">
-      <span>Odds shown are from when this board was built. The book sets the
-      parlay price when it opens, and prices same-game legs together.</span>
+      <span>Parlay odds multiply each leg's price from when this board was built.
+      ${anySgp ? "<b>*</b> Includes legs from the same game: the book prices those "
+        + "together, so its number will differ. " : ""}The book shows the real
+      price when it opens.</span>
       <button class="slip-clear" id="slip-clear">Clear all</button>
     </div>`;
 }
 
+
+/* =========================================================================
+   PARLAY GENERATOR
+
+   What it maximises. For a fixed payout D = d1 x d2 x ... x dn, the chance
+   the parlay hits is p1 x p2 x ... x pn. Holding D fixed, that product is
+   largest when each leg's p x d -- our estimate against the book's price --
+   is largest. So the "most likely to hit at these odds" parlay is the one
+   built from the legs the board rates most above their price. The search
+   below finds it exactly (within rounding), with one leg per player.
+
+   How a leg is rated -- and the honest limits of it:
+   1. His hit rate at that number, SHRUNK toward the book's own implied
+      probability (the book's price counted as 16 games of evidence, 32 for
+      a short history). Raw hit rates on 24 games swing +/-15 points; without
+      this, the search would chase the luckiest small samples.
+   2. Last-10 blended in at a quarter weight.
+   3. Small nudges, capped together at +/-0.35 on the log-odds scale:
+      role growing/shrinking, matchup softer/tougher than his usual, game
+      script, a teammate ruled out, and questionable status. These sizes are
+      judgment, not fitted -- there is no settled-results backtest behind them.
+   Excluded: anyone listed Out or Doubtful, and "role changed" lines, where
+   the book knows something the history does not.
+   ========================================================================= */
+const PG_K = 16, PG_TILT_CAP = 0.35;
+const logit = p => Math.log(p / (1 - p)), sigm = x => 1 / (1 + Math.exp(-x));
+const clampP = p => Math.min(0.985, Math.max(0.015, p));
+
+function withSport(key, fn){
+  const saved = SPORT; SPORT = key;
+  try{ return fn(); } finally { SPORT = saved; }
+}
+
+function rateLeg(sportKey, r){
+  return withSport(sportKey, () => {
+    const s = S(), prof = (s.profiles || {})[normName(r.player)] || {};
+    const status = prof.status && prof.status.status;
+    if(status === "Out" || status === "Doubtful" || r.verdict === "role") return null;
+    const meta = (SHARED.marketMeta || {})[r.market] || {}, stat = meta.stat;
+    const q = impliedFrom(r.price) / 1.045;          // strip a typical ~4.5% hold
+    const k = prof.short ? 2 * PG_K : PG_K;
+    const pFull = (r.hits + k * q) / (r.n + k);
+    const vals = ((prof.stats || {})[stat] || {}).values || [];
+    const l10 = vals.slice(-10), h10 = l10.filter(v => v > r.threshold).length;
+    let p = l10.length ? 0.75 * pFull + 0.25 * (h10 + k * q) / (l10.length + k) : pFull;
+
+    let tilt = 0; const why = [];
+    const kind = stat === "passing_yards" ? "att" : volumeKind(stat);
+    const u = (prof.usage || {})[kind];
+    if(u && u.dir === "up"){ tilt += 0.15; why.push(["Role growing", "up"]); }
+    if(u && u.dir === "down"){ tilt -= 0.15; why.push(["Role shrinking", "down"]); }
+
+    const dfn = defenseFor(r), faced = (prof.faced || {})[r.market];
+    if(dfn && faced != null){
+      const gap = dfn.rank - faced;
+      if(gap >= 6){ tilt += 0.10; why.push(["Soft matchup", "up"]); }
+      else if(gap <= -6){ tilt -= 0.10; why.push(["Tough matchup", "down"]); }
+    }
+
+    const gl = (s.lines || {})[r.game];
+    if(gl && gl.fav){
+      const big = sportKey === "cfb" ? 14 : 7;
+      const passing = ["passing_yards", "receptions", "receiving_yards"].includes(stat);
+      if(sportKey === "cfb" && r.team === gl.fav && gl.spread >= 21){ tilt -= 0.15; why.push(["Blowout risk", "down"]); }
+      else if(gl.spread >= big && r.team === gl.fav && stat === "rushing_yards"){ tilt += 0.10; why.push(["Run-heavy script", "up"]); }
+      else if(gl.spread >= big && r.team === gl.dog && passing){ tilt += 0.10; why.push(["Trailing script", "up"]); }
+      else if(gl.spread >= big && r.team === gl.dog && stat === "rushing_yards"){ tilt -= 0.10; why.push(["Trailing script", "down"]); }
+    }
+
+    const vk = volumeKind(stat), vmin = vk === "car" ? 0.25 : 0.10;
+    const gone = ((s.outs || {})[r.team] || []).filter(o =>
+      normName(o.player) !== normName(r.player) && (o[vk] || 0) >= vmin);
+    if(gone.length){
+      if(stat === "passing_yards"){ tilt -= 0.05; why.push(["Top target out", "down"]); }
+      else { tilt += 0.05; why.push(["Teammate out", "up"]); }
+    }
+    if(status === "Questionable"){ tilt -= 0.30; why.push(["Questionable", "down"]); }
+
+    tilt = Math.max(-PG_TILT_CAP, Math.min(PG_TILT_CAP, tilt));
+    p = sigm(logit(clampP(p)) + tilt);
+    return {p, q, why};
+  });
+}
+
+/* Every line the chosen book can put on a slip, rated, one option-list per
+   player. Options that are both less likely AND pay less than another rung of
+   the same player can never be part of the best parlay, so they are dropped. */
+function pgPool(book, scope){
+  const curGame = $("f-game").value;
+  const players = new Map();
+  for(const [key, sp] of Object.entries(SPORTS)){
+    if(scope !== "all" && key !== SPORT) continue;
+    for(const r of (sp.rows || [])){
+      if(r.book !== book || !legId(r)) continue;
+      if(scope === "game" && r.game !== curGame) continue;
+      const rated = rateLeg(key, r);
+      if(!rated) continue;
+      const d = decOf(r.price);
+      if(d <= 1.0001) continue;
+      const pk = key + "|" + normName(r.player) + "|" + r.team;
+      if(!players.has(pk)) players.set(pk, []);
+      players.get(pk).push({r, sport: key, p: rated.p, q: rated.q, why: rated.why,
+                            d, lp: Math.log(rated.p), ld: Math.log(d)});
+    }
+  }
+  const out = [];
+  for(const opts of players.values()){
+    opts.sort((a, b) => b.d - a.d || b.p - a.p);
+    const keep = []; let bestP = -1;
+    for(const o of opts){ if(o.p > bestP + 1e-9){ keep.push(o); bestP = o.p; } }
+    out.push(keep.slice(0, 60));
+  }
+  return out;
+}
+
+/* Exact 0/1 knapsack over players: n legs, one per player, combined log-odds
+   binned at 0.01, maximising the summed log-probability. The exact sum of
+   the best path is carried per bin, so rounding never accumulates. */
+function buildParlay(nLegs, targetAmer, book, scope){
+  const players = pgPool(book, scope);
+  if(players.length < nLegs){
+    return {error: `Only ${players.length} player${players.length === 1 ? " has" : "s have"} `
+      + `${bookName(book)} lines in this selection. Pick ${players.length} leg${players.length === 1 ? "" : "s"} or fewer, `
+      + `or widen the games.`};
+  }
+  const target = Math.log(decOf(targetAmer));
+  const maxLd = players.reduce((a, opts) => a + Math.max(...opts.map(o => o.ld)), 0);
+  const top = Math.min(maxLd, target + 1.2), N = nLegs;
+  // Bucket width: as fine as memory allows. Two combinations landing in one
+  // bucket keep only the likelier, which can cost the true best by a hair;
+  // finer buckets shrink that. Capped at ~24 MB of back-pointers so a
+  // 25-leg search over a big college board still runs on a phone.
+  const budget = Math.floor(6e6 / ((N + 1) * players.length));
+  const W = Math.max(0.0005, top / Math.max(200, Math.min(4000, budget)));
+  const B = Math.ceil(top / W) + 2;
+  const NEG = -Infinity;
+  const score = [], sums = [];
+  for(let c = 0; c <= N; c++){ score.push(new Float64Array(B).fill(NEG)); sums.push(new Float64Array(B)); }
+  score[0][0] = 0;
+  const choice = [];
+  players.forEach((opts, i) => {
+    const ch = new Int32Array((N + 1) * B);
+    for(let c = Math.min(i + 1, N); c >= 1; c--){
+      const prevS = score[c - 1], prevSum = sums[c - 1], curS = score[c], curSum = sums[c];
+      for(let b = 0; b < B; b++){
+        const base = prevS[b];
+        if(base === NEG) continue;
+        for(let o = 0; o < opts.length; o++){
+          const ns = prevSum[b] + opts[o].ld, nb = Math.round(ns / W);
+          if(nb >= B) continue;
+          const v = base + opts[o].lp;
+          if(v > curS[nb]){ curS[nb] = v; curSum[nb] = ns; ch[c * B + nb] = (b << 7) | (o + 1); }
+        }
+      }
+    }
+    choice.push(ch);
+  });
+
+  // Inside +/-10% of the target payout, take the most likely; if nothing
+  // lands there, the closest payout that can be built.
+  const tol = Math.log(1.10), fin = score[N], finSum = sums[N];
+  let best = -1, inBand = false;
+  for(let b = 0; b < B; b++){
+    if(fin[b] === NEG) continue;
+    const ok = Math.abs(finSum[b] - target) <= tol;
+    if(ok && (!inBand || fin[b] > fin[best])){ best = b; inBand = true; }
+    else if(!inBand && (best < 0 || Math.abs(finSum[b] - target) < Math.abs(finSum[best] - target))) best = b;
+  }
+  if(best < 0) return {error: "No combination of those lines could be built."};
+
+  const legs = []; let c = N, b = best;
+  for(let i = players.length - 1; i >= 0 && c > 0; i--){
+    const v = choice[i][c * B + b];
+    if(!v) continue;
+    legs.push(players[i][(v & 127) - 1]);
+    b = v >> 7; c--;
+  }
+  legs.reverse();
+  const d = legs.reduce((a, o) => a * o.d, 1);
+  const prob = legs.reduce((a, o) => a * o.p, 1);
+  return {legs, d, prob, inBand, book};
+}
+
+let PG_LAST = null;
+function pgRender(res){
+  const out = $("pg-out");
+  if(res.error){ out.innerHTML = `<div class="pg-warn">${esc(res.error)}</div>`; return; }
+  PG_LAST = res;
+  const target = Number($("pg-odds").value), name = bookName(res.book);
+  const odds = amerOf(res.d), implied = 1 / res.d;
+  const sgp = sameGame(res.legs.map(o => o.r));
+  const legsHtml = res.legs.map(o => {
+    const unit = (SHARED.units || {})[o.r.market] || "";
+    const chips = o.why.map(([t, cls]) => `<span class="pg-chip ${cls}">${esc(t)}</span>`).join("");
+    return `<div class="pg-leg">
+      <div class="leg-main">
+        <div class="leg-what">${esc(o.r.player)} ${Math.ceil(o.r.threshold)}+ ${esc(unit)}
+          <span class="leg-price">${american(o.r.price)}</span></div>
+        <div class="leg-where">${esc(o.r.game)}</div>
+        ${chips ? `<div class="why">${chips}</div>` : ""}
+      </div>
+      <span class="p" title="Board estimate for this leg">${Math.round(o.p * 100)}%</span>
+    </div>`;
+  }).join("");
+  out.innerHTML = `
+    <div class="pg-sum">
+      <div class="row"><span class="big">${fmtAmer(odds)}</span>
+        <span>${res.legs.length} leg${res.legs.length === 1 ? "" : "s"} at ${name} · target ${fmtAmer(target)}</span></div>
+      <div class="row"><span>Board estimate it hits: <b>${(res.prob * 100).toFixed(res.prob < 0.01 ? 2 : 1)}%</b></span>
+        <span>Price implies: ${(implied * 100).toFixed(implied < 0.01 ? 2 : 1)}%</span>
+        <span>$10 pays $${(10 * res.d).toFixed(2)}</span></div>
+    </div>
+    ${res.inBand ? "" : `<div class="pg-warn">Nothing on this board lands within 10% of
+      ${fmtAmer(target)} with ${res.legs.length} leg${res.legs.length === 1 ? "" : "s"}.
+      This is the closest it can build.</div>`}
+    ${sgp ? `<div class="pg-warn">Some legs share a game. ${name} prices same-game legs
+      together, so its price will differ from ${fmtAmer(odds)}.</div>` : ""}
+    <div style="margin-top:6px">${legsHtml}</div>
+    <div class="pg-actions">
+      <button class="btn" id="pg-add">Add to slip</button>
+      <a class="btn ghost" id="pg-open-book" target="_blank" rel="noopener"
+         href="${esc(pgSlipUrl(res))}">Open in ${name}</a>
+    </div>
+    <p class="pg-fine">How it picks: each line's hit rate is pulled toward the
+      book's own price (so small samples can't run wild), blended with the last
+      10 games, then nudged a little for role changes, matchup, game script,
+      injuries and questionable tags. It maximises the chance every leg hits at
+      the odds you chose. It is an estimate from past games, not a prediction —
+      a parlay only pays if every leg hits.</p>`;
+}
+
+function pgSlipUrl(res){
+  const saved = new Map(SLIP);
+  SLIP.clear(); res.legs.forEach(o => SLIP.set(legId(o.r), o.r));
+  const url = slipUrl(res.book);
+  SLIP.clear(); saved.forEach((v, k) => SLIP.set(k, v));
+  return url;
+}
+
+function pgFillForm(){
+  const legs = $("pg-legs"), odds = $("pg-odds"), book = $("pg-book");
+  if(!legs.options.length){
+    for(let i = 1; i <= 25; i++) legs.add(new Option(`${i} leg${i === 1 ? "" : "s"}`, i));
+    legs.value = "3";
+    [-10000, -5000, -2000, -1000, -500, -300, -200, -150, -110, 100, 150, 200, 300,
+     400, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000, 25000, 50000, 100000]
+      .forEach(a => odds.add(new Option(fmtAmer(a), a)));
+    odds.value = "500";
+  }
+  const books = BOOKS.filter(([b]) => Object.values(SPORTS).some(sp =>
+    (sp.rows || []).some(r => r.book === b && legId(r))));
+  const prev = book.value;
+  book.innerHTML = books.map(([b, n]) => `<option value="${b}">${n}</option>`).join("");
+  if(books.some(([b]) => b === prev)) book.value = prev;
+  else if(books.some(([b]) => b === $("f-book").value)) book.value = $("f-book").value;
+}
+
+$("pg-open").onclick = () => { pgFillForm(); $("pg").hidden = false; document.body.style.overflow = "hidden"; };
+$("pg-close").onclick = () => { $("pg").hidden = true; document.body.style.overflow = ""; };
+$("pg").addEventListener("click", ev => { if(ev.target === $("pg")) $("pg-close").onclick(); });
+$("pg-go").onclick = () => {
+  if(!$("pg-book").value){ $("pg-out").innerHTML = `<div class="pg-warn">No lines on this board can be sent to a sportsbook slip.</div>`; return; }
+  $("pg-go").textContent = "Building…";
+  setTimeout(() => {
+    const t0 = performance.now();
+    pgRender(buildParlay(Number($("pg-legs").value), Number($("pg-odds").value),
+                         $("pg-book").value, $("pg-scope").value));
+    $("pg-go").textContent = "Build my parlay";
+    $("pg-go").dataset.ms = Math.round(performance.now() - t0);
+  }, 20);
+};
+$("pg-out").addEventListener("click", ev => {
+  if(ev.target.id !== "pg-add" || !PG_LAST) return;
+  for(const [k, v] of [...SLIP]) if(v.book === PG_LAST.book) SLIP.delete(k);
+  PG_LAST.legs.forEach(o => SLIP.set(legId(o.r), o.r));
+  saveSlip(); render(); renderSlip();
+  $("pg-close").onclick();
+});
 
 buildSportSeg();
 buildFilters();
