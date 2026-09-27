@@ -499,7 +499,7 @@ body.has-slip{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 <div class="wrap">
 
   <div class="filters">
-    <div class="field"><label id="f-game-l">Games</label><div class="mp" id="f-game"></div></div>
+    <div class="field"><label for="f-game">Game</label><select id="f-game"></select></div>
     <div class="field"><label for="f-market">Stat</label><select id="f-market"></select></div>
     <div class="field"><label for="f-book">Sportsbook</label><select id="f-book"></select></div>
   </div>
@@ -847,23 +847,36 @@ function slotGroups(sportKey){
   }));
 }
 
-/* The board's Games filter. Remembered per sport; starts on the next TV
-   window that has not finished (kicked off under ~4 hours ago). */
-const GAME_SEL = {};
 function buildGameSelect(){
-  const slots = slotsFor(SPORT);
-  if(!GAME_SEL[SPORT]){
-    const soon = slots.find(sl => sl.t > Date.now() - 4 * 3600e3) || slots[0];
-    GAME_SEL[SPORT] = new Set(soon ? soon.games : []);
-  }
-  const valid = new Set(slots.flatMap(sl => sl.games));
-  [...GAME_SEL[SPORT]].forEach(g => { if(!valid.has(g)) GAME_SEL[SPORT].delete(g); });
-  multiPick($("f-game"), slotGroups(SPORT), GAME_SEL[SPORT], () => render(), "game");
+  const sel = $("f-game"), prev = sel.value, slots = slotsFor(SPORT);
+  sel.innerHTML = "";
+  const values = [];
+  slots.forEach(sl => {
+    const grp = document.createElement("optgroup");
+    grp.label = sl.label;
+    if(sl.games.length > 1){
+      grp.appendChild(new Option(`All ${sl.name} games (${sl.games.length})`, "slot:" + sl.key));
+      values.push("slot:" + sl.key);
+    }
+    sl.games.forEach(g => {
+      const d = kickOf(g);
+      grp.appendChild(new Option(d ? `${g} · ${etParts(d).time}` : g, g));
+      values.push(g);
+    });
+    sel.appendChild(grp);
+  });
+  if(values.includes(prev)){ sel.value = prev; return; }
+  // Default: the next window that has not finished (kicked off under ~4h ago).
+  const soon = slots.find(sl => sl.t > Date.now() - 4 * 3600e3) || slots[0];
+  if(soon) sel.value = soon.games.length > 1 ? "slot:" + soon.key : soon.games[0];
 }
 function selectedGames(){
-  // In kickoff order, whatever order they were ticked in.
-  const sel = GAME_SEL[SPORT] || new Set();
-  return slotsFor(SPORT).flatMap(sl => sl.games).filter(g => sel.has(g));
+  const v = $("f-game").value || "";
+  if(v.startsWith("slot:")){
+    const sl = slotsFor(SPORT).find(x => "slot:" + x.key === v);
+    return sl ? sl.games : [];
+  }
+  return v ? [v] : [];
 }
 
 function buildFilters(){
@@ -1665,6 +1678,7 @@ $("pg-out").addEventListener("click", ev => {
 
 buildSportSeg();
 buildFilters();
+$("f-game").onchange = render;
 $("f-market").onchange = render;
 $("f-book").onchange = render;
 
