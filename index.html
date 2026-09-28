@@ -414,6 +414,9 @@ body.has-slip{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 .pg-toggle input:focus-visible + .sw{box-shadow:0 0 0 3px rgba(39,232,156,.35)}
 .pg-toggle b{display:block;font:700 14.5px/1.2 var(--ui);color:var(--ink)}
 .pg-toggle input:checked ~ span b{color:var(--good-text)}
+.pg-fresh{appearance:none;border:0;background:none;padding:0;margin-left:4px;cursor:pointer;
+  color:var(--accent);font:inherit;font-weight:700;text-decoration:underline}
+.pg-toggle + .pg-toggle{margin-top:8px}
 .pg-toggle small{display:block;margin-top:3px;font-size:12.5px;line-height:1.4;color:var(--secondary)}
 .btn{
   appearance:none;border:0;border-radius:14px;padding:13px 18px;cursor:pointer;
@@ -552,6 +555,9 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
       <div class="field"><label for="pg-book">Sportsbook</label><select id="pg-book"></select></div>
       <div class="field"><label id="pg-scope-l">Games</label><div class="mp" id="pg-scope"></div></div>
     </div>
+    <label class="pg-toggle"><input type="checkbox" id="pg-spread" checked><span class="sw" aria-hidden="true"></span>
+      <span><b>New players every parlay</b><small id="pg-spread-note">Each parlay you build skips players already in
+        your other parlays and your slip, so one bad leg can't sink several bets.</small></span></label>
     <label class="pg-toggle"><input type="checkbox" id="pg-clean" checked><span class="sw" aria-hidden="true"></span>
       <span><b>Green flags only</b><small>Every leg has only green flags — anything with an amber
         warning (tough matchup, shrinking role, questionable…) is skipped. Off: the most likely
@@ -1302,6 +1308,10 @@ function renderSlip(){
    recorded games).
    ========================================================================= */
 const PG_K = 16, PG_TILT_CAP = 0.35, PG_MISS = 0.5;
+// Leg-picking rules added after grading week 3 -- steadiness, and no matchup
+// nudge until defenses have 4 games this season (see rateLeg). A switch so
+// the old and new rules can be compared on the same board.
+let ALGO_V2 = true;
 const logit = p => Math.log(p / (1 - p)), sigm = x => 1 / (1 + Math.exp(-x));
 const clampP = p => Math.min(0.985, Math.max(0.015, p));
 
@@ -1354,6 +1364,19 @@ function rateLeg(sportKey, r){
       for(let i = 0; i < need; i++){ cdf += term; term *= recMean / (i + 1); }
       p = 0.5 * p + 0.5 * (1 - cdf);
     }
+    // STEADINESS. How much his game-to-game numbers swing. A boom-or-bust
+    // player's hit rate rests on a few big games; a steady one clears his
+    // number the same way most weeks.
+    if(ALGO_V2 && vals.length >= 6){
+      const mean = vals.reduce((a, v) => a + v, 0) / vals.length;
+      const sd = Math.sqrt(vals.reduce((a, v) => a + (v - mean) ** 2, 0) / vals.length);
+      const cv = mean > 0 ? sd / mean : 9;
+      if(cv > 0.8){ tilt -= 0.10; why.push(["Boom or bust", "down",
+        `His ${stat.replace(/_/g, " ")} swing a lot from game to game — some big games, some near zero. `
+        + `His hit rate leans on the big ones, so any given week is shakier than it looks. Marked down.`]); }
+      else if(cv < 0.45){ tilt += 0.05; why.push(["Steady", "up",
+        `His ${stat.replace(/_/g, " ")} barely swing from game to game, so his hit rate is a reliable guide. Nudged up.`]); }
+    }
     // USAGE. Low-volume receivers on yardage lines: target share where the
     // feed has it (NFL), catches a game where it does not (college).
     if(stat === "receiving_yards"){
@@ -1380,7 +1403,10 @@ function rateLeg(sportKey, r){
     if(u && u.dir === "down"){ tilt -= 0.15; why.push(["Role shrinking", "down", roleTxt()]); }
 
     const dfn = defenseFor(r), faced = (prof.faced || {})[r.market];
-    if(dfn && faced != null){
+    // Early in the season the defense ranks are mostly last year's teams.
+    // In week 3 "soft matchup" legs hit LESS often than expected and "tough"
+    // ones more, so the matchup waits until defenses have 4 games this year.
+    if(dfn && faced != null && (!ALGO_V2 || (dfn.games || 0) >= 4)){
       const gap = dfn.rank - faced;
       const unit = (SHARED.units || {})[r.market] || "";
       const base = `${dfn.team} ranks ${ordinal(dfn.rank)} of ${dfn.of} against ${r.pos}s in ${unit} allowed `
@@ -1571,6 +1597,48 @@ function buildBest(nLegs, targetAmer, book, scope, exclude, green){
    people, not just new rungs -- and the estimate shows what that variety
    costs. Every option is kept, so Back and Next move between them. */
 let PG_LAST = null, PG_HIST = [], PG_IDX = -1, PG_SCOPE = null;
+
+/* NEW PLAYERS EVERY PARLAY. Players in any parlay built on this board (and
+   in the slip) are skipped by the next one, so a single miss can only ever
+   sink one of your parlays. Remembered per board in this browser; "Start
+   fresh" forgets them. */
+const PG_USED_KEY = "propboard_used:" + Object.values(SPORTS).map(x => x.stamp).join("|");
+let PG_USED = new Set();
+try{ PG_USED = new Set(JSON.parse(localStorage.getItem(PG_USED_KEY) || "[]")); }catch(e){}
+function pgSaveUsed(){ try{ localStorage.setItem(PG_USED_KEY, JSON.stringify([...PG_USED])); }catch(e){} }
+function pgKeyOf(sport, r){ return sport + "|" + normName(r.player) + "|" + r.team; }
+function pgSkip(){
+  if(!$("pg-spread").checked) return new Set();
+  const skip = new Set(PG_USED);
+  for(const r of SLIP.values()){
+    for(const [k, sp] of Object.entries(SPORTS)) if((sp.rows || []).includes(r)) skip.add(pgKeyOf(k, r));
+  }
+  return skip;
+}
+function pgSpreadNote(){
+  const n = pgSkip().size;
+  $("pg-spread-note").innerHTML = !$("pg-spread").checked
+    ? "Off: every parlay is picked from all players, so the same strong legs can show up in several."
+    : n ? `Skipping <b>${n}</b> player${n === 1 ? "" : "s"} already in your other parlays or slip.
+         <button type="button" class="pg-fresh" id="pg-fresh">Start fresh</button>`
+        : "Each parlay you build skips players already in your other parlays and your slip, so one bad leg can't sink several bets.";
+}
+/* Build with the skip list; if it leaves too few players, fall back to
+   repeats and say so. */
+function buildSpread(nLegs, target, book, scope, extra, green){
+  const skip = new Set([...pgSkip(), ...(extra || [])]);
+  let res = buildBest(nLegs, target, book, scope, skip, green);
+  if(res.error && skip.size){
+    res = buildBest(nLegs, target, book, scope, extra ? new Set(extra) : null, green);
+    if(!res.error) res.repeats = true;
+  }
+  return res;
+}
+function pgRemember(res){
+  if(!res || res.error) return;
+  res.legs.forEach(o => PG_USED.add(o.pk));
+  pgSaveUsed();
+}
 function pgShow(i){
   PG_IDX = i;
   pgRender(PG_HIST[i]);
@@ -1579,13 +1647,13 @@ function pgRegenerate(){
   const base = PG_HIST[0];
   if(!base) return;
   const used = new Set(PG_HIST.flatMap(h => h.legs.map(o => o.pk)));
-  let res = buildBest(base.nLegs, base.target, base.book, base.scope, used, base.green !== false);
+  let res = buildSpread(base.nLegs, base.target, base.book, base.scope, used, base.green !== false);
   let reused = false;
   if(res.error){
     // Out of fresh players: allow earlier options' players back, keeping
     // only the one on screen out, so the next option still differs from it.
     const cur = new Set(PG_HIST[PG_IDX].legs.map(o => o.pk));
-    res = buildBest(base.nLegs, base.target, base.book, base.scope, cur, base.green !== false);
+    res = buildSpread(base.nLegs, base.target, base.book, base.scope, cur, base.green !== false);
     reused = true;
   }
   if(res.error){
@@ -1594,12 +1662,15 @@ function pgRegenerate(){
     return;
   }
   res.reused = reused;
+  res.green = base.green;
+  pgRemember(res);
   PG_HIST.push(res);
   pgShow(PG_HIST.length - 1);
 }
 
 function pgRender(res){
   const out = $("pg-out");
+  pgSpreadNote();
   if(res.error){ out.innerHTML = `<div class="pg-warn">${esc(res.error)}</div>`; return; }
   PG_LAST = res;
   const target = res.target, name = bookName(res.book);
@@ -1637,6 +1708,8 @@ function pgRender(res){
       <div class="row"><span>Board estimate it hits: <b>${(res.prob * 100).toFixed(res.prob < 0.01 ? 2 : 1)}%</b></span>
         <span>$10 pays $${(10 * res.d).toFixed(2)}</span></div>
     </div>
+    ${res.repeats ? `<div class="pg-warn">Not enough new players left for ${res.legs.length} legs, so this one
+      repeats players from your other parlays. Use fewer legs, tick more games, or Start fresh.</div>` : ""}
     ${res.mixed ? `<div class="pg-warn">Not enough green-flag legs for ${res.legs.length}
       legs here, so some below carry an amber warning. Use fewer legs or tick more games
       for an all-green parlay.</div>` : ""}
@@ -1699,7 +1772,11 @@ function pgFillForm(){
   else if(books.some(([b]) => b === $("f-book").value)) book.value = $("f-book").value;
 }
 
-$("pg-open").onclick = () => { pgFillForm(); $("pg").hidden = false; document.body.style.overflow = "hidden"; };
+document.addEventListener("click", ev => {
+  if(ev.target && ev.target.id === "pg-fresh"){ ev.preventDefault(); PG_USED.clear(); pgSaveUsed(); pgSpreadNote(); }
+});
+$("pg-spread").addEventListener("change", pgSpreadNote);
+$("pg-open").onclick = () => { pgSpreadNote(); pgFillForm(); $("pg").hidden = false; document.body.style.overflow = "hidden"; };
 $("pg-close").onclick = () => { $("pg").hidden = true; document.body.style.overflow = ""; };
 $("pg").addEventListener("click", ev => { if(ev.target === $("pg")) $("pg-close").onclick(); });
 $("pg-go").onclick = () => {
@@ -1712,8 +1789,10 @@ $("pg-go").onclick = () => {
       $("pg-out").innerHTML = `<div class="pg-warn">Pick at least one game.</div>`;
       return;
     }
-    const res = buildBest(Number($("pg-legs").value), Number($("pg-odds").value),
+    const res = buildSpread(Number($("pg-legs").value), Number($("pg-odds").value),
                           $("pg-book").value, new Set(PG_SCOPE), null, $("pg-clean").checked);
+    res.green = $("pg-clean").checked;
+    pgRemember(res);
     PG_HIST = res.error ? [] : [res];
     PG_IDX = res.error ? -1 : 0;
     pgRender(res);
