@@ -553,10 +553,6 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
       <div class="field"><label for="pg-book">Sportsbook</label><select id="pg-book"></select></div>
       <div class="field"><label id="pg-scope-l">Games</label><div class="mp" id="pg-scope"></div></div>
     </div>
-    <label class="pg-toggle"><input type="checkbox" id="pg-clean" checked><span class="sw" aria-hidden="true"></span>
-      <span><b>Green flags only</b><small>Every leg has only green flags — anything with an amber
-        warning (tough matchup, shrinking role, questionable…) is skipped. Off: the most likely
-        parlay, warnings allowed.</small></span></label>
     <button class="btn pg-go" id="pg-go">Build my parlay</button>
     <div id="pg-out"></div>
   </div>
@@ -1716,9 +1712,10 @@ function pgRender(res){
       10 games, then nudged a little for role changes, matchup, game script,
       injuries and questionable tags. Games missing from a player's record count
       partly as misses, low-volume receivers are marked down, and players with
-      under six recorded games are left out. With Green flags only on, anything
-      with an amber warning (tough matchup, shrinking role, unrecorded games,
-      questionable) is skipped. It maximises the chance every leg hits at
+      under six recorded games are left out. Only green-flag legs are used —
+      anything with an amber warning (boom or bust, shrinking role, unrecorded
+      games, questionable…) is skipped — and players already in a parlay you
+      took aren't used again. It maximises the chance every leg hits at
       the odds you chose. It is an estimate from past games, not a prediction —
       a parlay only pays if every leg hits.</p>`;
 }
@@ -1772,8 +1769,8 @@ $("pg-go").onclick = () => {
       return;
     }
     const res = buildSpread(Number($("pg-legs").value), Number($("pg-odds").value),
-                          $("pg-book").value, new Set(PG_SCOPE), null, $("pg-clean").checked);
-    res.green = $("pg-clean").checked;
+                          $("pg-book").value, new Set(PG_SCOPE), null, true);
+    res.green = true;             // green flags only, always
     PG_HIST = res.error ? [] : [res];
     PG_IDX = res.error ? -1 : 0;
     pgRender(res);
