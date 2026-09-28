@@ -1303,6 +1303,8 @@ const PG_K = 16, PG_TILT_CAP = 0.35, PG_MISS = 0.5;
 // nudge until defenses have 4 games this season (see rateLeg). A switch so
 // the old and new rules can be compared on the same board.
 let ALGO_V2 = true;
+const PG_LONGSHOT_EDGE = 0.05;
+const PG_STACK_PHI = 0.25;      // QB-receiver link, measured on 2024-26 games (0.22-0.32)
 const logit = p => Math.log(p / (1 - p)), sigm = x => 1 / (1 + Math.exp(-x));
 const clampP = p => Math.min(0.985, Math.max(0.015, p));
 
@@ -1451,6 +1453,13 @@ function rateLeg(sportKey, r){
 
     tilt = Math.max(-PG_TILT_CAP, Math.min(PG_TILT_CAP, tilt));
     p = sigm(logit(clampP(p)) + tilt);
+    // LONG SHOTS. On a leg that pays more than it risks, the board's history
+    // may not rate it far above what the sportsbook does. Week 3: long-shot
+    // legs the board rated 10+ points above the book hit ~30%, not the 42-54%
+    // the board said -- and the long-odds parlays were built on exactly those,
+    // because the search goes looking for legs the board likes most. A small
+    // edge is allowed (those did hit a bit more often than the book said).
+    if(ALGO_V2 && r.price > 0) p = Math.min(p, q + PG_LONGSHOT_EDGE);
     return {p, q, why};
   });
 }
@@ -1459,7 +1468,7 @@ function rateLeg(sportKey, r){
    player. Options that are both less likely AND pay less than another rung of
    the same player can never be part of the best parlay, so they are dropped. */
 const RATE_CACHE = new WeakMap();
-function pgPool(book, scope, exclude, strict){
+function pgPool(book, scope, exclude, strict, noAlone){
   // Scope: a Set of "sport|game" keys ticked in the Games picker.
   const pick = scope instanceof Set ? scope : null;
   const players = new Map();
@@ -1488,12 +1497,56 @@ function pgPool(book, scope, exclude, strict){
                             d, lp: Math.log(rated.p), ld: Math.log(d)});
     }
   }
-  const out = [];
-  for(const opts of players.values()){
+  // STACKS. A quarterback's passing yards and his own receivers' numbers
+  // rise and fall together: in 2,133 QB-receiver games (2024-26), when each
+  // cleared a line he clears ~40% of the time, both did 22% of the time --
+  // not the 15% two unrelated legs would. So a QB line plus one of his
+  // WR/TE lines is also offered as a single two-leg option, rated with that
+  // link. The link is small for near-locks and large for longer shots,
+  // which is exactly where long-odds parlays need help.
+  const combos = new Map();                     // QB group key -> combo options
+  if(ALGO_V2 && !(noAlone && noAlone.stackOff)){
+    const byTeam = new Map();
+    for(const [pk, opts] of players){
+      const o = opts[0], k = o.sport + "|" + o.r.team;
+      if(!byTeam.has(k)) byTeam.set(k, []);
+      byTeam.get(k).push([pk, opts]);
+    }
+    const statOf = o => ((SHARED.marketMeta || {})[o.r.market] || {}).stat;
+    for(const group of byTeam.values()){
+      const qbs = group.filter(([, os]) => os[0].r.pos === "QB");
+      const recs = group.filter(([, os]) => ["WR", "TE"].includes(os[0].r.pos));
+      for(const [qk, qopts] of qbs){
+        const pass = qopts.filter(o => statOf(o) === "passing_yards");
+        for(const [rk, ropts] of recs){
+          const catches = ropts.filter(o => ["receiving_yards", "receptions"].includes(statOf(o)));
+          for(const a of pass) for(const b of catches){
+            const link = PG_STACK_PHI * Math.sqrt(a.p * (1 - a.p) * b.p * (1 - b.p));
+            const pab = Math.min(a.p * b.p + link, a.p, b.p);
+            const txt = `${a.r.player} and ${b.r.player} play for the same offense: when he throws for more, `
+              + `his receivers catch more. Legs like these land together more often than two unrelated legs — `
+              + `the estimate for this parlay counts that.`;
+            const pa = Object.assign({}, a, {why: a.why.concat([[`Stacked with ${b.r.player.split(" ").slice(-1)[0]}`, "up", txt]])});
+            const pb = Object.assign({}, b, {why: b.why.concat([[`Stacked with ${a.r.player.split(" ").slice(-1)[0]}`, "up", txt]])});
+            if(!combos.has(qk)) combos.set(qk, []);
+            combos.get(qk).push({combo: true, parts: [pa, pb], pk: qk, pk2: rk, w: 2,
+              p: pab, d: a.d * b.d, lp: Math.log(pab), ld: Math.log(a.d * b.d)});
+          }
+        }
+      }
+    }
+  }
+  const frontier = (opts, cap) => {
     opts.sort((a, b) => b.d - a.d || b.p - a.p);
     const keep = []; let bestP = -1;
     for(const o of opts){ if(o.p > bestP + 1e-9){ keep.push(o); bestP = o.p; } }
-    out.push(keep.slice(0, 60));
+    return keep.slice(0, cap);
+  };
+  const out = [];
+  for(const [pk, opts] of players){
+    const single = (noAlone && noAlone.has(pk)) ? [] : frontier(opts.map(o => Object.assign(o, {w: 1})), 60);
+    const both = single.concat(combos.has(pk) ? frontier(combos.get(pk), 60) : []);
+    if(both.length) out.push(both);
   }
   return out;
 }
@@ -1502,8 +1555,21 @@ function pgPool(book, scope, exclude, strict){
    binned at 0.01, maximising the summed log-probability. The exact sum of
    the best path is carried per bin, so rounding never accumulates. */
 function buildParlay(nLegs, targetAmer, book, scope, exclude, strict){
-  const players = pgPool(book, scope, exclude, strict);
-  if(players.length < nLegs){
+  // A receiver picked inside a stack must not also be picked on his own:
+  // if that happens, rebuild with him available only through the stack.
+  const noAlone = new Set();
+  for(let tries = 0; tries < 6; tries++){
+    const res = buildParlayOnce(nLegs, targetAmer, book, scope, exclude, strict, noAlone);
+    if(res.error || !res.clash) return res;
+    noAlone.add(res.clash);
+  }
+  noAlone.stackOff = true;
+  return buildParlayOnce(nLegs, targetAmer, book, scope, exclude, strict, noAlone);
+}
+
+function buildParlayOnce(nLegs, targetAmer, book, scope, exclude, strict, noAlone){
+  const players = pgPool(book, scope, exclude, strict, noAlone);
+  if(players.length < nLegs && !players.some(os => os.some(o => o.w === 2))){
     return {error: `Only ${players.length} player${players.length === 1 ? " has" : "s have"} `
       + `${bookName(book)} lines in this selection. Pick ${players.length} leg${players.length === 1 ? "" : "s"} or fewer, `
       + `or widen the games.`};
@@ -1511,10 +1577,6 @@ function buildParlay(nLegs, targetAmer, book, scope, exclude, strict){
   const target = Math.log(decOf(targetAmer));
   const maxLd = players.reduce((a, opts) => a + Math.max(...opts.map(o => o.ld)), 0);
   const top = Math.min(maxLd, target + 1.2), N = nLegs;
-  // Bucket width: as fine as memory allows. Two combinations landing in one
-  // bucket keep only the likelier, which can cost the true best by a hair;
-  // finer buckets shrink that. Capped at ~24 MB of back-pointers so a
-  // 25-leg search over a big college board still runs on a phone.
   const budget = Math.floor(6e6 / ((N + 1) * players.length));
   const W = Math.max(0.0005, top / Math.max(200, Math.min(4000, budget)));
   const B = Math.ceil(top / W) + 2;
@@ -1523,14 +1585,19 @@ function buildParlay(nLegs, targetAmer, book, scope, exclude, strict){
   for(let c = 0; c <= N; c++){ score.push(new Float64Array(B).fill(NEG)); sums.push(new Float64Array(B)); }
   score[0][0] = 0;
   const choice = [];
-  players.forEach((opts, i) => {
+  let reach = 0;
+  players.forEach(opts => {
     const ch = new Int32Array((N + 1) * B);
-    for(let c = Math.min(i + 1, N); c >= 1; c--){
-      const prevS = score[c - 1], prevSum = sums[c - 1], curS = score[c], curSum = sums[c];
-      for(let b = 0; b < B; b++){
-        const base = prevS[b];
-        if(base === NEG) continue;
-        for(let o = 0; o < opts.length; o++){
+    reach = Math.min(N, reach + Math.max(...opts.map(o => o.w)));
+    for(let c = reach; c >= 1; c--){
+      const curS = score[c], curSum = sums[c];
+      for(let o = 0; o < opts.length; o++){
+        const w = opts[o].w;
+        if(c - w < 0) continue;
+        const prevS = score[c - w], prevSum = sums[c - w];
+        for(let b = 0; b < B; b++){
+          const base = prevS[b];
+          if(base === NEG) continue;
           const ns = prevSum[b] + opts[o].ld, nb = Math.round(ns / W);
           if(nb >= B) continue;
           const v = base + opts[o].lp;
@@ -1553,17 +1620,24 @@ function buildParlay(nLegs, targetAmer, book, scope, exclude, strict){
   }
   if(best < 0) return {error: "No combination of those lines could be built."};
 
-  const legs = []; let c = N, b = best;
+  const picks = []; let c = N, b = best;
   for(let i = players.length - 1; i >= 0 && c > 0; i--){
     const v = choice[i][c * B + b];
     if(!v) continue;
-    legs.push(players[i][(v & 127) - 1]);
-    b = v >> 7; c--;
+    const o = players[i][(v & 127) - 1];
+    picks.push(o);
+    b = v >> 7; c -= o.w;
   }
-  legs.reverse();
+  picks.reverse();
+  // Same receiver on his own AND inside a stack: report it for a rebuild.
+  const alone = new Set(picks.filter(o => !o.combo).map(o => o.pk));
+  const clash = picks.filter(o => o.combo).map(o => o.pk2).find(k => alone.has(k));
+  if(clash) return {clash};
+  const legs = picks.flatMap(o => o.combo ? o.parts : [o]);
   const d = legs.reduce((a, o) => a * o.d, 1);
-  const prob = legs.reduce((a, o) => a * o.p, 1);
-  return {legs, d, prob, inBand, book, target: targetAmer, nLegs, scope};
+  const prob = picks.reduce((a, o) => a * o.p, 1);
+  return {legs, d, prob, inBand, book, target: targetAmer, nLegs, scope,
+          stacks: picks.filter(o => o.combo).length};
 }
 
 /* Clean legs first. Only when there are not enough of them for the legs
