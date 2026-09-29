@@ -18,6 +18,11 @@ h1{margin:6px 0 4px;font-size:26px;letter-spacing:-.02em}
 .kpi b{display:block;font:700 26px/1 var(--num);letter-spacing:-.02em}
 .kpi span{display:block;margin-top:6px;font-size:12px;color:var(--mut);line-height:1.35}
 .kpi.wide{grid-column:1/-1}
+.kpi em{font-style:normal;font-weight:650}
+.kpi.note{padding:12px 14px}
+.kpi.note p{margin:0;font-size:12.5px;line-height:1.5;color:var(--sec)}
+.kpi.note strong{color:var(--ink)}
+.kpi.note .flag{display:inline-block;margin:0 4px 0 0;color:var(--warn);font-size:10px;line-height:1.5}
 h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;margin:0 -16px;padding-left:16px;padding-right:16px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
@@ -179,19 +184,30 @@ $("sub").textContent = DATA.sub;
 })();
 if(DATA.season){ $("picksec").hidden = true; $("seasonnote").hidden = false; }
 (function kpis(){
-  const s = settled(PS), w = s.filter(p => p.status === "won").length;
-  const done = s.filter(p => p.results.every(r => r === "hit" || r === "miss" || r === "void"));
-  const exp = done.reduce((a, p) => a + p.prob, 0), dw = done.filter(p => p.status === "won").length;
-  const pend = PS.filter(p => p.status === "pending").length;
-  const hurt = PS.filter(p => p.status === "won" && (p.results || []).includes("injury")).length;
+  // One set for both tiles: parlays whose every leg is settled. (A parlay that
+  // lost early while another leg was still to play isn't counted yet -- it
+  // would make the hit rate look worse than the board's prediction for it.)
+  const OK = ["hit", "miss", "void", "injury"];
+  const done = settled(PS).filter(p => p.results.every(r => OK.includes(r)));
+  const w = done.filter(p => p.status === "won").length;
+  const exp = done.reduce((a, p) => a + p.prob, 0);
+  const hit = done.length ? Math.round(100 * w / done.length) : null;
+  const said = done.length ? Math.round(100 * exp / done.length) : null;
+  const gap = hit == null ? 0 : said - hit;
+  const verdict = hit == null ? "" : Math.abs(gap) <= 2 ? `<em class="hi">right on</em> — within ${Math.abs(gap) || "1"} point${Math.abs(gap) === 1 ? "" : "s"}`
+    : gap > 0 ? `<em class="lo">${gap} points too high</em>` : `<em class="hi">${-gap} points too low</em> — better than predicted`;
+  const pend = PS.filter(p => p.status === "pending" || (settled([p]).length && !done.includes(p))).length;
+  const hurt = done.filter(p => p.status === "won" && p.results.includes("injury")).length;
   $("kpis").innerHTML =
-    `<div class="kpi"><b class="${s.length ? tone(w / s.length) : "none"}">${s.length ? Math.round(100 * w / s.length) + "%" : "—"}</b><span>parlays hit<br>${w} of ${s.length} settled</span></div>`
-  + `<div class="kpi"><b>${done.length ? Math.round(100 * exp / done.length) + "%" : "—"}</b><span>board expected<br>${done.length ? `actual ${Math.round(100 * dw / done.length)}%` : ""}</span></div>`
-  + (pend ? `<div class="kpi wide"><span style="margin:0">${pend} pick${pend === 1 ? "" : "s"} still pending — games not over or stats not posted yet.</span></div>` : "")
-  + (hurt ? `<div class="kpi wide"><span style="margin:0"><b style="display:inline;font:inherit;color:var(--ink)">${hurt}</b>
-      parlay${hurt === 1 ? "" : "s"} counted as won only because an injured player's leg was dropped — he left the game
-      and didn't come back. FanDuel's Bet Protect removes that leg (free on NFL props through September 2026; a paid
-      add-on otherwise), so these wins need it. Flagged <span class="flag" style="margin:0">Injury</span> below.</span></div>` : "");
+    `<div class="kpi"><b class="${hit == null ? "none" : tone(w / done.length)}">${hit == null ? "—" : hit + "%"}</b>
+       <span>of parlays hit<br>${w} of ${done.length}</span></div>`
+  + `<div class="kpi"><b>${said == null ? "—" : said + "%"}</b>
+       <span>the board predicted<br>${verdict}</span></div>`
+  + (pend ? `<div class="kpi wide note"><p>${pend} more pick${pend === 1 ? "" : "s"} still waiting on games or stats — not counted yet.</p></div>` : "")
+  + (hurt ? `<div class="kpi wide note"><p><span class="flag">Injury</span> <strong>${hurt}</strong> of these wins
+      count only because an injured player's leg was dropped — he left the game and didn't return. FanDuel's
+      Bet Protect removes that leg (free on NFL props through September 2026, a paid add-on otherwise), so
+      these wins need it.</p></div>` : "");
 })();
 
 const wins = ["All windows", ...new Set(PS.map(p => p.win))].sort((a, b) =>
