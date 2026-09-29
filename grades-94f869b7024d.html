@@ -206,16 +206,18 @@ function drawTD(){
   const RS = {hit: ["TD ✓", "hit"], miss: ["No TD", "miss"], void: ["DNP", "pend"],
               pending: ["Pending", "pend"], norecord: ["Pending", "pend"]};
   const cards = [];
-  for(const board of [...new Set(pick.map(t => t.board))]){
+  // One list per week: Thursday's locked players and Sunday's fill-in are
+  // the same top 10, whichever update made each pick.
+  for(const board of ["week"]){
     for(const [grp, title] of [["RB", "Running backs"], ["REC", "Receivers · WR / TE"]]){
-      const rs = pick.filter(t => t.board === board && t.grp === grp).sort((a, b) => a.rank - b.rank);
+      const rs = pick.filter(t => t.grp === grp).sort((a, b) => b.p - a.p).map((t, i) => ({...t, rank: i + 1}));
       if(!rs.length) continue;
       const done = rs.filter(t => t.result === "hit" || t.result === "miss");
       const hit = done.filter(t => t.result === "hit").length;
       const exp = done.reduce((a, t) => a + t.p, 0);
       const r = done.length ? hit / done.length : null;
       cards.push(`<div class="tdcard"><div class="tdhead"><div><b>${title}</b>
-          <small>${DATA.boards > 1 ? esc(board) + " · " : ""}${done.length ? `board expected ${exp.toFixed(1)} of ${done.length}` : "not settled yet"}</small></div>
+          <small>${done.length ? `board expected ${exp.toFixed(1)} of ${done.length}` : "not settled yet"}</small></div>
           <span class="${r == null ? "none" : tone(r)}">${done.length ? `${hit} of ${done.length}` : "—"}</span></div>
         ${rs.map(t => { const [txt, c] = RS[t.result] || [t.result, "pend"];
           return `<div class="tdrow"><span class="rk">${t.rank}</span>
