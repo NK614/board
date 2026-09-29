@@ -181,6 +181,8 @@ body.shot #ldshell{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%
 .ig-full{position:fixed;inset:0;background:#000;z-index:20;display:flex;align-items:center;justify-content:center}
 .ig-full svg{width:min(100vw,calc(100vh * var(--ar)));height:auto}
 body.igfull{overflow:hidden}
+#igview .ig-wins{display:flex;flex-wrap:wrap;gap:8px}
+#igview .ig-wins .chip{padding:8px 12px;font-size:13.5px}
 </style></head><body><div class="wrap">
 <div class="eyebrow">Parlay Generator</div>
 <h1 id="pagetitle">Track record</h1>
@@ -761,6 +763,12 @@ function loadFeed(){
   return fetch(`${base}-live.json`, {cache: "no-store"}).then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(j => { FEED = j; }).catch(() => { FEED_ERR = "No board data yet — it appears after the next Build (scheduled or manual)."; });
 }
+const WIN_ORDER = ["TNF", "Sun morning", "Sun 1 PM", "Sun 4 PM", "SNF", "MNF", "All games"];
+const WINS = [...new Set(PS.map(p => p.win))].sort((a, b) =>
+  ((WIN_ORDER.indexOf(a) + 1) || 50) - ((WIN_ORDER.indexOf(b) + 1) || 50) || a.localeCompare(b));
+const pickedWins = () => { const w = opt("res", "wins", null); return Array.isArray(w) ? w.filter(x => WINS.includes(x)) : null; };
+const PSW = () => { const w = pickedWins(); return w && w.length ? PS.filter(p => w.includes(p.win)) : PS; };
+const winNote = () => { const w = pickedWins(); return w && w.length && w.length < WINS.length ? w.join(" + ") : ""; };
 const settledAll = ps => ps.filter(p => (p.status === "won" || p.status === "lost")
   && p.results.every(r => ["hit", "miss", "void", "injury"].includes(r)));
 const tdPicks = () => (D.td || []).filter(t => t.scope === "Week" || t.scope === "All games");
@@ -837,6 +845,11 @@ function statTile(svg, x, y, w, big, bigFill, label, small){
 }
 function mark(svg, x, y, st, r){
   r = r || 22;
+  if(st === "void"){                     // didn't play: say so instead of an empty circle
+    el("rect", {x: x - r * 1.15, y: y - r * .7, width: r * 2.3, height: r * 1.4, rx: r * .7, fill: "#0b1124", stroke: "#8e98b8", "stroke-width": 3}, svg);
+    T(svg, x, y + r * .31, "DNP", {"text-anchor": "middle", "font-size": r * .85, fill: "#b7c0dc", "font-weight": 900});
+    return;
+  }
   const c = st === "hit" ? "#27e89c" : st === "miss" ? "#ff6b6b" : st === "injury" ? "#ffc86b" : "#56607f";
   el("circle", {cx: x, cy: y, r, fill: "#0b1124", stroke: c, "stroke-width": 4}, svg);
   const k = r / 22;
@@ -894,10 +907,10 @@ let DAY = S.day && DAYS.some(d => d.k === S.day) ? S.day : defaultDay();
 const B = {};
 
 B.tue = () => {
-  const done = settledAll(PS), w = done.filter(p => p.status === "won").length;
+  const done = settledAll(PSW()), w = done.filter(p => p.status === "won").length;
   const exp = done.reduce((a, p) => a + p.prob, 0);
   const show = {cover: opt("tue", "cover", true), odds: opt("tue", "odds", true), atd: opt("tue", "atd", true), close: opt("tue", "close", true)};
-  const head = `${weekLabel} receipts`, sub = "Every pick graded. Wins and losses.";
+  const head = `${weekLabel} receipts`, sub = winNote() ? `${winNote()} parlays · every pick graded.` : "Every pick graded. Wins and losses.";
   const slides = [];
   const H = 1350;
   if(show.cover){
@@ -916,7 +929,7 @@ B.tue = () => {
     slides.push(s);
   }
   if(show.odds){
-    const s = canvas(H); let y = frame(s, H, weekLabel, "Hit rate by odds", "What hit vs what our model said, at each target.");
+    const s = canvas(H); let y = frame(s, H, weekLabel, "Hit rate by odds", winNote() ? `${winNote()} · what hit vs what our model said.` : "What hit vs what our model said, at each target.");
     const tg = [...new Set(done.map(p => p.target))].sort((a, b) => a - b);
     const rowH = Math.min(120, (H - 200 - y) / Math.max(1, tg.length));
     tg.forEach((t, i) => {
@@ -942,7 +955,7 @@ B.tue = () => {
         T(s, x + 450, y + 20, st.n ? `${st.h}/${st.n}` : "", {"text-anchor": "end", "font-size": 30, "font-weight": 900, fill: st.n ? tone(st.h / st.n) : "#fff"});
         rs.forEach((t, i) => {
           const yy = y + 80 + i * 70;
-          mark(s, x + 22, yy - 10, t.result === "hit" || t.result === "miss" ? t.result : "p", 20);
+          mark(s, x + 22, yy - 10, ["hit", "miss", "void"].includes(t.result) ? t.result : "p", 20);
           T(s, x + 58, yy, wrap(t.player, 28, 300, 1)[0], {"font-size": 28, "font-weight": 700, fill: t.result === "miss" ? "#b7c0dc" : "#fff"});
           T(s, x + 450, yy, pct(t.p), {"text-anchor": "end", "font-size": 24, fill: "#8e98b8", "font-weight": 700});
         });
@@ -951,15 +964,15 @@ B.tue = () => {
     }
   }
   if(show.close){
-    const lost = settledAll(PS).filter(p => p.status === "lost");
+    const lost = settledAll(PSW()).filter(p => p.status === "lost");
     if(lost.length){
       const one = lost.filter(p => (p.miss || []).length === 1).length;
       const legs = new Map();
       lost.forEach(p => (p.miss || []).forEach(m => { const k = `${m[0]}|${m[2]}|${m[3]}`;
         const o = legs.get(k) || {m, n: 0}; o.n++; legs.set(k, o); }));
       const top = [...legs.values()].sort((a, b) => b.n - a.n).slice(0, 3);
-      const s = canvas(H); let y = frame(s, H, weekLabel, "Where we missed", "The losses, out in the open.");
-      statTile(s, 70, y + 10, 940, pct(one / lost.length), "#ffc86b", "OF LOSSES MISSED BY ONE LEG", `${one} of ${lost.length} lost parlays`);
+      const s = canvas(H); let y = frame(s, H, weekLabel, "Where we missed", winNote() ? `${winNote()} · the losses, out in the open.` : "The losses, out in the open.");
+      statTile(s, 70, y + 10, 940, pct(one / lost.length), "#ffc86b", "OF LOSSES MISSED BY ONE LEG", "");
       y += 270;
       T(s, 70, y, "LEGS THAT COST US THE MOST", {"font-size": 24, fill: "#8e98b8", "letter-spacing": 3, "font-weight": 800});
       top.forEach((o, i) => {
@@ -967,19 +980,19 @@ B.tue = () => {
         el("rect", {x: 70, y: yy - 50, width: 940, height: 92, rx: 20, fill: "rgba(11,17,36,.85)", stroke: "#ff6b6b", "stroke-opacity": .35, "stroke-width": 2}, s);
         T(s, 100, yy - 6, pl, {"font-size": 32, "font-weight": 800});
         T(s, 100, yy + 26, `${prop({stat, threshold: th})} · had ${act == null ? "—" : act}`, {"font-size": 22, fill: "#b7c0dc", "font-weight": 600});
-        T(s, 980, yy + 8, `in ${o.n} losses`, {"text-anchor": "end", "font-size": 28, fill: "#ff8a8a", "font-weight": 800});
+        T(s, 980, yy + 8, `in ${pct(o.n / lost.length)} of losses`, {"text-anchor": "end", "font-size": 28, fill: "#ff8a8a", "font-weight": 800});
       });
       slides.push(s);
     }
   }
   const cap = done.length
-    ? `${weekLabel} receipts 🧾\n\nParlays hit ${pct(w / done.length)} (${w} of ${done.length}). Our model predicted ${pct(exp / done.length)}.\n\nEvery pick graded — wins and losses. Swipe for the breakdown.\n\n21+ | Bet responsibly\n#nflparlays #playerprops #sportsbetting #anytimetd`
+    ? `${weekLabel} receipts 🧾${winNote() ? ` (${winNote()})` : ""}\n\nParlays hit ${pct(w / done.length)} (${w} of ${done.length}). Our model predicted ${pct(exp / done.length)}.\n\nEvery pick graded — wins and losses. Swipe for the breakdown.\n\n21+ | Bet responsibly\n#nflparlays #playerprops #sportsbetting #anytimetd`
     : "";
   return {slides, head, sub, caption: cap, note: slides.length ? "" : "Nothing graded on this page yet — open a week in the Track record tab."};
 };
 
 B.wed = () => {
-  const lost = settledAll(PS).filter(p => p.status === "lost" && (p.legs || []).length);
+  const lost = settledAll(PSW()).filter(p => p.status === "lost" && (p.legs || []).length);
   if(!lost.length) return {slides: [], head: "", sub: "", caption: "",
     note: D.season ? "Open a week page first (menu in the Track record tab) — this one has no legs to show." : "No lost parlays with every leg settled on this page."};
   lost.sort((a, b) => ((a.miss || []).length === 1 ? 0 : 1) - ((b.miss || []).length === 1 ? 0 : 1)
@@ -1119,9 +1132,10 @@ B.sunpm = () => {
     y += 50;
     rs.forEach(t => {
       const m = st(t), yy = y + rowH / 2;
-      mark(s, 98, yy - 8, m === "hit" || m === "miss" ? m : "p", 24);
-      T(s, 145, yy + 4, t.player, {"font-size": 36, "font-weight": 800, fill: m === "miss" ? "#8e98b8" : "#fff"});
-      T(s, 1010, yy + 2, m === "hit" ? "SCORED" : m === "miss" ? "NO TD" : pct(t.p), {"text-anchor": "end", "font-size": 28, "font-weight": 900,
+      const mr = Math.min(24, rowH * .36), fs = Math.min(36, rowH * .6);      // smaller rows when the list is long
+      mark(s, 70 + mr * 1.2, yy - fs * .22, ["hit", "miss", "void"].includes(m) ? m : "p", mr);
+      T(s, 70 + mr * 2.4 + 22, yy + fs * .12, t.player, {"font-size": fs, "font-weight": 800, fill: m === "miss" || m === "void" ? "#8e98b8" : "#fff"});
+      T(s, 1010, yy + fs * .1, m === "hit" ? "SCORED" : m === "miss" ? "NO TD" : m === "void" ? "DID NOT PLAY" : pct(t.p), {"text-anchor": "end", "font-size": Math.min(28, fs * .8), "font-weight": 900,
         fill: m === "hit" ? "#5cf2bb" : m === "miss" ? "#ff8a8a" : "#8e98b8", "letter-spacing": m === "p" ? 0 : 2});
       y += rowH;
     });
@@ -1141,8 +1155,16 @@ function sel(day, k, dflt, label, items){
   return `<div class="ig-field"><label>${esc(label)}</label><select data-day="${day}" data-k="${k}">${
     items.map(([val, txt]) => `<option value="${esc(val)}" ${String(val) === v ? "selected" : ""}>${esc(txt)}</option>`).join("")}</select></div>`;
 }
+function winsHtml(){
+  if(WINS.length < 2) return "";
+  const w = pickedWins(), on = x => !w || !w.length || w.includes(x);
+  return `<div class="ig-field"><label>Game windows to include</label><div class="ig-wins">
+    <button class="chip" data-win="*" aria-pressed="${!w || !w.length || w.length === WINS.length}">All</button>${
+    WINS.map(x => `<button class="chip" data-win="${esc(x)}" aria-pressed="${!!(w && w.length && w.length < WINS.length && on(x))}">${esc(x)}</button>`).join("")}</div></div>`;
+}
 function optsHtml(day, R){
   const h = [`<h3>${esc(DAYS.find(d => d.k === day).what)} · options</h3>`];
+  if(day === "tue" || day === "wed") h.push(winsHtml());
   if(day === "tue"){
     h.push(`<p class="ld-hint" style="margin-top:0">A carousel from the grades on this page (${esc(weekLabel)}). Pick another week in the Track record tab to post that one.</p>`,
       chk("tue", "cover", true, "Slide 1 · headline numbers"), chk("tue", "odds", true, "Slide 2 · hit rate by odds"),
@@ -1281,6 +1303,14 @@ $("igopts").addEventListener("input", e => {
   const back = $(id); if(back){ back.focus(); back.setSelectionRange(back.value.length, back.value.length); }
 });
 $("igopts").addEventListener("click", e => {
+  const c = e.target.closest("button[data-win]");
+  if(c){
+    const x = c.dataset.win; let w = pickedWins() || [];
+    if(x === "*" || w.length >= WINS.length) w = x === "*" ? [] : [x];
+    else w = w.includes(x) ? w.filter(y => y !== x) : [...w, x];
+    if(w.length >= WINS.length) w = [];
+    setOpt("res", "wins", w); render(true); return;
+  }
   const b = e.target.closest("button[data-mk]"); if(!b) return;
   if(b.dataset.s) S.marks[b.dataset.mk] = b.dataset.s; else delete S.marks[b.dataset.mk];
   save(); render(true);
