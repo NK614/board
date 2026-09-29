@@ -1014,8 +1014,6 @@ function renderTD(){
   const s = S(), board = $("board");
   const all = s.td || [];
   const meta = s.tdMeta || {}, final = meta.final !== false;     // older boards: treat as final
-  const lockAt = meta.lock_at ? new Date(meta.lock_at) : null;
-  const lockTxt = lockAt && !isNaN(lockAt) ? `${etParts(lockAt).wd} ${etParts(lockAt).time} ET` : "Sunday morning";
   if(!s.td){
     board.innerHTML = `<div class="empty">${SPORT === "nfl" || !SPORTS.nfl
       ? "No touchdown estimates on this board yet — they come with the next build."
@@ -1056,16 +1054,12 @@ function renderTD(){
     return `<section class="td-sec"><div class="td-h"><h3>${title}</h3><span>chance to score</span></div>
       <div class="td-list">${rs.map(row).join("")}</div></section>`;
   };
-  const how = `Built from each player's share of his team's red-zone and scoring chances over his last 12 games, and the
-      points his team is expected to score. No odds involved. Top-10 running backs have scored about 55% of the time, top-10
-      receivers about 40%.`;
   const intro = final
     ? `<div class="td-intro"><b>Who's most likely to score a touchdown this week</b> (rushing or receiving), from every
-        game this week. Each player's spot was set at the last update before his game, and the list won't change now. ${how}</div>`
-    : `<div class="td-intro pending"><b>The full list posts Sunday morning</b>${lockAt && !isNaN(lockAt) ? ` (by ${esc(lockTxt)})` : ""}, after the final injury reports.
+        game this week. Each player's spot was set at the last update before his game, and the list won't change now.</div>`
+    : `<div class="td-intro pending"><b>The full list posts before noon ET on Sundays</b>, after the final injury reports.
         ${all.length ? "Below: the players in games before Sunday who already rank in this week's top 10. Their spots are set."
-                     : "No player in the games before Sunday made this week's top 10, so there's nothing to show yet."}
-        ${how}</div>`;
+                     : "No player in the games before Sunday made this week's top 10, so there's nothing to show yet."}</div>`;
   board.innerHTML = intro + (all.length || final ? sec("Receivers · WR / TE", "REC") + sec("Running backs", "RB") : "");
 }
 
@@ -2100,7 +2094,7 @@ function homeInfo(){
   $("tile-td").classList.toggle("off", !td);
   const tm = nfl.tdMeta || {};
   $("tile-td-t").textContent = tm.final === false
-    ? "Early-game players who made this week's top 10 — the full list posts Sunday morning."
+    ? "Early-game players who made this week's top 10 — the full list posts before noon ET on Sundays."
     : "This week's 10 running backs and 10 receivers most likely to score a touchdown.";
 }
 function route(){
