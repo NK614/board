@@ -461,6 +461,8 @@ body.has-slip{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 .pg-head h2{margin:0;font:750 21px/1.1 var(--display);letter-spacing:-.02em;
   background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .pg-sub{margin:6px 0 16px;font-size:13px;color:var(--secondary);line-height:1.5}
+.pg-hint{margin-top:8px;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.pg-hint b{color:var(--secondary)}
 .pg-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 12px}
 .pg-toggle{display:flex;align-items:center;gap:13px;margin:14px 0 2px;padding:12px 14px;border-radius:14px;cursor:pointer;
   border:1px solid var(--hairline-2);background:var(--glass);transition:border-color .15s, background .15s}
@@ -1862,6 +1864,24 @@ const PG_BET_KEY = "propboard_bet:" + Object.values(SPORTS).map(x => x.stamp).jo
 let PG_BET = new Set();
 try{ PG_BET = new Set(JSON.parse(localStorage.getItem(PG_BET_KEY) || "[]")); }catch(e){}
 function pgKeyOf(sport, r){ return sport + "|" + normName(r.player) + "|" + r.team; }
+// ---- Why the same names keep coming back -----------------------------------
+// Every Build uses the board's likeliest legs, so the same players return
+// until a parlay goes on the slip. Browsing different names is what
+// Regenerate is for (each option uses new players). When a Build repeats
+// players from earlier Builds this visit, a note says so and points there.
+const PG_SEEN = new Map();                       // player -> Builds he was in, this visit
+function pgSeen(res){
+  const before = new Map(PG_SEEN);
+  res.legs.forEach(o => PG_SEEN.set(o.pk, (PG_SEEN.get(o.pk) || 0) + 1));
+  const lastName = n => { const w = n.split(" ").filter(x => !/^(jr|sr|ii|iii|iv|v)\.?$/i.test(x)); return w[w.length - 1] || n; };
+  const again = res.legs.filter(o => (before.get(o.pk) || 0) >= 1).map(o => lastName(o.r.player));
+  if(!again.length || !$("pg-note")) return;
+  $("pg-note").innerHTML = `<div class="pg-info"><b>${again.map(esc).join(", ")}</b> ${again.length === 1 ? "was" : "were"}
+    in your earlier parlays too — ${again.length === 1 ? "he's" : "they're"} among the board's likeliest legs, so every
+    build starts with ${again.length === 1 ? "him" : "them"}. Tap <b>Regenerate</b> for options with different players,
+    or add a parlay to your slip and later builds will skip its players.</div>`;
+}
+
 function pgSkip(){
   const skip = new Set(PG_BET);
   for(const r of SLIP.values()){
@@ -1931,7 +1951,8 @@ function pgRender(res){
     </div>
     <div id="pg-note">${i > 0 ? `<div class="pg-info">${res.reused
         ? "No fresh players left, so this one reuses players from earlier options — but none from the one before."
-        : "All-new players. Rated a little lower than the best pick — that's the price of variety."}</div>` : ""}</div>`;
+        : "All-new players. Rated a little lower than the best pick — that's the price of variety."}</div>`
+      : `<div class="pg-hint">The likeliest parlay for this setting. <b>Regenerate</b> shows options with different players.</div>`}</div>`;
   const odds = amerOf(res.d);
   const sgp = sameGame(res.legs.map(o => o.r));
   const legsHtml = res.legs.map((o, li) => {
@@ -2036,12 +2057,15 @@ $("pg-go").onclick = () => {
       $("pg-out").innerHTML = `<div class="pg-warn">Pick at least one game.</div>`;
       return;
     }
-    const res = buildSpread(Number($("pg-legs").value), Number($("pg-odds").value),
-                          $("pg-book").value, new Set(PG_SCOPE), null, true);
+    const args = [Number($("pg-legs").value), Number($("pg-odds").value), $("pg-book").value, new Set(PG_SCOPE)];
+    // Spread on: leave out everyone in parlays already built this visit, not
+    // just the ones added to the slip. If that leaves too few, repeat some.
+    const res = buildSpread(...args, null, true);
     res.green = true;             // green flags only, always
     PG_HIST = res.error ? [] : [res];
     PG_IDX = res.error ? -1 : 0;
     pgRender(res);
+    if(!res.error) pgSeen(res);
     $("pg-go").textContent = "Build my parlay";
     $("pg-go").dataset.ms = Math.round(performance.now() - t0);
   }, 20);
