@@ -916,33 +916,30 @@ B.tue = () => {
   if(show.cover){
     const s = canvas(H); const y = frame(s, H, weekLabel, words("head", head), words("sub", sub));
     if(done.length){
-      statTile(s, 70, y + 10, 460, pct(w / done.length), tone(w / done.length), "PARLAYS HIT", `${w} of ${done.length}`);
-      statTile(s, 550, y + 10, 460, pct(exp / done.length), "#fff", "OUR MODEL PREDICTED", "before kickoff");
+      statTile(s, 70, y + 10, 940, pct(w / done.length), tone(w / done.length), "PARLAYS HIT", `${w} of ${done.length}`);
     }
     const td = tdPicks();
     const rb = tdStat(td.filter(t => t.grp === "RB")), rc = tdStat(td.filter(t => t.grp === "REC"));
     if(rb.n || rc.n){
-      statTile(s, 70, y + 230, 460, rb.n ? pct(rb.h / rb.n) : "—", rb.n ? tone(rb.h / rb.n) : "#8e98b8", "ANYTIME TD · RBs", rb.n ? `${rb.h} of ${rb.n} · model ${pct(rb.e / rb.n)}` : "");
-      statTile(s, 550, y + 230, 460, rc.n ? pct(rc.h / rc.n) : "—", rc.n ? tone(rc.h / rc.n) : "#8e98b8", "ANYTIME TD · WR/TE", rc.n ? `${rc.h} of ${rc.n} · model ${pct(rc.e / rc.n)}` : "");
+      statTile(s, 70, y + 230, 460, rb.n ? pct(rb.h / rb.n) : "—", rb.n ? tone(rb.h / rb.n) : "#8e98b8", "ANYTIME TD · RBs", rb.n ? `${rb.h} of ${rb.n}` : "");
+      statTile(s, 550, y + 230, 460, rc.n ? pct(rc.h / rc.n) : "—", rc.n ? tone(rc.h / rc.n) : "#8e98b8", "ANYTIME TD · WR/TE", rc.n ? `${rc.h} of ${rc.n}` : "");
     }
     T(s, 70, H - 150, "Swipe for the breakdown →", {"font-size": 28, fill: "#3fd6ff", "font-weight": 800});
     slides.push(s);
   }
   if(show.odds){
-    const s = canvas(H); let y = frame(s, H, weekLabel, "Hit rate by odds", winNote() ? `${winNote()} · what hit vs what our model said.` : "What hit vs what our model said, at each target.");
+    const s = canvas(H); let y = frame(s, H, weekLabel, "Hit rate by odds", winNote() ? `${winNote()} · how often each target hit.` : "How often each target hit.");
     const tg = [...new Set(done.map(p => p.target))].sort((a, b) => a - b);
     const rowH = Math.min(120, (H - 200 - y) / Math.max(1, tg.length));
     tg.forEach((t, i) => {
       const ps = done.filter(p => p.target === t), won = ps.filter(p => p.status === "won").length;
-      const r = won / ps.length, e = ps.reduce((a, p) => a + p.prob, 0) / ps.length, yy = y + i * rowH + 50;
+      const r = won / ps.length, yy = y + i * rowH + 50;
       T(s, 70, yy + 12, odds(t), {"font-size": 40, "font-weight": 900});
       el("rect", {x: 250, y: yy - 12, width: 520, height: 24, rx: 12, fill: "rgba(148,163,209,.14)"}, s);
       el("rect", {x: 250, y: yy - 12, width: Math.max(10, 520 * r), height: 24, rx: 12, fill: "url(#igbar)"}, s);
-      el("line", {x1: 250 + 520 * e, y1: yy - 24, x2: 250 + 520 * e, y2: yy + 24, stroke: "#fff", "stroke-width": 4, "stroke-linecap": "round"}, s);
       T(s, W - 70, yy + 2, pct(r), {"text-anchor": "end", "font-size": 40, "font-weight": 900, fill: tone(r)});
-      T(s, W - 70, yy + 34, `${won}/${ps.length} · model ${pct(e)}`, {"text-anchor": "end", "font-size": 20, fill: "#8e98b8", "font-weight": 600});
+      T(s, W - 70, yy + 34, `${won} of ${ps.length}`, {"text-anchor": "end", "font-size": 20, fill: "#8e98b8", "font-weight": 600});
     });
-    T(s, 70, H - 130, "Bar = hit rate   |   White tick = our model's prediction", {"font-size": 22, fill: "#8e98b8", "font-weight": 600});
     slides.push(s);
   }
   if(show.atd){
@@ -986,7 +983,7 @@ B.tue = () => {
     }
   }
   const cap = done.length
-    ? `${weekLabel} receipts 🧾${winNote() ? ` (${winNote()})` : ""}\n\nParlays hit ${pct(w / done.length)} (${w} of ${done.length}). Our model predicted ${pct(exp / done.length)}.\n\nEvery pick graded — wins and losses. Swipe for the breakdown.\n\n21+ | Bet responsibly\n#nflparlays #playerprops #sportsbetting #anytimetd`
+    ? `${weekLabel} receipts 🧾${winNote() ? ` (${winNote()})` : ""}\n\nParlays hit ${pct(w / done.length)} (${w} of ${done.length}).\n\nEvery pick graded — wins and losses. Swipe for the breakdown.\n\n21+ | Bet responsibly\n#nflparlays #playerprops #sportsbetting #anytimetd`
     : "";
   return {slides, head, sub, caption: cap, note: slides.length ? "" : "Nothing graded on this page yet — open a week in the Track record tab."};
 };
@@ -1003,14 +1000,14 @@ B.wed = () => {
   const missed = p.legs.filter((l, k) => p.results[k] === "miss");
   const hitN = p.results.filter(r => r === "hit").length;
   const head = missed.length === 1 ? "One leg away" : `${missed.length} legs short`;
-  const sub = `${p.legs_n}-leg parlay at ${odds(p.odds)} · our model gave it ${pct(p.prob)}`;
+  const sub = `${p.legs_n}-leg parlay at ${odds(p.odds)}`;
   const H = 1350, s = canvas(H);
   let y = frame(s, H, weekLabel, words("head", head), words("sub", sub));
   legRows(s, y, H - 330, p.legs.map((l, k) => {
     const r = p.results[k], bad = r === "miss";
     return {mark: r === "void" ? "p" : r, bad, name: l.player, detail: `${prop(l)} · ${odds(l.price)}`,
       right: l.actual == null ? "—" : `had ${l.actual}`, rightFill: bad ? "#ff8a8a" : r === "hit" ? "#5cf2bb" : "#b7c0dc",
-      small: r === "injury" ? "left injured" : `model ${pct(l.p)}`};
+      small: r === "injury" ? "left injured" : ""};
   }));
   const m = missed[0];
   const take = missed.length === 1 && m
@@ -1045,12 +1042,11 @@ B.thu = () => {
   const H = 1350, s = canvas(H);
   let y = frame(s, H, w.name, words("head", head), words("sub", sub));
   if(!legs.length){ T(s, 70, y + 60, "Pick some legs in the options.", {"font-size": 32, fill: "#8e98b8"}); }
-  legRows(s, y, H - 360, legs.map(l => ({name: l.player, detail: `${l.team} · ${prop(l)}`, right: odds(l.price), small: `model ${pct(l.p)}`})), true);
+  legRows(s, y, H - 360, legs.map(l => ({name: l.player, detail: `${l.team} · ${prop(l)}`, right: odds(l.price), small: ""})), true);
   if(legs.length){
-    statTile(s, 70, H - 330, 460, odds(pOdds), "#fff", "PAYS", `${legs.length} legs · FanDuel prices`);
-    statTile(s, 550, H - 330, 460, pct(prob), tone(prob), "OUR MODEL'S CHANCE", mode === "mine" ? "legs multiplied" : "before kickoff");
+    statTile(s, 70, H - 330, 940, odds(pOdds), "#fff", "PAYS", `${legs.length} legs · FanDuel prices`);
   }
-  const cap = `${head} 🏈\n\n${legs.map(l => `• ${l.player} ${prop(l)} (${odds(l.price)})`).join("\n")}\n\nPays ${odds(pOdds)} · our model: ${pct(prob)}.\nWe'll post the result either way.\n\n21+ | Bet responsibly\n#TNF #nflparlays #playerprops`;
+  const cap = `${head} 🏈\n\n${legs.map(l => `• ${l.player} ${prop(l)} (${odds(l.price)})`).join("\n")}\n\nPays ${odds(pOdds)}.\nWe'll post the result either way.\n\n21+ | Bet responsibly\n#TNF #nflparlays #playerprops`;
   return {slides: [s], head, sub, caption: cap};
 };
 
@@ -1105,7 +1101,7 @@ B.sunam = () => {
   const showRec = opt("sunam", "rec", true);
   if(showRec){
     const td = tdPicks(), a = tdStat(td);
-    if(a.n) T(s, 70, H - 300, `Our record${D.season ? " this season" : ` · ${weekLabel}`}: ${a.h} of ${a.n} scored (${pct(a.h / a.n)}) · model said ${pct(a.e / a.n)}`,
+    if(a.n) T(s, 70, H - 300, `Our record${D.season ? " this season" : ` · ${weekLabel}`}: ${a.h} of ${a.n} scored (${pct(a.h / a.n)})`,
       {"font-size": 24, fill: "#8e98b8", "font-weight": 600});
   }
   el("rect", {x: 70, y: H - 260, width: 940, height: 130, rx: 26, fill: "rgba(63,214,255,.08)", stroke: "#3fd6ff", "stroke-opacity": .6, "stroke-width": 3}, s);
