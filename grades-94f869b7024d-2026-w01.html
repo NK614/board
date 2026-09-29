@@ -97,11 +97,12 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
 .wksel{appearance:none;-webkit-appearance:none;width:100%;padding:13px 40px 13px 15px;border-radius:14px;
   background:var(--card);border:1px solid var(--line);color:var(--ink);font:650 15px/1.2 var(--ui);cursor:pointer}
 .wksel:focus{outline:2px solid var(--acc);outline-offset:1px}
-.wkrow{display:grid;grid-template-columns:minmax(0,1fr) 88px 88px;gap:8px;align-items:center;padding:11px 14px;border-top:1px solid var(--line);font-size:13.5px}
+.wkrow{display:grid;grid-template-columns:minmax(0,1fr) 104px 104px;gap:8px;align-items:center;padding:11px 14px;border-top:1px solid var(--line);font-size:13.5px}
 .wkrow:first-child{border-top:0}
 .wkrow.h{font:700 11px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
 .wkrow b{font:700 14px/1 var(--num);text-align:right}
 .wkrow .h2{text-align:right}
+.wkrow b small{display:block;margin-top:4px;font:500 11px/1 var(--ui);color:var(--mut);white-space:nowrap}
 .nr{grid-column:1/-1;display:grid;grid-template-columns:62px 1fr 74px;gap:12px;align-items:center;margin-top:-2px}
 .nrk{font:600 10.5px/1.1 var(--ui);letter-spacing:.04em;color:var(--mut);text-transform:uppercase}
 .bar.thin{height:5px}
@@ -139,6 +140,7 @@ six targets taken in order as one day of bets, never reusing a player — how th
 bad leg shows up in many of these parlays. The parlays you actually take share far fewer, because of the no-repeat rule.</div></div>
 
 <div id="tdsec" hidden><h2>Touchdown picks</h2><div class="hint">The board's top 10 for the whole week by chance to score. Didn't play = no action.</div>
+<div class="kpis" id="tdkpis"></div>
 <div class="tdgrid" id="tdgrid"></div></div>
 
 <div id="picksec"><h2>Every pick</h2><div class="hint">Tap a pick to see its legs and the actual stats.</div>
@@ -162,6 +164,10 @@ const NR = DATA.parlays.filter(p => p.nr);           // no repeats: a day of bet
 let LSET = "grid";
 const settled = ps => ps.filter(p => p.status === "won" || p.status === "lost");
 const tone = r => r >= .5 ? "hi" : r >= .25 ? "mid" : "lo";
+// How the board's prediction compares with what happened, in points.
+const verdictOf = (hit, said) => { const gap = said - hit;
+  return Math.abs(gap) <= 2 ? `<em class="hi">right on</em> — within ${Math.abs(gap) || "1"} point${Math.abs(gap) === 1 ? "" : "s"}`
+    : gap > 0 ? `<em class="lo">${gap} points too high</em>` : `<em class="hi">${-gap} points too low</em> — better than predicted`; };
 const LABEL = {won: "Won", lost: "Lost", pending: "Pending", void: "Void"};
 const RES = {hit: ["Hit", "hit", "✓"], miss: ["Miss", "miss", "✕"], void: ["DNP", "pend", "–"],
              injury: ["Hit* · left injured", "inj", "✓"],
@@ -193,9 +199,7 @@ if(DATA.season){ $("picksec").hidden = true; $("seasonnote").hidden = false; }
   const exp = done.reduce((a, p) => a + p.prob, 0);
   const hit = done.length ? Math.round(100 * w / done.length) : null;
   const said = done.length ? Math.round(100 * exp / done.length) : null;
-  const gap = hit == null ? 0 : said - hit;
-  const verdict = hit == null ? "" : Math.abs(gap) <= 2 ? `<em class="hi">right on</em> — within ${Math.abs(gap) || "1"} point${Math.abs(gap) === 1 ? "" : "s"}`
-    : gap > 0 ? `<em class="lo">${gap} points too high</em>` : `<em class="hi">${-gap} points too low</em> — better than predicted`;
+  const verdict = hit == null ? "" : verdictOf(hit, said);
   const pend = PS.filter(p => p.status === "pending" || (settled([p]).length && !done.includes(p))).length;
   const hurt = done.filter(p => p.status === "won" && p.results.includes("injury")).length;
   $("kpis").innerHTML =
@@ -294,11 +298,22 @@ function drawTD(){
   if(!T.length) return;
   // Always the week's lists, whatever window is picked above.
   const pick = T.filter(t => t.scope === "Week" || t.scope === "All games");
+  // Settled picks only (scored / didn't); DNP and injury exits are no action.
+  const stat = rs => { const d = rs.filter(t => t.result === "hit" || t.result === "miss");
+    const h = d.filter(t => t.result === "hit").length, e = d.reduce((a, t) => a + t.p, 0);
+    return {n: d.length, h, e, hit: d.length ? Math.round(100 * h / d.length) : null,
+            said: d.length ? Math.round(100 * e / d.length) : null}; };
+  $("tdkpis").innerHTML = [["RB", "RBs"], ["REC", "WR/TE"]].map(([g, label]) => {
+    const s = stat(pick.filter(t => t.grp === g));
+    return `<div class="kpi"><b class="${s.hit == null ? "none" : tone(s.h / s.n)}">${s.hit == null ? "—" : s.hit + "%"}</b>
+      <span>${label}${s.n ? `: ${s.h} of ${s.n} scored` : ""}<br>${s.n
+        ? `board predicted ${s.said}%<br>${verdictOf(s.hit, s.said)}` : "not settled yet"}</span></div>`;
+  }).join("");
   if(DATA.season){
     // One line per week: how each week's two top 10s did.
-    const cell = rs => { const d = rs.filter(t => t.result === "hit" || t.result === "miss");
-      const h = d.filter(t => t.result === "hit").length;
-      return d.length ? `<b class="${tone(h / d.length)}">${h}/${d.length}</b>` : `<b class="none">—</b>`; };
+    const cell = rs => { const s = stat(rs);
+      return s.n ? `<b class="${tone(s.h / s.n)}">${s.h}/${s.n}<small>${s.hit}% · board ${s.said}%</small></b>`
+                 : `<b class="none">—</b>`; };
     const weeks = [...new Set(pick.map(t => t.board))].reverse();
     const all = g => pick.filter(t => t.grp === g);
     $("tdgrid").innerHTML = `<div class="tdcard">
@@ -321,7 +336,7 @@ function drawTD(){
       const exp = done.reduce((a, t) => a + t.p, 0);
       const r = done.length ? hit / done.length : null;
       cards.push(`<div class="tdcard"><div class="tdhead"><div><b>${title}</b>
-          <small>${done.length ? `board expected ${exp.toFixed(1)} of ${done.length}` : "not settled yet"}</small></div>
+          ${done.length ? "" : "<small>not settled yet</small>"}</div>
           <span class="${r == null ? "none" : tone(r)}">${done.length ? `${hit} of ${done.length}` : "—"}</span></div>
         ${rs.map(t => { const [txt, c] = RS[t.result] || [t.result, "pend"];
           return `<div class="tdrow"><span class="rk">${t.rank}</span>
