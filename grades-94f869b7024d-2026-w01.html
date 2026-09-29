@@ -136,7 +136,7 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
   padding:11px 14px;font:650 14px var(--ui);cursor:pointer}
 .ld-btn.pri{background:var(--cyan);border-color:var(--cyan);color:#04121a}
 .ld-acts{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
-.ld-row{display:grid;grid-template-columns:22px 78px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.ld-row{display:grid;grid-template-columns:22px 92px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .ld-row:first-child{border-top:0}
 .ld-row .n{font:700 13px var(--ui);color:var(--mut);text-align:center}
 .ld-row input[type=text],.ld-row input[type=number]{padding:8px 9px;font-size:16px}
@@ -156,6 +156,7 @@ body.shot .wrap > *:not(#ladview){display:none}
 body.shot #ladview > *:not(#ldshell){display:none}
 body.shot #ldshell{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);margin:0;border-radius:0;box-shadow:none;
   width:min(100vw,calc(100vh * .8))}
+.ld-row .pay{font:800 17px/1 var(--num);color:var(--ink);text-align:right;padding-right:4px}
 #igview{--cyan:#3fd6ff;--violet:#a855f7}
 #igview .ig-days{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
 #igview .ig-day{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--sec);border-radius:14px;
@@ -215,9 +216,9 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
 <div id="ladview" hidden>
 <div class="ld-shell" id="ldshell"><svg id="ldcard" viewBox="0 0 1080 1350" xmlns="http://www.w3.org/2000/svg" aria-label="Ladder challenge graphic"></svg></div>
 <div class="ld-panel">
-  <h3>Rungs · mark each bet</h3>
+  <h3>Bets · odds in, payout out</h3>
   <div id="ldrows"></div>
-  <p class="ld-hint">Or tap a rung on the graphic: pending → hit → miss.</p>
+  <p class="ld-hint">Type each bet's odds (e.g. -150 or +120) and its payout fills in. Blank = planned odds, shown with ~. Mark ✓ or ✕ when it settles, or tap the rung on the graphic.</p>
 </div>
 <div class="ld-panel">
   <div class="ld-acts" style="margin-top:0">
@@ -232,10 +233,10 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
   <div class="ld-g3">
     <div><label for="ldstart">Start ($)</label><input id="ldstart" type="number" inputmode="decimal"></div>
     <div><label for="ldgoal">Goal ($)</label><input id="ldgoal" type="number" inputmode="decimal"></div>
-    <div><label for="ldbets">Bets (rungs)</label><input id="ldbets" type="number" inputmode="numeric" min="2" max="12"></div>
+    <div><label for="ldplan">Planned odds</label><input id="ldplan" type="text" inputmode="numbers-and-punctuation"></div>
   </div>
-  <div class="ld-acts"><button class="ld-btn" id="ldauto">Fill amounts evenly</button></div>
-  <p class="ld-hint">Fills every rung so each bet needs about the same odds. Edit any amount or label above afterwards.</p>
+  <p class="ld-hint">Planned odds fill in any bet you haven't priced yet, so you can see how many bets the climb takes. Put each bet's real odds in the list above as you place it.</p>
+  <div class="ig-field" style="margin-top:12px"><label for="ldlabel">Bet type (shown after the odds)</label><input id="ldlabel" type="text" placeholder="parlay"></div>
   <div class="ld-g2" style="margin-top:12px">
     <div><label for="ldtag">Line under the title</label><input id="ldtag" type="text"></div>
     <div><label for="ldhandle">Handle</label><input id="ldhandle" type="text"></div>
@@ -507,34 +508,45 @@ $("tab-lad").onclick = () => tab("ladder");
 $("tab-ig").onclick = () => tab("instagram");
 
 // ---- The ladder: saved in this browser only ----
-const KEY = "alp-ladder-v1";
+// You set the start, the goal and each bet's odds; every rung's dollar amount
+// is the bankroll rolled over at those odds. Bets you haven't priced yet use
+// the planned odds, and the ladder ends at the first rung that reaches the goal.
+const KEY = "alp-ladder-v2";
 let S = null;
 try { S = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e) { S = null; }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} };
-
+const MAXR = 15;
 const money = v => "$" + Math.round(v).toLocaleString("en-US");
-const nice = v => {
-  const step = v < 100 ? 5 : v < 500 ? 10 : v < 2000 ? 25 : v < 10000 ? 50 : 100;
-  return Math.max(step, Math.round(v / step) * step);
-};
-const oddsTxt = (a, b) => {
-  const r = b / a - 1;
-  if(!(r > 0)) return "—";
-  return r >= 1 ? "+" + Math.round(r * 100) : "-" + Math.round(100 / r);
-};
-function fill(n, keep){
-  n = Math.max(2, Math.min(12, Math.round(n || 6)));
+const odd = o => (o > 0 ? "+" : "") + o;
+const valid = o => Number.isFinite(o) && (o >= 100 || o <= -100);
+const dec = o => o > 0 ? 1 + o / 100 : 1 + 100 / -o;
+const parseOdds = v => { const t = String(v).trim(); if(!t) return null; const n = Math.round(+t);
+  return valid(n) ? n : null; };
+if(!S){
+  // Carry over the first version's ladder (its labels held the odds).
+  let old = null;
+  try { old = JSON.parse(localStorage.getItem("alp-ladder-v1") || "null"); } catch(e) {}
+  S = {start: 25, goal: 1000, plan: -150, label: "parlay", odds: [], st: [], tag: "Ladder #1", handle: "@altlineparlays", real: true};
+  if(old && Array.isArray(old.rungs)){
+    Object.assign(S, {start: old.start || 25, goal: old.goal || 1000, tag: old.tag || S.tag, handle: old.handle || S.handle, real: old.real !== false});
+    S.st = old.rungs.map(r => r.st || "p");
+  }
+}
+function compute(){
   S.start = Math.max(1, +S.start || 25);
-  S.goal = Math.max(S.start * 1.1, +S.goal || 1000);
-  const amts = [];
-  for(let i = 1; i <= n; i++) amts.push(i === n ? S.goal : nice(S.start * Math.pow(S.goal / S.start, i / n)));
-  const old = keep ? S.rungs || [] : [];
-  S.rungs = amts.map((a, i) => ({amt: a, label: `${oddsTxt(i ? amts[i - 1] : S.start, a)} parlay`, st: (old[i] && old[i].st) || "p"}));
+  S.goal = Math.max(S.start + 1, +S.goal || 1000);
+  if(!valid(S.plan)) S.plan = -150;
+  const out = [];
+  let amt = S.start;
+  for(let i = 0; i < MAXR && amt < S.goal - 0.005; i++){
+    const set = valid(S.odds[i]) ? S.odds[i] : null, o = set == null ? S.plan : set;
+    amt = amt * dec(o);
+    out.push({amt, odds: o, planned: set == null, st: S.st[i] || "p"});
+  }
+  S.rungs = out;
+  return out;
 }
-if(!S || !Array.isArray(S.rungs) || !S.rungs.length){
-  S = {start: 25, goal: 1000, rungs: [], tag: "Ladder #1", handle: "@altlineparlays", real: true};
-  fill(6);
-}
+compute();
 
 function el(tag, attrs, parent, text){
   const e = document.createElementNS(NS, tag);
@@ -545,7 +557,7 @@ function el(tag, attrs, parent, text){
 }
 function draw(){
   const svg = $("ldcard"); svg.innerHTML = "";
-  const R = S.rungs, n = R.length;
+  const R = compute(), n = R.length;
   const busted = R.findIndex(r => r.st === "m");
   let hits = 0; while(hits < n && R[hits].st === "h") hits++;       // climbed = hits in a row from the bottom
   const done = hits === n;
@@ -604,10 +616,16 @@ function draw(){
     el("rect", {x: x0, y: yb, width: x1 - x0, height: 12, rx: 6, fill: "rgba(148,163,209,.13)"}, g);
     if(st === "h") el("rect", {x: x0, y: yb, width: x1 - x0, height: 12, rx: 6, fill: "url(#ldbar)", filter: "url(#ldglow)"}, g);
     if(st === "m") el("rect", {x: x0, y: yb, width: x1 - x0, height: 12, rx: 6, fill: "#ff6b6b", opacity: .85}, g);
-    el("text", {x: x0, y: y + 2, "font-weight": 800, "font-size": isStart ? 40 : 46, fill: st === "m" ? "#ff9d9d" : "#fff"}, g,
-       money(isStart ? S.start : r.amt));
-    el("text", {x: x1, y: y + 2, "text-anchor": "end", "font-weight": 650, "font-size": 24, fill: "#8e98b8", "letter-spacing": 1}, g,
-       isStart ? "START" : (i === n ? "GOAL · " : "") + (r.label || "").toUpperCase());
+    el("text", {x: x0, y: y + 2, "font-weight": 800, "font-size": isStart ? 40 : 46,
+       fill: st === "m" ? "#ff9d9d" : r && r.planned && st === "p" ? "#c9d1e6" : "#fff"}, g,
+       isStart ? money(S.start) : (r.planned && st === "p" ? "~" : "") + money(r.amt));
+    // The bet's odds on the right, shrunk if it would run into the amount.
+    const amtTxt = isStart ? money(S.start) : (r.planned && st === "p" ? "~" : "") + money(r.amt);
+    let lab = isStart ? "START" : ((i === n ? "GOAL · " : "") + `${odd(r.odds)} ${S.label || ""}`).trim().toUpperCase();
+    const room = x1 - (x0 + amtTxt.length * (isStart ? 26 : 31) + 44);
+    if(lab.length * .66 * 19 > room) lab = lab.replace(/^GOAL · /, "");      // tight top rung: the odds matter more
+    const lfs = Math.max(14, Math.min(24, room / Math.max(1, lab.length * .66)));
+    el("text", {x: x1, y: y + 2, "text-anchor": "end", "font-weight": 650, "font-size": lfs, fill: "#8e98b8", "letter-spacing": 1}, g, lab);
     if(next) el("circle", {cx: x, cy: y, r: 50, fill: "none", stroke: "#3fd6ff", "stroke-width": 3, opacity: .45, filter: "url(#ldglow)"}, g);
     const ring = st === "h" ? "#27e89c" : st === "m" ? "#ff6b6b" : next ? "#3fd6ff" : "#56607f";
     el("circle", {cx: x, cy: y, r: 38, fill: "#0b1124", stroke: ring, "stroke-width": 5, filter: st === "p" && !next ? "none" : "url(#ldglow)"}, g);
@@ -635,57 +653,61 @@ function draw(){
   el("rect", {x: 300, y: 1270, width: 685, height: 10, rx: 5, fill: "rgba(148,163,209,.15)"}, P);
   if(hits) el("rect", {x: 300, y: 1270, width: 685 * hits / n, height: 10, rx: 5, fill: busted >= 0 ? "#ff6b6b" : "url(#ldbar)"}, P);
 
-  const foot = [S.handle, S.real ? `Real odds of finishing: about 1 in ${Math.max(2, Math.round(S.goal / S.start))}` : "",
+  const last = n ? R[n - 1].amt : S.goal;
+  const foot = [S.handle, S.real ? `Real odds of finishing: about 1 in ${Math.max(2, Math.round(last / S.start))}` : "",
                 "21+ · Bet responsibly"].filter(Boolean).join("   ·   ");
   el("text", {x: 540, y: 1330, "text-anchor": "middle", "font-weight": 600, "font-size": 20, fill: "#6f7898", "letter-spacing": 1}, svg, foot);
 
   svg.querySelectorAll(".rung").forEach(g => g.onclick = () => {
-    const i = +g.dataset.i; S.rungs[i].st = {p: "h", h: "m", m: "p"}[S.rungs[i].st];
+    const i = +g.dataset.i; S.st[i] = {p: "h", h: "m", m: "p"}[S.st[i] || "p"];
     save(); draw(); rows();
   });
   $("ldtitle").onclick = () => document.body.classList.remove("shot");
 }
 
 function rows(){
-  const q = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
-  $("ldrows").innerHTML = S.rungs.map((r, i) => `<div class="ld-row">
+  const R = compute();
+  $("ldrows").innerHTML = R.map((r, i) => `<div class="ld-row">
       <span class="n">${i + 1}</span>
-      <input type="number" inputmode="decimal" value="${r.amt}" data-k="amt" data-i="${i}" aria-label="Rung ${i + 1} amount">
-      <input type="text" value="${q(r.label)}" data-k="label" data-i="${i}" aria-label="Rung ${i + 1} bet">
-      <div class="ld-seg" role="group" aria-label="Rung ${i + 1} result">
+      <input type="text" inputmode="numbers-and-punctuation" value="${r.planned ? "" : odd(r.odds)}" placeholder="${odd(S.plan)}"
+        data-i="${i}" aria-label="Bet ${i + 1} odds">
+      <span class="pay" data-pay="${i}">${r.planned ? "~" : ""}${money(r.amt)}</span>
+      <div class="ld-seg" role="group" aria-label="Bet ${i + 1} result">
         <button class="p" aria-pressed="${r.st === "p"}" data-s="p" data-i="${i}" title="Pending">·</button>
         <button class="h" aria-pressed="${r.st === "h"}" data-s="h" data-i="${i}" title="Hit">✓</button>
         <button class="m" aria-pressed="${r.st === "m"}" data-s="m" data-i="${i}" title="Miss">✕</button>
-      </div></div>`).join("");
+      </div></div>`).join("")
+    + (R.length >= MAXR && R[R.length - 1].amt < S.goal ? `<p class="ld-hint">Stopped at ${MAXR} bets — raise the odds to reach the goal sooner.</p>` : "");
 }
 function form(){
-  $("ldstart").value = S.start; $("ldgoal").value = S.goal; $("ldbets").value = S.rungs.length;
+  $("ldstart").value = S.start; $("ldgoal").value = S.goal; $("ldplan").value = odd(S.plan); $("ldlabel").value = S.label || "";
   $("ldtag").value = S.tag || ""; $("ldhandle").value = S.handle || ""; $("ldreal").checked = !!S.real;
 }
+// Typing odds updates the payouts as you go; the list redraws when you leave the box
+// (a new bet may appear or drop off the end).
 $("ldrows").addEventListener("input", e => {
-  const t = e.target, i = +t.dataset.i;
-  if(t.dataset.k === "amt"){
-    S.rungs[i].amt = Math.max(0, +t.value || 0);
-    if(i === S.rungs.length - 1){ S.goal = S.rungs[i].amt; $("ldgoal").value = S.goal; }
-  }
-  if(t.dataset.k === "label") S.rungs[i].label = t.value;
-  save(); draw();
+  const t = e.target; if(t.dataset.i == null) return;
+  const i = +t.dataset.i, o = parseOdds(t.value);
+  S.odds[i] = o; save(); const R = compute(); draw();
+  R.forEach((r, k) => { const c = document.querySelector(`[data-pay="${k}"]`); if(c) c.textContent = (r.planned ? "~" : "") + money(r.amt); });
 });
+$("ldrows").addEventListener("change", e => { if(e.target.dataset.i != null) rows(); });
 $("ldrows").addEventListener("click", e => {
   const b = e.target.closest("button[data-s]"); if(!b) return;
-  S.rungs[+b.dataset.i].st = b.dataset.s; save(); draw(); rows();
+  S.st[+b.dataset.i] = b.dataset.s; save(); draw(); rows();
 });
-const refill = () => {
-  S.start = +$("ldstart").value; S.goal = +$("ldgoal").value;
-  fill(+$("ldbets").value, true); save(); form(); draw(); rows();
+const reset = () => {
+  S.start = +$("ldstart").value || S.start; S.goal = +$("ldgoal").value || S.goal;
+  const pl = parseOdds($("ldplan").value); if(pl != null) S.plan = pl;
+  save(); form(); draw(); rows();
 };
-$("ldauto").onclick = refill;
-["ldstart", "ldgoal", "ldbets"].forEach(id => $(id).addEventListener("change", refill));
+["ldstart", "ldgoal", "ldplan"].forEach(id => $(id).addEventListener("change", reset));
+$("ldlabel").oninput = e => { S.label = e.target.value; save(); draw(); };
 $("ldtag").oninput = e => { S.tag = e.target.value; save(); draw(); };
 $("ldhandle").oninput = e => { S.handle = e.target.value; save(); draw(); };
 $("ldreal").onchange = e => { S.real = e.target.checked; save(); draw(); };
 $("ldnew").onclick = () => {
-  S.rungs.forEach(r => r.st = "p");
+  S.st = []; S.odds = [];
   S.tag = (S.tag || "").replace(/#(\d+)/, (_, k) => "#" + (+k + 1));
   save(); form(); draw(); rows();
 };
