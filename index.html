@@ -262,6 +262,9 @@ select option{background:#0c111c;color:var(--ink)}
 .td-tag{padding:2px 7px;border-radius:6px;font:700 10.5px/1.5 var(--ui);letter-spacing:.03em}
 .td-tag.q{background:var(--warn-soft);color:var(--warn-text)}
 .td-tag.up{background:var(--good-soft);color:var(--good-text)}
+.td-tag.out{background:var(--crit-soft);color:var(--crit-text)}
+.td-tag.done{background:rgba(148,163,209,.12);color:var(--muted)}
+.td-row.gone .td-nm,.td-row.gone .td-p b{opacity:.5;text-decoration:line-through}
 .td-p{text-align:right}
 .td-p b{display:block;font:700 20px/1 var(--num);color:var(--ink);letter-spacing:-.02em}
 .td-bar{margin-top:7px;height:5px;border-radius:9px;background:rgba(148,163,209,.14);overflow:hidden}
@@ -1019,12 +1022,15 @@ function renderTD(){
       `${r.rz} red-zone touch${r.rz === 1 ? "" : "es"} a game`,
       `${r.tds} TD in his last ${r.games}`];
     if(r.implied) why.push(`${esc(r.team)} expected to score ${r.implied}`);
-    const tags = [];
-    if(r.status) tags.push(`<span class="td-tag q">${esc(r.status)}</span>`);
+    const tags = [], gone = r.status === "Out" || r.status === "Doubtful";
+    const started = r.kick && new Date(r.kick) <= new Date();
+    if(gone) tags.push(`<span class="td-tag out">${esc(r.status)} — ruled out after this list was made</span>`);
+    else if(r.status) tags.push(`<span class="td-tag q">${esc(r.status)}</span>`);
+    if(started) tags.push(`<span class="td-tag done">Game started</span>`);
     if(r.boost) tags.push(`<span class="td-tag up">Teammate out — bigger role</span>`);
     const d = r.kick ? new Date(r.kick) : kickOf(r.game);
     const when = d && !isNaN(d) ? ` · ${etParts(d).wd} ${etParts(d).time}` : "";
-    return `<div class="td-row">
+    return `<div class="td-row${gone ? " gone" : ""}">
       <div class="td-rk">${i + 1}</div>
       <div class="td-who">
         <div class="td-nm">${esc(r.player)}</div>
@@ -1043,7 +1049,8 @@ function renderTD(){
   };
   const nGames = new Set(all.map(r => r.game)).size;
   board.innerHTML = `<div class="td-intro"><b>Who's most likely to score a touchdown this week</b> (rushing or receiving),
-      picked from all ${nGames} game${nGames === 1 ? "" : "s"} left on the schedule.
+      picked from all ${nGames} game${nGames === 1 ? "" : "s"} this week. The list is made once, at the week's
+      first build, and stays the same all week.
       Built from each player's share of his team's red-zone and scoring chances over his last 12 games, and the
       points his team is expected to score. No odds involved. Top-10 running backs have scored about 55% of the time, top-10
       receivers about 40%.</div>`
