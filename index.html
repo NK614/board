@@ -1638,6 +1638,17 @@ function rateLeg(sportKey, r){
    player. Options that are both less likely AND pay less than another rung of
    the same player can never be part of the best parlay, so they are dropped. */
 const RATE_CACHE = new WeakMap();
+// SOFT NO-REPEAT (being tested; the generator doesn't use it yet). While
+// PG_REUSE is set -- {pk: times this player is already in parlays taken} --
+// a player already bet counts a little against himself (PG_REUSE_COST off his
+// log-chance per earlier use), so a near-equal new player is preferred; after
+// PG_REUSE_CAP uses he's out. The strict rule is the same with cap 1.
+let PG_REUSE = null;
+const PG_REUSE_COST = 0.10, PG_REUSE_CAP = 2;
+const reuseCost = pk => {
+  const n = PG_REUSE ? (PG_REUSE.get(pk) || 0) : 0;
+  return n >= PG_REUSE_CAP ? Infinity : PG_REUSE_COST * n;
+};
 function pgPool(book, scope, exclude, strict, noAlone){
   // Scope: a Set of "sport|game" keys ticked in the Games picker.
   const pick = scope instanceof Set ? scope : null;
@@ -1663,11 +1674,13 @@ function pgPool(book, scope, exclude, strict, noAlone){
       if(d <= 1.0001) continue;
       const pk = key + "|" + normName(r.player) + "|" + r.team;
       if(exclude && exclude.has(pk)) continue;
+      const reuse = reuseCost(pk);
+      if(reuse === Infinity) continue;
       if(!players.has(pk)) players.set(pk, []);
       // "soft": when there aren't enough all-green legs, amber legs are
       // allowed but each amber flag counts heavily against the leg, so the
       // fewest and mildest cautions get in.
-      const lp = Math.log(rated.p) - (strict === "soft" ? PG_AMBER_COST * downs : 0);
+      const lp = Math.log(rated.p) - (strict === "soft" ? PG_AMBER_COST * downs : 0) - reuse;
       players.get(pk).push({r, sport: key, pk, p: rated.p, q: rated.q, why: rated.why,
                             d, lp, ld: Math.log(d), downs});
     }
@@ -1706,7 +1719,8 @@ function pgPool(book, scope, exclude, strict, noAlone){
             if(!combos.has(qk)) combos.set(qk, []);
             combos.get(qk).push({combo: true, parts: [pa, pb], pk: qk, pk2: rk, w: 2,
               p: pab, d: a.d * b.d, ld: Math.log(a.d * b.d),
-              lp: Math.log(pab) - (strict === "soft" ? PG_AMBER_COST * ((a.downs || 0) + (b.downs || 0)) : 0)});
+              lp: Math.log(pab) - (strict === "soft" ? PG_AMBER_COST * ((a.downs || 0) + (b.downs || 0)) : 0)
+                  - reuseCost(qk) - reuseCost(rk)});
           }
         }
       }
