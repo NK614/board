@@ -184,6 +184,10 @@ body.shot #ldshell{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%
 body.igfull{overflow:hidden}
 #igview .ig-wins{display:flex;flex-wrap:wrap;gap:8px}
 #igview .ig-wins .chip{padding:8px 12px;font-size:13.5px}
+#betpanel select{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:10px 11px;font:600 16px/1.3 var(--ui);appearance:none;-webkit-appearance:none}
+#betpanel .ig-field{margin-top:10px}
+#betpanel .ig-note{font-size:13px;color:var(--warn);line-height:1.45;margin:10px 0 0}
+#betpanel .ig-picks{max-height:360px;overflow-y:auto}
 </style></head><body><div class="wrap">
 <div class="eyebrow">Parlay Generator</div>
 <h1 id="pagetitle">Track record</h1>
@@ -223,13 +227,21 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
   <div id="ldrows"></div>
   <p class="ld-hint">Type each bet's odds (e.g. -150 or +120) and its payout fills in. Blank = planned odds, shown with ~. Mark ✓ or ✕ when it settles, or tap the rung on the graphic.</p>
 </div>
+<div class="ld-panel" id="betpanel">
+  <h3>This rung's bet · as a picture</h3>
+  <p class="ld-hint" style="margin-top:0">The parlay you're placing for the next rung, with the model's hit rate, the historical hit rate and the flags — ready to post.</p>
+  <div id="betopts"></div>
+  <div class="ig-slides" id="betslide"></div>
+  <div class="ld-acts"><button class="ld-btn pri" id="betsave">Save image</button></div>
+  <p class="ld-hint">Or press and hold the picture and pick "Save to Photos".</p>
+</div>
 <div class="ld-panel">
   <div class="ld-acts" style="margin-top:0">
     <button class="ld-btn pri" id="ldshoot">Screenshot mode</button>
     <button class="ld-btn" id="ldnew">Start a new ladder</button>
   </div>
   <p class="ld-hint">Screenshot mode shows only the graphic, in Instagram's 4:5 shape. Tap the title on the graphic to come back.
-  "Start a new ladder" clears the results and bumps the ladder number.</p>
+  "Start a new ladder" clears the results and the odds.</p>
 </div>
 <div class="ld-panel">
   <h3>Set up</h3>
@@ -240,10 +252,7 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
   </div>
   <p class="ld-hint">Planned odds fill in any bet you haven't priced yet, so you can see how many bets the climb takes. Put each bet's real odds in the list above as you place it.</p>
   <div class="ig-field" style="margin-top:12px"><label for="ldlabel">Bet type (shown after the odds)</label><input id="ldlabel" type="text" placeholder="parlay"></div>
-  <div class="ld-g2" style="margin-top:12px">
-    <div><label for="ldtag">Line under the title</label><input id="ldtag" type="text"></div>
-    <div><label for="ldhandle">Handle</label><input id="ldhandle" type="text"></div>
-  </div>
+  <div class="ig-field" style="margin-top:12px"><label for="ldhandle">Handle</label><input id="ldhandle" type="text"></div>
   <label class="ld-check"><input type="checkbox" id="ldreal"> Show the real odds of finishing</label>
   <p class="ld-hint">Saved on this phone only.</p>
 </div>
@@ -505,7 +514,7 @@ function tab(which){
   }
   $("pagetitle").textContent = VIEWS[which][2];
   if(history.replaceState) history.replaceState(null, "", VIEWS[which][3] || location.pathname + location.search);
-  if(which === "ladder") draw();
+  if(which === "ladder"){ draw(); if(window.BET_SHOW) window.BET_SHOW(); }
   if(which === "instagram" && window.IG_SHOW) window.IG_SHOW();
 }
 $("tab-rec").onclick = () => tab("record");
@@ -596,8 +605,6 @@ function draw(){
   const t = el("text", {x: 540, y: 116 + fs * .35, "text-anchor": "middle", "font-weight": 800, "font-size": fs, fill: "#fff", "letter-spacing": 1}, tg);
   el("tspan", {}, t, "THE "); el("tspan", {fill: "#3fd6ff"}, t, money(S.start));
   el("tspan", {}, t, " → "); el("tspan", {fill: "#3fd6ff"}, t, money(S.goal)); el("tspan", {}, t, " LADDER");
-  el("text", {x: 540, y: 228, "text-anchor": "middle", "font-weight": 700, "font-size": 26, fill: "#8e98b8", "letter-spacing": 5}, svg,
-     (S.tag || "").toUpperCase());
 
   const top = 300, bottom = 1100, pts = [];
   for(let i = 0; i <= n; i++) pts.push([130 + 300 * i / n, bottom - (bottom - top) * i / n]);
@@ -686,7 +693,7 @@ function rows(){
 }
 function form(){
   $("ldstart").value = S.start; $("ldgoal").value = S.goal; $("ldplan").value = odd(S.plan); $("ldlabel").value = S.label || "";
-  $("ldtag").value = S.tag || ""; $("ldhandle").value = S.handle || ""; $("ldreal").checked = !!S.real;
+  $("ldhandle").value = S.handle || ""; $("ldreal").checked = !!S.real;
 }
 // Typing odds updates the payouts as you go; the list redraws when you leave the box
 // (a new bet may appear or drop off the end).
@@ -708,7 +715,6 @@ const reset = () => {
 };
 ["ldstart", "ldgoal", "ldplan"].forEach(id => $(id).addEventListener("change", reset));
 $("ldlabel").oninput = e => { S.label = e.target.value; save(); draw(); };
-$("ldtag").oninput = e => { S.tag = e.target.value; save(); draw(); };
 $("ldhandle").oninput = e => { S.handle = e.target.value; save(); draw(); };
 $("ldreal").onchange = e => { S.real = e.target.checked; save(); draw(); };
 $("ldnew").onclick = () => {
@@ -737,9 +743,7 @@ const odds = a => (a > 0 ? "+" : "") + a;
 const nick = team => String(team || "").trim().split(" ").pop();
 const shortGame = g => String(g || "").split(" @ ").map(nick).join(" @ ");
 const STAT = {receptions: ["catch", "catches"], receiving_yards: ["rec yd", "rec yds"], rushing_yards: ["rush yd", "rush yds"],
-              passing_yards: ["pass yd", "pass yds"], tds: ["TD", "TDs"],
-              hits: ["hit", "hits"], total_bases: ["total base", "total bases"], home_runs: ["HR", "HRs"],
-              hrr: ["H+R+RBI", "H+R+RBI"], pitcher_strikeouts: ["K", "Ks"]};
+              passing_yards: ["pass yd", "pass yds"], tds: ["TD", "TDs"]};
 const prop = l => { const n = Math.floor(l.threshold) + 1, s = STAT[l.stat] || [l.stat, l.stat]; return `${n}+ ${n === 1 ? s[0] : s[1]}`; };
 
 // ---------- saved choices ----------
@@ -763,7 +767,7 @@ const weekLabel = (() => {
 let FEED = null, FEED_ERR = "";
 function loadFeed(){
   const file = decodeURIComponent(location.pathname.split("/").pop() || "");
-  const base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|season|other)$/, "");
+  const base = file.replace(/\.html$/, "").replace(/-(\d{4}-[wc]\d{2}|season|other)$/, "");
   if(!/^https?:$/.test(location.protocol) || !base){ FEED_ERR = "The board's data loads when this page is opened from its web address."; return Promise.resolve(); }
   return fetch(`${base}-live.json`, {cache: "no-store"}).then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(j => { FEED = j; }).catch(() => { FEED_ERR = "No board data yet — it appears after the next Build (scheduled or manual)."; });
@@ -1339,8 +1343,152 @@ $("igslides").addEventListener("click", e => {
   f.onclick = () => { f.remove(); document.body.classList.remove("igfull"); };
 });
 
+// ---------- Ladder tab: the next rung's bet as a picture ----------
+const STATL = {receptions: ["catch", "catches"], receiving_yards: ["receiving yard", "receiving yards"],
+  rushing_yards: ["rushing yard", "rushing yards"], passing_yards: ["passing yard", "passing yards"],
+  hits: ["hit", "hits"], total_bases: ["total base", "total bases"], home_runs: ["home run", "home runs"],
+  hrr: ["H+R+RBI", "H+R+RBI"], pitcher_strikeouts: ["strikeout", "strikeouts"]};
+const propLong = l => { const n = Math.floor(l.threshold) + 1, s2 = STATL[l.stat] || [l.stat, l.stat]; return `${n}+ ${n === 1 ? s2[0] : s2[1]}`; };
+const kickTxt = iso => { if(!iso) return ""; const d = new Date(iso);
+  return d.toLocaleString("en-US", {timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit"}).replace(",", ""); };
+const decOf = o => o > 0 ? 1 + o / 100 : 1 + 100 / -o;
+const amerOfDec = d => Math.round(d >= 2 ? (d - 1) * 100 : -100 / (d - 1));
+function ladderNow(){
+  // The ladder tab's own saved state: the bankroll going into the next bet.
+  let L = null;
+  try { L = JSON.parse(localStorage.getItem("alp-ladder-v2") || "null"); } catch(e) {}
+  if(!L) return null;
+  const ok = o => Number.isFinite(o) && (o >= 100 || o <= -100);
+  let amt = +L.start || 25, hits = 0;
+  const plan = ok(L.plan) ? L.plan : -150;
+  for(let i = 0; i < 15 && amt < (+L.goal || 1000) - 0.005; i++){
+    if((L.st || [])[i] !== "h") break;
+    amt *= decOf(ok((L.odds || [])[i]) ? L.odds[i] : plan); hits++;
+  }
+  return {bank: amt, rung: hits + 1, busted: (L.st || [])[hits] === "m"};
+}
+function betLegs(){
+  if(!FEED || !(FEED.windows || []).length) return null;
+  const wins = FEED.windows, mode = opt("bet", "mode", "best");
+  if(mode === "mine"){
+    const all = [];
+    wins.forEach(w => (w.top || []).forEach(l => all.push(l)));
+    all.sort((a, b) => b.p - a.p);
+    const seen = new Set(), pool = all.filter(l => { const k = l.player + "|" + l.stat + "|" + l.threshold; if(seen.has(k)) return false; seen.add(k); return true; }).slice(0, 80);
+    OPTS_EXTRA.betpool = pool;
+    const keys = new Set(opt("bet", "mine", []) || []);
+    return pool.filter(l => keys.has(l.player + "|" + l.stat + "|" + l.threshold));
+  }
+  const w = wins[Math.min(opt("bet", "win", 0), wins.length - 1)];
+  const pl = w.parlays.find(x => x.legs_n === +opt("bet", "legs", 3) && x.target === +opt("bet", "target", 100)) || w.parlays[0];
+  return pl ? pl.legs : [];
+}
+function betCard(legs){
+  const H = 1350, s = canvas(H), L = ladderNow();
+  const dec = legs.reduce((a, l) => a * decOf(l.price), 1), odds = legs.length ? amerOfDec(dec) : 0;
+  const rung = L ? L.rung : 1, stake = L ? L.bank : 0;
+  let y = frame(s, H, `Rung ${rung}`, `Rung ${rung} bet`,
+    stake ? `$${Math.round(stake)} at ${odds > 0 ? "+" : ""}${odds} → $${Math.round(stake * dec).toLocaleString("en-US")}` : "");
+  T(s, 70, y + 4, "LEG", {"font-size": 18, fill: "#8e98b8", "letter-spacing": 3, "font-weight": 800});
+  T(s, 1010, y - 18, "MODEL PREDICTION HIT RATE", {"text-anchor": "end", "font-size": 18, fill: "#3fd6ff", "letter-spacing": 2, "font-weight": 800});
+  T(s, 1010, y + 6, "HISTORICAL HIT RATE", {"text-anchor": "end", "font-size": 18, fill: "#8e98b8", "letter-spacing": 2, "font-weight": 800});
+  el("line", {x1: 70, y1: y + 22, x2: 1010, y2: y + 22, stroke: "#56607f", "stroke-opacity": .5, "stroke-width": 2}, s);
+  y += 34;
+  const bottom = H - 300, rowH = Math.min(190, (bottom - y) / Math.max(1, legs.length)), k = Math.min(1, rowH / 170);
+  legs.forEach((l, i) => {
+    const top = y + i * rowH;
+    if(i) el("line", {x1: 70, y1: top, x2: 1010, y2: top, stroke: "#56607f", "stroke-opacity": .3, "stroke-width": 1.5}, s);
+    let ty = top + 44 * k;
+    const nm = el("text", {x: 70, y: ty, "font-size": 34 * k, "font-weight": 800, fill: "#fff"}, s);
+    el("tspan", {}, nm, l.player + "  ");
+    el("tspan", {"font-size": 18 * k, fill: "#8e98b8", "letter-spacing": 2}, nm, `${l.pos || ""} · ${l.team || ""}`.toUpperCase());
+    ty += 38 * k;
+    const pr = el("text", {x: 70, y: ty, "font-size": 27 * k, "font-weight": 600, fill: "#e6ebff"}, s);
+    el("tspan", {}, pr, propLong(l) + "  ");
+    el("tspan", {"font-weight": 800}, pr, (l.price > 0 ? "+" : "") + l.price);
+    if(rowH > 120){ ty += 32 * k; T(s, 70, ty, `${l.game}${l.kick ? " · " + kickTxt(l.kick) : ""}`, {"font-size": 20 * k, fill: "#8e98b8", "font-weight": 600}); }
+    const flags = (l.flags || []).slice(0, 3);
+    if(flags.length && rowH > 140){
+      let fx = 70; const fy = ty + 18 * k, fh = 34 * k;
+      flags.forEach(([t, cls]) => {
+        const w = t.length * 12.5 * k + 30 * k, c = cls === "up" ? "#27e89c" : cls === "down" ? "#ffc86b" : "#8e98b8";
+        if(fx + w > 860) return;
+        el("rect", {x: fx, y: fy, width: w, height: fh, rx: fh / 2, fill: "none", stroke: c, "stroke-opacity": .7, "stroke-width": 2}, s);
+        T(s, fx + w / 2, fy + fh * .66, t.toUpperCase(), {"text-anchor": "middle", "font-size": 16 * k, fill: c, "letter-spacing": 1.5, "font-weight": 800});
+        fx += w + 12;
+      });
+    }
+    T(s, 1010, top + 60 * k, pct(l.p), {"text-anchor": "end", "font-size": 54 * k, "font-weight": 900, fill: "#3fd6ff"});
+    if(l.n) T(s, 1010, top + 100 * k, `${l.hits}/${l.n}`, {"text-anchor": "end", "font-size": 28 * k, "font-weight": 700, fill: "#8e98b8"});
+  });
+  if(legs.length){
+    statTile(s, 70, H - 290, 940, (odds > 0 ? "+" : "") + odds, "#fff", "PAYS",
+      `${legs.length} leg${legs.length === 1 ? "" : "s"} · FanDuel prices`);
+  }
+  return s;
+}
+function betOptsHtml(){
+  if(!FEED || !(FEED.windows || []).length) return `<p class="ig-note">${esc(FEED_ERR || "No board data yet — it appears after the next Build.")}</p>`;
+  const wins = FEED.windows, h = [];
+  h.push(sel("bet", "mode", "best", "Legs", [["best", "The model's best parlay"], ["mine", "Let me pick the legs (the one I'm betting)"]]));
+  if(opt("bet", "mode", "best") === "best"){
+    const w = wins[Math.min(opt("bet", "win", 0), wins.length - 1)];
+    const ns = [...new Set(w.parlays.map(p => p.legs_n))], ts = [...new Set(w.parlays.map(p => p.target))];
+    h.push(sel("bet", "win", 0, "Games", wins.map((x, i) => [i, x.label])),
+      `<div class="ld-g2">${sel("bet", "legs", 3, "Legs", ns.map(n => [n, n + " legs"]))}${sel("bet", "target", 100, "Target odds", ts.map(t => [t, odds(t)]))}</div>`);
+  } else {
+    const mine = new Set(opt("bet", "mine", []) || []);
+    h.push(`<div class="ig-field"><label>Tick the legs on your slip (up to 10) — the model's likeliest lines on the board</label><div class="ig-picks">${
+      (OPTS_EXTRA.betpool || []).map(l => { const k = l.player + "|" + l.stat + "|" + l.threshold;
+        return `<div class="ig-pick"><label><input type="checkbox" data-bet="${esc(k)}" ${mine.has(k) ? "checked" : ""}>
+          <span>${esc(l.player)} <small>${esc(propLong(l))} · ${odds(l.price)}</small></span></label><small>${pct(l.p)}</small></div>`; }).join("")}</div></div>`);
+  }
+  return h.join("");
+}
+let BET_FILE = null;
+function renderBet(){
+  if(!$("betopts")) return;
+  const legs = betLegs();
+  $("betopts").innerHTML = betOptsHtml();
+  const box = $("betslide"); box.innerHTML = ""; BET_FILE = null;
+  if(!legs) return;
+  const svg = betCard(legs), d = document.createElement("div");
+  d.className = "ig-slide"; d.appendChild(svg); box.appendChild(d);
+  toPng(svg).then(async blob => {
+    BET_FILE = new File([blob], "alp-ladder-bet.png", {type: "image/png"});
+    const img = new Image(); img.src = await asDataUrl(blob); img.width = 1080; img.height = 1350; img.alt = "Ladder bet";
+    if(d.isConnected) d.replaceChildren(img);
+  }).catch(() => {});
+}
+if($("betopts")){
+  $("betopts").addEventListener("change", e => {
+    const t = e.target;
+    if(t.dataset.k) setOpt("bet", t.dataset.k, isNaN(+t.value) ? t.value : +t.value);
+    else if(t.dataset.bet != null){
+      let mine = (opt("bet", "mine", []) || []).slice();
+      mine = t.checked ? [...new Set([...mine, t.dataset.bet])].slice(0, 10) : mine.filter(x => x !== t.dataset.bet);
+      setOpt("bet", "mine", mine);
+    }
+    renderBet();
+  });
+  $("betsave").onclick = () => {
+    if(!BET_FILE){ toast("Still drawing — tap again in a second"); return; }
+    if(navigator.canShare && navigator.canShare({files: [BET_FILE]})) navigator.share({files: [BET_FILE]}).catch(() => {});
+    else { const a = document.createElement("a"); a.href = URL.createObjectURL(BET_FILE); a.download = BET_FILE.name;
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+  };
+  $("betslide").addEventListener("click", e => {
+    const d = e.target.closest(".ig-slide"); if(!d) return;
+    const src = d.querySelector("img, svg"); if(!src) return;
+    const f = document.createElement("div"); f.className = "ig-full"; f.style.setProperty("--ar", "0.8");
+    f.appendChild(src.cloneNode(true)); document.body.appendChild(f); document.body.classList.add("igfull");
+    f.onclick = () => { f.remove(); document.body.classList.remove("igfull"); };
+  });
+}
+window.BET_SHOW = renderBet;
+
 window.IG_SHOW = () => { render(false); };
-loadFeed().then(() => { if(!$("igview").hidden) render(true); });
+loadFeed().then(() => { if(!$("igview").hidden) render(true); renderBet(); });
 render(true);
 })();
 </script></body></html>
