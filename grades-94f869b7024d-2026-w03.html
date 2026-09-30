@@ -186,6 +186,7 @@ body.igfull{overflow:hidden}
 #igview .ig-wins .chip{padding:8px 12px;font-size:13.5px}
 #betpanel select{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:10px 11px;font:600 16px/1.3 var(--ui);appearance:none;-webkit-appearance:none}
 #betpanel .ig-field{margin-top:10px}
+#betpanel .bet-ov{display:grid;grid-template-columns:.7fr 1fr 1fr;gap:10px}
 #betpanel .ig-note{font-size:13px;color:var(--warn);line-height:1.45;margin:10px 0 0}
 #betpanel .ig-picks{max-height:360px;overflow-y:auto}
 </style></head><body><div class="wrap">
@@ -570,6 +571,7 @@ function el(tag, attrs, parent, text){
   return e;
 }
 function draw(){
+  clearTimeout(window.BET_T); window.BET_T = setTimeout(() => window.BET_SHOW && window.BET_SHOW(), 250);
   const svg = $("ldcard"); svg.innerHTML = "";
   const R = compute(), n = R.length;
   const busted = R.findIndex(r => r.st === "m");
@@ -1095,7 +1097,7 @@ B.thu = () => {
   const H = 1350, s = canvas(H);
   let y = frame(s, H, w.name, words("head", head), words("sub", sub));
   if(!legs.length){ T(s, 70, y + 60, "Pick some legs in the options.", {"font-size": 32, fill: "#8e98b8"}); }
-  legRows(s, y, H - 360, legs.map(l => ({name: l.player, detail: `${l.team} · ${prop(l)}`, right: odds(l.price), small: ""})), true);
+  if(legs.length) rateLegs(s, y + 10, H - 360, legs);
   if(legs.length){
     statTile(s, 70, H - 330, 940, odds(pOdds), "#fff", "PAYS", `${legs.length} legs`);
   }
@@ -1485,18 +1487,15 @@ function betLegs(){
   const pl = w.parlays.find(x => x.legs_n === +opt("bet", "legs", 3) && x.target === +opt("bet", "target", 100)) || w.parlays[0];
   return pl ? pl.legs : [];
 }
-function betCard(legs){
-  const H = 1350, s = canvas(H), L = ladderNow();
-  const dec = legs.reduce((a, l) => a * decOf(l.price), 1), odds = legs.length ? amerOfDec(dec) : 0;
-  const rung = L ? L.rung : 1, stake = L ? L.bank : 0;
-  let y = frame(s, H, `Rung ${rung}`, `Rung ${rung} bet`,
-    stake ? `$${Math.round(stake).toLocaleString("en-US")} → $${Math.round(stake * dec).toLocaleString("en-US")}` : "");
+// The leg list with the model's hit rate (blue) and the historical x/y (gray)
+// on the right -- shared by the ladder's bet card and Thursday's parlay.
+function rateLegs(s, y, bottom, legs){
   T(s, 70, y + 4, "LEG", {"font-size": 18, fill: "#8e98b8", "letter-spacing": 3, "font-weight": 800});
   T(s, 1010, y - 18, "MODEL PREDICTION HIT RATE", {"text-anchor": "end", "font-size": 18, fill: "#3fd6ff", "letter-spacing": 2, "font-weight": 800});
   T(s, 1010, y + 6, "HISTORICAL HIT RATE", {"text-anchor": "end", "font-size": 18, fill: "#8e98b8", "letter-spacing": 2, "font-weight": 800});
   el("line", {x1: 70, y1: y + 22, x2: 1010, y2: y + 22, stroke: "#56607f", "stroke-opacity": .5, "stroke-width": 2}, s);
   y += 34;
-  const bottom = H - 300, rowH = Math.min(190, (bottom - y) / Math.max(1, legs.length)), k = Math.min(1, rowH / 170);
+  const rowH = Math.min(190, (bottom - y) / Math.max(1, legs.length)), k = Math.min(1, rowH / 170);
   legs.forEach((l, i) => {
     const top = y + i * rowH;
     if(i) el("line", {x1: 70, y1: top, x2: 1010, y2: top, stroke: "#56607f", "stroke-opacity": .3, "stroke-width": 1.5}, s);
@@ -1523,13 +1522,29 @@ function betCard(legs){
     T(s, 1010, top + 60 * k, pct(l.p), {"text-anchor": "end", "font-size": 54 * k, "font-weight": 900, fill: "#3fd6ff"});
     if(l.n) T(s, 1010, top + 100 * k, `${l.hits}/${l.n}`, {"text-anchor": "end", "font-size": 28 * k, "font-weight": 700, fill: "#8e98b8"});
   });
+}
+// Whole dollars, unless you typed cents yourself.
+const cash = (v, typed) => "$" + (typed && Math.round(v * 100) % 100
+  ? v.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})
+  : Math.round(v).toLocaleString("en-US"));
+function betCard(legs){
+  const H = 1350, s = canvas(H), L = ladderNow();
+  const dec = legs.reduce((a, l) => a * decOf(l.price), 1), odds = legs.length ? amerOfDec(dec) : 0;
+  // Rung, bet and return follow the ladder unless typed in under the picture.
+  const ov = opt("bet", "ov", {}) || {};
+  const rung = ov.rung > 0 ? Math.round(ov.rung) : L ? L.rung : 1;
+  const stake = ov.stake > 0 ? ov.stake : L ? L.bank : 0;
+  const ret = ov.ret > 0 ? ov.ret : stake * dec;
+  let y = frame(s, H, `Rung ${rung}`, `Rung ${rung} bet`,
+    stake ? `${cash(stake, ov.stake > 0)} → ${cash(ret, ov.ret > 0)}` : "");
+  rateLegs(s, y, H - 300, legs);
   if(legs.length){
     statTile(s, 70, H - 290, 940, (odds > 0 ? "+" : "") + odds, "#fff", "PAYS",
       `${legs.length} leg${legs.length === 1 ? "" : "s"}`);
   }
   return s;
 }
-function betOptsHtml(){
+function betOptsHtml(legs){
   if(!FEED || !(FEED.windows || []).length) return `<p class="ig-note">${esc(FEED_ERR || "No board data yet — it appears after the next Build.")}</p>`;
   const wins = FEED.windows, h = [];
   h.push(sel("bet", "mode", "best", "Legs", [["best", "The model's best parlay"], ["mine", "Let me pick the legs (the one I'm betting)"]]));
@@ -1545,13 +1560,22 @@ function betOptsHtml(){
         return `<div class="ig-pick"><label><input type="checkbox" data-bet="${esc(k)}" ${mine.has(k) ? "checked" : ""}>
           <span>${esc(l.player)} <small>${esc(propLong(l))} · ${odds(l.price)}</small></span></label><small>${pct(l.p)}</small></div>`; }).join("")}</div></div>`);
   }
+  const L = ladderNow(), ov = opt("bet", "ov", {}) || {};
+  const dec = (legs || []).reduce((a, l) => a * decOf(l.price), 1);
+  const aRung = L ? L.rung : 1, aStake = ov.stake > 0 ? ov.stake : L ? L.bank : 25;
+  const box = (k, label, ph, mode) => `<div class="ig-field"><label>${label}</label><input type="text" inputmode="${mode}"
+    data-ov="${k}" value="${ov[k] > 0 ? ov[k] : ""}" placeholder="${esc(ph)}"></div>`;
+  h.push(`<div class="bet-ov">${box("rung", "Rung", String(aRung), "numeric")}${box("stake", "Bet $", Math.round(aStake).toLocaleString("en-US"), "decimal")}${
+    box("ret", "Returns $", Math.round(aStake * dec).toLocaleString("en-US"), "decimal")}</div>
+    <p class="ld-hint" style="margin-top:8px">Blank = the ladder's numbers (shown in gray). Returns fills in from the bet and the parlay's odds.
+    ${Object.keys(ov).length ? `<button class="ld-btn" id="betovreset" style="margin-top:8px">Use the ladder's numbers</button>` : ""}</p>`);
   return h.join("");
 }
 let BET_FILE = null;
 function renderBet(){
   if(!$("betopts")) return;
   const legs = betLegs();
-  $("betopts").innerHTML = betOptsHtml();
+  $("betopts").innerHTML = betOptsHtml(legs);
   const box = $("betslide"); box.innerHTML = ""; BET_FILE = null;
   if(!legs) return;
   const svg = betCard(legs), d = document.createElement("div");
@@ -1565,13 +1589,21 @@ function renderBet(){
 if($("betopts")){
   $("betopts").addEventListener("change", e => {
     const t = e.target;
-    if(t.dataset.k) setOpt("bet", t.dataset.k, isNaN(+t.value) ? t.value : +t.value);
+    if(t.dataset.ov){
+      const ov = Object.assign({}, opt("bet", "ov", {}) || {}), v = +String(t.value).replace(/[$,\s]/g, "");
+      if(v > 0) ov[t.dataset.ov] = v; else delete ov[t.dataset.ov];
+      setOpt("bet", "ov", ov);
+    }
+    else if(t.dataset.k) setOpt("bet", t.dataset.k, isNaN(+t.value) ? t.value : +t.value);
     else if(t.dataset.bet != null){
       let mine = (opt("bet", "mine", []) || []).slice();
       mine = t.checked ? [...new Set([...mine, t.dataset.bet])].slice(0, 10) : mine.filter(x => x !== t.dataset.bet);
       setOpt("bet", "mine", mine);
     }
     renderBet();
+  });
+  $("betopts").addEventListener("click", e => {
+    if(e.target.id === "betovreset"){ setOpt("bet", "ov", {}); renderBet(); }
   });
   $("betsave").onclick = () => {
     if(!BET_FILE){ toast("Still drawing — tap again in a second"); return; }
