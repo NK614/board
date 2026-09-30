@@ -901,7 +901,7 @@ const DAYS = [
   {k: "tue", name: "Tue", what: "Weekly results"},
   {k: "wed", name: "Wed", what: "Why it lost"},
   {k: "thu", name: "Thu", what: "TNF parlay"},
-  {k: "fri", name: "Fri", what: "Comment a player"},
+  {k: "fri", name: "Fri", what: "Heaters"},
   {k: "sunam", name: "Sun AM", what: "ATD top 3"},
   {k: "sunpm", name: "Sun night", what: "Scoring update"},
 ];
@@ -1058,28 +1058,49 @@ B.thu = () => {
   return {slides: [s], head, sub, caption: cap};
 };
 
+// HEATERS: the players on this week's board with the longest-running floor
+// in one stat -- "6+ catches in 10 straight games". No odds on purpose.
+const HEAT_STATS = [["receptions", "Catches"], ["receiving_yards", "Receiving yards"],
+                    ["rushing_yards", "Rushing yards"], ["passing_yards", "Passing yards"]];
+function heaters(stat, len){
+  const list = ((FEED || {}).streaks || {})[stat] || [];
+  const yards = /yards/.test(stat);
+  return list.filter(x => (x.last || []).length >= len).map(x => {
+    const vals = x.last.slice(-len), low = Math.min(...vals);
+    const floor = yards ? (low >= 10 ? Math.floor(low / 5) * 5 : 0) : Math.floor(low);
+    return Object.assign({}, x, {vals, floor, mean: vals.reduce((a, v) => a + v, 0) / vals.length});
+  }).filter(x => x.floor > 0).sort((a, b) => b.floor - a.floor || b.mean - a.mean);
+}
 B.fri = () => {
-  const head = "Comment a player", sub = "We'll run him through our model and reply with his best props.";
+  if(!FEED || !FEED.streaks) return {slides: [], head: "", sub: "", caption: "",
+    note: FEED_ERR || "No streak data yet — it appears after the next Build."};
+  const stat = opt("fri", "stat", "receptions"), len = +opt("fri", "len", 10), n = +opt("fri", "n", 10);
+  const label = (HEAT_STATS.find(x => x[0] === stat) || [stat, stat])[1];
+  const unit = (STAT[stat] || [stat, stat])[1];
+  const top = heaters(stat, len).slice(0, n);
+  const head = "Heaters", sub = `${label} · ${len} straight games`;
   const H = 1350, s = canvas(H);
-  let y = frame(s, H, "Prop Assist", words("head", head), words("sub", sub));
-  const ex = opt("fri", "ex", true);
-  if(ex && FEED){
-    const seen = new Set(), picks = [];
-    (FEED.windows || []).forEach(w => (w.top || []).forEach(l => { if(!seen.has(l.player) && l.price > -600){ seen.add(l.player); picks.push(l); } }));
-    picks.sort((a, b) => b.p - a.p);
-    T(s, 70, y + 30, "LIKE THIS", {"font-size": 24, fill: "#8e98b8", "letter-spacing": 3, "font-weight": 800});
-    picks.slice(0, 3).forEach((l, k) => {
-      const yy = y + 110 + k * 120;
-      el("rect", {x: 70, y: yy - 50, width: 940, height: 100, rx: 20, fill: "rgba(11,17,36,.85)", stroke: "#a855f7", "stroke-opacity": .4, "stroke-width": 2}, s);
-      T(s, 100, yy - 4, l.player, {"font-size": 34, "font-weight": 800});
-      T(s, 100, yy + 30, `${l.team} · ${prop(l)} · ${odds(l.price)}`, {"font-size": 22, fill: "#b7c0dc", "font-weight": 600});
-      T(s, 980, yy + 12, pct(l.p), {"text-anchor": "end", "font-size": 46, "font-weight": 900, fill: tone(l.p)});
-    });
+  let y = frame(s, H, "Streaks", words("head", head), words("sub", sub));
+  if(!top.length){
+    T(s, 70, y + 60, "No streaks that long on this week's board.", {"font-size": 30, fill: "#8e98b8", "font-weight": 600});
   }
-  el("rect", {x: 70, y: H - 330, width: 940, height: 170, rx: 30, fill: "rgba(63,214,255,.08)", stroke: "#3fd6ff", "stroke-opacity": .6, "stroke-width": 3}, s);
-  T(s, 540, H - 250, "DROP A NAME BELOW ↓", {"text-anchor": "middle", "font-size": 52, "font-weight": 900, fill: "#3fd6ff"});
-  T(s, 540, H - 200, words("cta", "We reply to as many as we can"), {"text-anchor": "middle", "font-size": 26, fill: "#b7c0dc", "font-weight": 600});
-  const cap = `Comment a player 👇\n\nWe'll run him through our model and reply with his best props for Sunday.\n\n21+ | Bet responsibly\n#nfl #playerprops #fantasyfootball`;
+  const rowH = Math.min(112, (H - 160 - y) / Math.max(1, top.length));
+  const k = Math.min(1, rowH / 100);
+  top.forEach((x, i) => {
+    const mid = y + i * rowH + rowH / 2;
+    if(i) el("line", {x1: 70, y1: y + i * rowH, x2: 1010, y2: y + i * rowH, stroke: "#56607f", "stroke-opacity": .3, "stroke-width": 1.5}, s);
+    T(s, 70, mid + 12 * k, String(i + 1), {"font-size": 34 * k, "font-weight": 900, fill: "#3fd6ff"});
+    const nm = el("text", {x: 130, y: mid - 4 * k, "font-size": 32 * k, "font-weight": 800, fill: "#fff"}, s);
+    el("tspan", {}, nm, x.player + "  ");
+    el("tspan", {"font-size": 17 * k, fill: "#8e98b8", "letter-spacing": 2}, nm, `${x.pos || ""} · ${x.team || ""}`.toUpperCase());
+    // one dot per game in the streak
+    const dr = 7 * k, gap = 22 * k;
+    x.vals.forEach((v, j) => el("circle", {cx: 130 + dr + j * gap, cy: mid + 26 * k, r: dr, fill: "#27e89c", opacity: .9}, s));
+    T(s, 1010, mid + 4 * k, `${x.floor}+`, {"text-anchor": "end", "font-size": 46 * k, "font-weight": 900, fill: "#5cf2bb"});
+    T(s, 1010, mid + 34 * k, `${unit} · ${len}/${len}`, {"text-anchor": "end", "font-size": 18 * k, fill: "#8e98b8", "font-weight": 700, "letter-spacing": 1});
+  });
+  const cap = `Heaters 🔥 ${label.toLowerCase()}, ${len} straight games\n\n${top.map((x, i) =>
+    `${i + 1}. ${x.player} (${x.team}) — ${x.floor}+ ${unit} in each of his last ${len}`).join("\n")}\n\nWho keeps it going this week?\n\n21+ | Bet responsibly\n#nfl #playerprops #fantasyfootball`;
   return {slides: [s], head, sub, caption: cap};
 };
 
@@ -1195,8 +1216,10 @@ function optsHtml(day, R){
       }
     }
   } else if(day === "fri"){
-    h.push(chk("fri", "ex", true, "Show 3 example players from this week's board"),
-      `<div class="ig-field"><label for="igcta">Small line under the button</label><input id="igcta" type="text" data-w="cta" value="${esc(S.words.fri && S.words.fri.cta || "")}" placeholder="We reply to as many as we can"></div>`);
+    h.push(sel("fri", "stat", "receptions", "Metric", HEAT_STATS),
+      `<div class="ld-g2">${sel("fri", "len", 10, "Streak", [5, 6, 7, 8, 9, 10].map(n => [n, n + " straight games"]))}${
+        sel("fri", "n", 10, "Players", [5, 8, 10].map(n => [n, "Top " + n]))}</div>`,
+      `<p class="ld-hint" style="margin-top:6px">Each player's number is the most he's reached in every one of those games (yards rounded down to the nearest 5). Only players on this week's board.</p>`);
   } else if(day === "sunam"){
     h.push(`<div class="ld-g2">${sel("sunam", "grp", "mix", "Who", [["mix", "Everyone"], ["RB", "Running backs"], ["REC", "WR / TE"]])}${
       sel("sunam", "n", 3, "How many", [1, 2, 3, 4, 5].map(n => [n, "Top " + n]))}</div>`,
@@ -1388,7 +1411,7 @@ function betCard(legs){
   const dec = legs.reduce((a, l) => a * decOf(l.price), 1), odds = legs.length ? amerOfDec(dec) : 0;
   const rung = L ? L.rung : 1, stake = L ? L.bank : 0;
   let y = frame(s, H, `Rung ${rung}`, `Rung ${rung} bet`,
-    stake ? `$${Math.round(stake)} at ${odds > 0 ? "+" : ""}${odds} → $${Math.round(stake * dec).toLocaleString("en-US")}` : "");
+    stake ? `$${Math.round(stake).toLocaleString("en-US")} → $${Math.round(stake * dec).toLocaleString("en-US")}` : "");
   T(s, 70, y + 4, "LEG", {"font-size": 18, fill: "#8e98b8", "letter-spacing": 3, "font-weight": 800});
   T(s, 1010, y - 18, "MODEL PREDICTION HIT RATE", {"text-anchor": "end", "font-size": 18, fill: "#3fd6ff", "letter-spacing": 2, "font-weight": 800});
   T(s, 1010, y + 6, "HISTORICAL HIT RATE", {"text-anchor": "end", "font-size": 18, fill: "#8e98b8", "letter-spacing": 2, "font-weight": 800});
@@ -1423,7 +1446,7 @@ function betCard(legs){
   });
   if(legs.length){
     statTile(s, 70, H - 290, 940, (odds > 0 ? "+" : "") + odds, "#fff", "PAYS",
-      `${legs.length} leg${legs.length === 1 ? "" : "s"} · FanDuel prices`);
+      `${legs.length} leg${legs.length === 1 ? "" : "s"}`);
   }
   return s;
 }
