@@ -915,15 +915,14 @@ B.tue = () => {
   const H = 1350;
   if(show.cover){
     const s = canvas(H); const y = frame(s, H, weekLabel, words("head", head), words("sub", sub));
-    if(done.length){
-      statTile(s, 70, y + 10, 940, pct(w / done.length), tone(w / done.length), "PARLAYS HIT", `${w} of ${done.length}`);
-    }
+    // One column of equal tiles down the left edge.
+    let ty = y + 10;
+    const tile = (big, fill, label, small) => { statTile(s, 70, ty, 460, big, fill, label, small); ty += 210; };
+    if(done.length) tile(pct(w / done.length), tone(w / done.length), "PARLAYS HIT", `${w} of ${done.length}`);
     const td = tdPicks();
     const rb = tdStat(td.filter(t => t.grp === "RB")), rc = tdStat(td.filter(t => t.grp === "REC"));
-    if(rb.n || rc.n){
-      statTile(s, 70, y + 230, 460, rb.n ? pct(rb.h / rb.n) : "—", rb.n ? tone(rb.h / rb.n) : "#8e98b8", "ANYTIME TD · RBs", rb.n ? `${rb.h} of ${rb.n}` : "");
-      statTile(s, 550, y + 230, 460, rc.n ? pct(rc.h / rc.n) : "—", rc.n ? tone(rc.h / rc.n) : "#8e98b8", "ANYTIME TD · WR/TE", rc.n ? `${rc.h} of ${rc.n}` : "");
-    }
+    if(rb.n) tile(pct(rb.h / rb.n), tone(rb.h / rb.n), "ANYTIME TD · RBs", `${rb.h} of ${rb.n}`);
+    if(rc.n) tile(pct(rc.h / rc.n), tone(rc.h / rc.n), "ANYTIME TD · WR/TE", `${rc.h} of ${rc.n}`);
     T(s, 70, H - 150, "Swipe for the breakdown →", {"font-size": 28, fill: "#3fd6ff", "font-weight": 800});
     slides.push(s);
   }
