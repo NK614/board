@@ -157,6 +157,11 @@ body.shot #ladview > *:not(#ldshell){display:none}
 body.shot #ldshell{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);margin:0;border-radius:0;box-shadow:none;
   width:min(100vw,calc(100vh * .8))}
 .ld-row .pay{font:800 17px/1 var(--num);color:var(--ink);text-align:right;padding-right:4px}
+.sport-sw{display:flex;gap:4px;margin:14px 0 0;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.sport-sw button{flex:1;appearance:none;border:0;background:transparent;color:var(--mut);border-radius:9px;padding:9px 8px;font:700 14px/1 var(--ui);cursor:pointer}
+.sport-sw button small{font-weight:600;font-size:11px;opacity:.7;margin-left:4px}
+.sport-sw button[aria-pressed="true"]{background:var(--card2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.sport-sw button[data-sport="mlb"][aria-pressed="true"]{background:#f3f5fa;color:#0b1124}
 #igview{--cyan:#3fd6ff;--violet:#a855f7}
 #igview .ig-days{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
 #igview .ig-day{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--sec);border-radius:14px;
@@ -223,6 +228,7 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
 <span class="live">Live</span> marks a leg from a game already under way when the board was built.</p>
 </div>
 <div id="ladview" hidden>
+<div class="sport-sw" role="group" aria-label="Sport"><button data-sport="nfl" aria-pressed="true">NFL</button><button data-sport="mlb" aria-pressed="false">MLB <small>white</small></button></div>
 <div class="ld-shell" id="ldshell"><svg id="ldcard" viewBox="0 0 1080 1350" xmlns="http://www.w3.org/2000/svg" aria-label="Ladder challenge graphic"></svg></div>
 <div class="ld-panel">
   <h3>Bets · odds in, payout out</h3>
@@ -263,6 +269,7 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
 <div class="ld-toast" id="ldtoast">Take your screenshot · tap the title to exit</div>
 </div>
 <div id="igview" hidden>
+<div class="sport-sw" role="group" aria-label="Sport"><button data-sport="nfl" aria-pressed="true">NFL</button><button data-sport="mlb" aria-pressed="false">MLB <small>white</small></button></div>
 <div class="ig-days" id="igdays"></div>
 <div class="ld-panel" id="igopts"></div>
 <div class="ld-panel">
@@ -529,10 +536,13 @@ $("tab-ig").onclick = () => tab("instagram");
 // You set the start, the goal and each bet's odds; every rung's dollar amount
 // is the bankroll rolled over at those odds. Bets you haven't priced yet use
 // the planned odds, and the ladder ends at the first rung that reaches the goal.
-const KEY = "alp-ladder-v2";
+// NFL and MLB each keep their own ladder. MLB images get a white background
+// so followers can tell them from the football ones at a glance.
+let SPORT = "nfl";
+try { SPORT = localStorage.getItem("alp-sport") === "mlb" ? "mlb" : "nfl"; } catch(e) {}
+const keyOf = sp => sp === "mlb" ? "alp-ladder-mlb-v1" : "alp-ladder-v2";
 let S = null;
-try { S = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e) { S = null; }
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} };
+const save = () => { try { localStorage.setItem(keyOf(SPORT), JSON.stringify(S)); } catch(e) {} };
 const MAXR = 15;
 const money = v => "$" + Math.round(v).toLocaleString("en-US");
 const odd = o => (o > 0 ? "+" : "") + o;
@@ -540,16 +550,53 @@ const valid = o => Number.isFinite(o) && (o >= 100 || o <= -100);
 const dec = o => o > 0 ? 1 + o / 100 : 1 + 100 / -o;
 const parseOdds = v => { const t = String(v).trim(); if(!t) return null; const n = Math.round(+t);
   return valid(n) ? n : null; };
-if(!S){
-  // Carry over the first version's ladder (its labels held the odds).
+function loadState(){
+  S = null;
+  try { S = JSON.parse(localStorage.getItem(keyOf(SPORT)) || "null"); } catch(e) { S = null; }
+  if(S) return;
+  // Carry over the first version's ladder (its labels held the odds). Football only.
   let old = null;
-  try { old = JSON.parse(localStorage.getItem("alp-ladder-v1") || "null"); } catch(e) {}
+  if(SPORT === "nfl") try { old = JSON.parse(localStorage.getItem("alp-ladder-v1") || "null"); } catch(e) {}
   S = {start: 25, goal: 1000, plan: -150, label: "parlay", odds: [], st: [], tag: "Ladder #1", handle: "@altlineparlays", real: true};
   if(old && Array.isArray(old.rungs)){
     Object.assign(S, {start: old.start || 25, goal: old.goal || 1000, tag: old.tag || S.tag, handle: old.handle || S.handle, real: old.real !== false});
     S.st = old.rungs.map(r => r.st || "p");
   }
 }
+loadState();
+
+// The white look: every color on the dark design swapped for its light twin.
+const LIGHT = {
+  "#10204a": "#ffffff", "#070c1d": "#f7f9fd", "#04060d": "#edf1f8", "#9fb4ff": "#23305e",
+  "#fff": "#0b1124", "#ffffff": "#0b1124", "#e6ebff": "#1c2340", "#c9d1e6": "#3a4460", "#b7c0dc": "#475270",
+  "#aab3cf": "#56607f", "#8e98b8": "#5f6986", "#8e98b3": "#56607f", "#6f7898": "#7a839e", "#56607f": "#c3c9d8",
+  "#0b1124": "#ffffff", "rgba(11,17,36,.85)": "#f3f5fa", "rgba(11,17,36,.88)": "#f3f5fa",
+  "rgba(148,163,209,.13)": "rgba(20,30,60,.08)", "rgba(148,163,209,.14)": "rgba(20,30,60,.08)", "rgba(148,163,209,.15)": "rgba(20,30,60,.08)",
+  "rgba(63,214,255,.08)": "rgba(10,159,208,.08)", "rgba(63,214,255,.06)": "rgba(10,159,208,.06)", "rgba(255,107,107,.08)": "rgba(224,72,72,.07)",
+  "#3fd6ff": "#0a9fd0", "#a855f7": "#8b3fe0", "#27e89c": "#0f9f6a", "#5cf2bb": "#0c8f5f",
+  "#ff6b6b": "#e04848", "#ff8a8a": "#d63c3c", "#ff9d9d": "#c43535", "#ffc86b": "#c98a00",
+};
+function light(svg){
+  [svg, ...svg.querySelectorAll("*")].forEach(n => ["fill", "stroke", "stop-color"].forEach(a => {
+    const v = n.getAttribute(a); if(!v) return;
+    const k = v.replace(/\s+/g, "").toLowerCase();
+    if(LIGHT[k]) n.setAttribute(a, LIGHT[k]);
+  }));
+  return svg;
+}
+const onSport = [];
+function setSport(sp){
+  SPORT = sp === "mlb" ? "mlb" : "nfl";
+  try { localStorage.setItem("alp-sport", SPORT); } catch(e) {}
+  loadState(); form(); rows(); draw();
+  document.querySelectorAll(".sport-sw button").forEach(b => b.setAttribute("aria-pressed", b.dataset.sport === SPORT));
+  onSport.forEach(f => { try { f(SPORT); } catch(e) {} });
+}
+window.ALP = {sport: () => SPORT, light: svg => SPORT === "mlb" ? light(svg) : svg, onSport, setSport};
+document.addEventListener("click", e => {
+  const b = e.target.closest(".sport-sw button[data-sport]");
+  if(b && b.dataset.sport !== SPORT) setSport(b.dataset.sport);
+});
 function compute(){
   S.start = Math.max(1, +S.start || 25);
   S.goal = Math.max(S.start + 1, +S.goal || 1000);
@@ -680,6 +727,7 @@ function draw(){
     save(); draw(); rows();
   });
   $("ldtitle").onclick = () => document.body.classList.remove("shot");
+  if(SPORT === "mlb") light(svg);
 }
 
 function rows(){
@@ -733,6 +781,7 @@ $("ldshoot").onclick = () => {
 };
 
 form(); rows();
+document.querySelectorAll(".sport-sw button").forEach(b => b.setAttribute("aria-pressed", b.dataset.sport === SPORT));
 tab(location.hash === "#ladder" ? "ladder" : location.hash === "#instagram" ? "instagram" : "record");
 })();
 </script><script>
@@ -745,10 +794,13 @@ const W = 1080;
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const pct = x => Math.round(100 * x) + "%";
 const odds = a => (a > 0 ? "+" : "") + a;
-const nick = team => String(team || "").trim().split(" ").pop();
+const nick = team => { const w = String(team || "").trim().split(" ");       // "White Sox", "Blue Jays"
+  return w.length > 1 && /^(Sox|Jays)$/.test(w[w.length - 1]) ? w.slice(-2).join(" ") : w.pop(); };
 const shortGame = g => String(g || "").split(" @ ").map(nick).join(" @ ");
 const STAT = {receptions: ["catch", "catches"], receiving_yards: ["rec yd", "rec yds"], rushing_yards: ["rush yd", "rush yds"],
-              passing_yards: ["pass yd", "pass yds"], tds: ["TD", "TDs"]};
+              passing_yards: ["pass yd", "pass yds"], tds: ["TD", "TDs"],
+              hits: ["hit", "hits"], total_bases: ["total base", "total bases"], home_runs: ["HR", "HRs"],
+              hrr: ["H+R+RBI", "H+R+RBI"], pitcher_strikeouts: ["K", "Ks"]};
 const prop = l => { const n = Math.floor(l.threshold) + 1, s = STAT[l.stat] || [l.stat, l.stat]; return `${n}+ ${n === 1 ? s[0] : s[1]}`; };
 
 // ---------- saved choices ----------
@@ -758,8 +810,13 @@ try { S = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch(e) { S = 
 S.words = S.words || {}; S.opts = S.opts || {}; S.marks = S.marks || {};
 if(S.handle == null) S.handle = "@altlineparlays";
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} };
-const opt = (day, k, dflt) => (S.opts[day] && S.opts[day][k] != null) ? S.opts[day][k] : dflt;
-const setOpt = (day, k, v) => { (S.opts[day] = S.opts[day] || {})[k] = v; save(); };
+// NFL or MLB, set by the switch at the top of the Ladder and Instagram tabs.
+const SPORT = () => (window.ALP && window.ALP.sport()) || "nfl";
+const MLB = () => SPORT() === "mlb";
+const wk = day => (MLB() ? "mlb:" : "") + day;            // each sport keeps its own choices
+const opt = (day, k, dflt) => (S.opts[wk(day)] && S.opts[wk(day)][k] != null) ? S.opts[wk(day)][k] : dflt;
+const setOpt = (day, k, v) => { (S.opts[wk(day)] = S.opts[wk(day)] || {})[k] = v; save(); };
+const LIGHT = svg => window.ALP ? window.ALP.light(svg) : svg;
 
 // ---------- data: the grades on this page, and the live board's feed ----------
 const D = typeof DATA === "object" ? DATA : {parlays: [], td: []};
@@ -769,13 +826,18 @@ const weekLabel = (() => {
   const me = (D.nav || []).find(n => n.suffix === D.me);
   return me ? me.label.split(" · ")[0] : "This week";
 })();
-let FEED = null, FEED_ERR = "";
+let FEED = null, FEED_ALL = null, FEED_ERR = "", FEED_ERR0 = "";
+function pickFeed(){
+  FEED = MLB() ? ((FEED_ALL || {}).mlb || null) : FEED_ALL;
+  FEED_ERR = MLB() && FEED_ALL && !FEED ? "No MLB board data yet — it appears after the next MLB Build." : FEED_ERR0;
+}
 function loadFeed(){
   const file = decodeURIComponent(location.pathname.split("/").pop() || "");
-  const base = file.replace(/\.html$/, "").replace(/-(\d{4}-[wc]\d{2}|season|other)$/, "");
-  if(!/^https?:$/.test(location.protocol) || !base){ FEED_ERR = "The board's data loads when this page is opened from its web address."; return Promise.resolve(); }
+  const base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|season|other)$/, "");
+  if(!/^https?:$/.test(location.protocol) || !base){ FEED_ERR0 = "The board's data loads when this page is opened from its web address."; pickFeed(); return Promise.resolve(); }
   return fetch(`${base}-live.json`, {cache: "no-store"}).then(r => r.ok ? r.json() : Promise.reject(r.status))
-    .then(j => { FEED = j; }).catch(() => { FEED_ERR = "No board data yet — it appears after the next Build (scheduled or manual)."; });
+    .then(j => { FEED_ALL = j; }).catch(() => { FEED_ERR0 = "No board data yet — it appears after the next Build (scheduled or manual)."; })
+    .then(pickFeed);
 }
 const WIN_ORDER = ["TNF", "Sun morning", "Sun 1 PM", "Sun 4 PM", "SNF", "MNF", "All games"];
 const WINS = [...new Set(PS.map(p => p.win))].sort((a, b) =>
@@ -902,7 +964,7 @@ function legRows(s, y0, y1, rows, numbered){
 }
 
 // ---------- the six posts ----------
-const DAYS = [
+const DAYS_NFL = [
   {k: "tue", name: "Tue", what: "Weekly results"},
   {k: "wed", name: "Wed", what: "Why it lost"},
   {k: "thu", name: "Thu", what: "TNF parlay"},
@@ -910,23 +972,46 @@ const DAYS = [
   {k: "sunam", name: "Sun AM", what: "ATD top 3"},
   {k: "sunpm", name: "Sun night", what: "Scoring update"},
 ];
+const DAYS_MLB = [
+  {k: "thu", name: "Parlay", what: "Today's games"},
+  {k: "fri", name: "Heaters", what: "Streaks"},
+  {k: "tue", name: "Results", what: "Graded picks"},
+  {k: "wed", name: "Near miss", what: "Why it lost"},
+];
+let DAYS = DAYS_NFL;
+// The grades on this page belong to one sport: the MLB playoffs page, or a football one.
+const PAGE_SPORT = /mlb$/.test(D.me || "") ? "mlb" : "nfl";
+function pageMismatch(){
+  if(SPORT() === PAGE_SPORT) return "";
+  return MLB() ? "MLB results live on the MLB playoffs page — pick it from the week menu in the Track record tab."
+               : "This is the MLB playoffs page — pick a football week in the Track record tab, or switch to MLB above.";
+}
 function defaultDay(){
   const et = new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"}));
   const wd = et.getDay(), h = et.getHours();
   return wd === 0 ? (h >= 16 ? "sunpm" : "sunam") : wd === 1 || wd === 2 ? "tue" : wd === 3 ? "wed" : wd === 4 ? "thu" : "fri";
 }
-let DAY = S.day && DAYS.some(d => d.k === S.day) ? S.day : defaultDay();
+let DAY = "tue";
+function applySport(){
+  DAYS = MLB() ? DAYS_MLB : DAYS_NFL;
+  const saved = MLB() ? S.dayMlb : S.day;
+  DAY = saved && DAYS.some(d => d.k === saved) ? saved : MLB() ? "thu" : defaultDay();
+  pickFeed();
+}
+applySport();
 
 // ---------- captions: a rotating hook on top, the facts, a call to action ----------
 // "New hook" steps through each day's list; hooks never promise a win.
 S.hooks = S.hooks || {};
-const pickOf = (arr, bump) => arr[((S.hooks[DAY] || 0) + (bump || 0)) % arr.length];
+const pickOf = (arr, bump) => arr[((S.hooks[wk(DAY)] || 0) + (bump || 0)) % arr.length];
+// Hashtags by sport.
+const TAGS = (nfl, mlb) => MLB() ? mlb : nfl;
 const handleTag = () => { const h = (S.handle || "").trim(); return h ? (h[0] === "@" ? h : "@" + h) : ""; };
 const CTAS = [
   () => `🔔 Follow ${handleTag() || "us"} so you never miss a post`,
   () => `🔗 Full board + parlay builder → link in bio`,
   () => `📌 Save this for game day`,
-  () => `🔔 Turn on post notifications. ${handleTag()} drops picks every week`,
+  () => `🔔 Turn on post notifications. ${handleTag()} drops picks every ${MLB() ? "day" : "week"}`,
 ];
 const cta = () => pickOf(CTAS, 1)().replace(/\s+$/, "");
 const FOOT = "21+ | Bet responsibly";
@@ -937,10 +1022,11 @@ const PRIME = /^(TNF|SNF|MNF)$/;
 const B = {};
 
 B.tue = () => {
+  if(pageMismatch()) return {slides: [], head: "", sub: "", caption: "", note: pageMismatch()};
   const done = settledAll(PSW()), w = done.filter(p => p.status === "won").length;
   const exp = done.reduce((a, p) => a + p.prob, 0);
   const show = {cover: opt("tue", "cover", true), odds: opt("tue", "odds", true), atd: opt("tue", "atd", true), close: opt("tue", "close", true)};
-  const head = `${weekLabel} receipts`, sub = winNote() ? `${winNote()} parlays · every pick graded.` : "Every pick graded. Wins and losses.";
+  const head = MLB() ? "MLB receipts" : `${weekLabel} receipts`, sub = winNote() ? `${winNote()} parlays · every pick graded.` : "Every pick graded. Wins and losses.";
   const slides = [];
   const H = 1350;
   if(show.cover){
@@ -1030,12 +1116,13 @@ B.tue = () => {
     if(rb.n) lines.push(`🏈 ATD RBs: ${rb.h} of ${rb.n} scored`);
     if(rc.n) lines.push(`🏈 ATD WR/TE: ${rc.h} of ${rc.n} scored`);
     cap = caption(hook, lines.join("\n") + `\n\nNo deleted posts. No hiding the losses. Just results 📊\nSwipe for the full breakdown →`,
-      "#nfl #nflparlays #playerprops #sportsbetting #anytimetd #parlay");
+      TAGS("#nfl #nflparlays #playerprops #sportsbetting #anytimetd #parlay", "#MLB #MLBPlayoffs #mlbparlays #playerprops #sportsbetting #parlay"));
   }
   return {slides, head, sub, caption: cap, note: slides.length ? "" : "Nothing graded on this page yet — open a week in the Track record tab."};
 };
 
 B.wed = () => {
+  if(pageMismatch()) return {slides: [], head: "", sub: "", caption: "", note: pageMismatch()};
   const lost = settledAll(PSW()).filter(p => p.status === "lost" && (p.legs || []).length);
   if(!lost.length) return {slides: [], head: "", sub: "", caption: "",
     note: D.season ? "Open a week page first (menu in the Track record tab) — this one has no legs to show." : "No lost parlays with every leg settled on this page."};
@@ -1074,7 +1161,7 @@ B.wed = () => {
       `Taking the L out loud 📉 Here's what happened`,
     ]);
   const cap = caption(hook, `${take}\n\nWe post the losses too. That's how you know the wins are real 💯\nOn to the next one 💪`,
-    "#nfl #nflparlays #playerprops #sportsbetting #parlay");
+    TAGS("#nfl #nflparlays #playerprops #sportsbetting #parlay", "#MLB #MLBPlayoffs #mlbparlays #playerprops #sportsbetting #parlay"));
   return {slides: [s], head, sub, caption: cap, take};
 };
 
@@ -1096,7 +1183,8 @@ B.thu = () => {
     const pl = w.parlays.find(x => x.legs_n === n && x.target === t) || w.parlays[0];
     legs = pl ? pl.legs : []; pOdds = pl ? pl.odds : 0; prob = pl ? pl.prob : 0;
   }
-  const head = `${w.name} parlay`, sub = `${shortGame(w.games[0])}${w.games.length > 1 ? ` + ${w.games.length - 1} more` : ""} · built by our model`;
+  const head = MLB() ? "MLB parlay" : `${w.name} parlay`;
+  const sub = `${MLB() ? w.name + " · " : ""}${shortGame(w.games[0])}${w.games.length > 1 ? ` + ${w.games.length - 1} more` : ""} · built by our model`;
   const H = 1350, s = canvas(H);
   let y = frame(s, H, w.name, words("head", head), words("sub", sub));
   if(!legs.length){ T(s, 70, y + 60, "Pick some legs in the options.", {"font-size": 32, fill: "#8e98b8"}); }
@@ -1104,7 +1192,12 @@ B.thu = () => {
   if(legs.length){
     statTile(s, 70, H - 330, 940, odds(pOdds), "#fff", "PAYS", `${legs.length} legs`);
   }
-  const hook = pickOf(PRIME.test(w.name) ? [
+  const hook = pickOf(MLB() ? [
+      `⚾ TODAY'S MLB PARLAY IS LIVE ⚾`,
+      `October baseball needs a parlay ⚾🔥`,
+      `Built by the model, leg by leg. Let's play ball ⚾👇`,
+      `Playoff baseball + a parlay. Let's GO 🔥⚾`,
+    ] : PRIME.test(w.name) ? [
       `🚨 ${w.name} PARLAY IS LIVE 🚨`,
       `Primetime needs a parlay 🏈🔥`,
       `Lights on. ${w.name} is HERE and so is our parlay 💡🏈`,
@@ -1116,14 +1209,18 @@ B.thu = () => {
     ]);
   const cap = caption(hook,
     `${legs.map(l => `🎯 ${l.player} ${prop(l)} (${odds(l.price)})`).join("\n")}\n\n💰 Pays ${odds(pOdds)}\n\nTail it, fade it, or just sweat it with us 😤 Result goes up either way 📊`,
-    `#${w.name.replace(/[^A-Za-z0-9]/g, "")} #nfl #nflparlays #playerprops #sportsbetting #parlay`);
+    TAGS(`#${w.name.replace(/[^A-Za-z0-9]/g, "")} #nfl #nflparlays #playerprops #sportsbetting #parlay`,
+         "#MLB #MLBPlayoffs #mlbparlays #playerprops #sportsbetting #parlay"));
   return {slides: [s], head, sub, caption: cap};
 };
 
 // HEATERS: the players on this week's board with the longest-running floor
 // in one stat -- "6+ catches in 10 straight games". No odds on purpose.
-const HEAT_STATS = [["receptions", "Catches"], ["receiving_yards", "Receiving yards"],
+const HEAT_MLB = [["hits", "Hits"], ["total_bases", "Total bases"], ["hrr", "Hits + runs + RBIs"],
+                  ["pitcher_strikeouts", "Pitcher strikeouts"]];
+const HEAT_NFL = [["receptions", "Catches"], ["receiving_yards", "Receiving yards"],
                     ["rushing_yards", "Rushing yards"], ["passing_yards", "Passing yards"]];
+const HEAT = () => MLB() ? HEAT_MLB : HEAT_NFL;
 function heaters(stat, len){
   const list = ((FEED || {}).streaks || {})[stat] || [];
   const yards = /yards/.test(stat);
@@ -1136,8 +1233,8 @@ function heaters(stat, len){
 B.fri = () => {
   if(!FEED || !FEED.streaks) return {slides: [], head: "", sub: "", caption: "",
     note: FEED_ERR || "No streak data yet — it appears after the next Build."};
-  const stat = opt("fri", "stat", "receptions"), len = +opt("fri", "len", 10), n = +opt("fri", "n", 10);
-  const label = (HEAT_STATS.find(x => x[0] === stat) || [stat, stat])[1];
+  const stat = opt("fri", "stat", HEAT()[0][0]), len = +opt("fri", "len", MLB() ? 7 : 10), n = +opt("fri", "n", 10);
+  const label = (HEAT().find(x => x[0] === stat) || [stat, stat])[1];
   const unit = (STAT[stat] || [stat, stat])[1];
   const top = heaters(stat, len).slice(0, n);
   const head = "Heaters", sub = `${label} · ${len} straight games`;
@@ -1169,7 +1266,7 @@ B.fri = () => {
     ]);
   const cap = caption(hook, `${top.map((x, i) =>
     `${i + 1}. ${x.player} (${x.team}): ${x.floor}+ ${unit} in each of his last ${len} 🔥`).join("\n")}\n\nWho keeps it rolling this week? 👀`,
-    "#nfl #playerprops #fantasyfootball #nflbetting #sportsbetting");
+    TAGS("#nfl #playerprops #fantasyfootball #nflbetting #sportsbetting", "#MLB #MLBPlayoffs #playerprops #mlbbetting #sportsbetting"));
   return {slides: [s], head, sub, caption: cap};
 };
 
@@ -1276,12 +1373,12 @@ function optsHtml(day, R){
   if(day === "tue"){
     h.push(`<p class="ld-hint" style="margin-top:0">A carousel from the grades on this page (${esc(weekLabel)}). Pick another week in the Track record tab to post that one.</p>`,
       chk("tue", "cover", true, "Slide 1 · headline numbers"), chk("tue", "odds", true, "Slide 2 · hit rate by odds"),
-      chk("tue", "atd", true, "Slide 3 · anytime TD list"), chk("tue", "close", true, "Slide 4 · where we missed"));
+      ...(MLB() ? [] : [chk("tue", "atd", true, "Slide 3 · anytime TD list")]), chk("tue", "close", true, "Slide 4 · where we missed"));
   } else if(day === "wed"){
     const lost = OPTS_EXTRA.wed || [];
     if(lost.length) h.push(sel("wed", "pick", 0, "Which losing parlay", lost.slice(0, 40).map((p, i) => [i,
       `${p.legs_n} legs · ${odds(p.target)} · ${p.win} · missed ${(p.miss || []).map(m => m[0]).join(", ")}`])));
-    h.push(`<div class="ig-field"><label for="igtake">Takeaway (bottom line)</label><input id="igtake" type="text" data-w="take" value="${esc(S.words.wed && S.words.wed.take || "")}" placeholder="${esc(R.take || "")}"></div>`);
+    h.push(`<div class="ig-field"><label for="igtake">Takeaway (bottom line)</label><input id="igtake" type="text" data-w="take" value="${esc(S.words[wk("wed")] && S.words[wk("wed")].take || "")}" placeholder="${esc(R.take || "")}"></div>`);
   } else if(day === "thu"){
     if(FEED && (FEED.windows || []).length){
       const wins = FEED.windows;
@@ -1299,8 +1396,8 @@ function optsHtml(day, R){
       }
     }
   } else if(day === "fri"){
-    h.push(sel("fri", "stat", "receptions", "Metric", HEAT_STATS),
-      `<div class="ld-g2">${sel("fri", "len", 10, "Streak", [5, 6, 7, 8, 9, 10].map(n => [n, n + " straight games"]))}${
+    h.push(sel("fri", "stat", HEAT()[0][0], "Metric", HEAT()),
+      `<div class="ld-g2">${sel("fri", "len", MLB() ? 7 : 10, "Streak", [5, 6, 7, 8, 9, 10].map(n => [n, n + " straight games"]))}${
         sel("fri", "n", 10, "Players", [5, 8, 10].map(n => [n, "Top " + n]))}</div>`,
       `<p class="ld-hint" style="margin-top:6px">Each player's number is the most he's reached in every one of those games (yards rounded down to the nearest 5). Only players on this week's board.</p>`);
   } else if(day === "sunam"){
@@ -1323,7 +1420,7 @@ function optsHtml(day, R){
   if(R.note) h.push(`<p class="ig-note">${esc(R.note)}</p>`);
   return h.join("");
 }
-function words(k, dflt){ const w = S.words[DAY] || {}; return (w[k] || "").trim() || dflt; }
+function words(k, dflt){ const w = S.words[wk(DAY)] || {}; return (w[k] || "").trim() || dflt; }
 
 // ---------- build, show, save ----------
 let CUR = null, FILES = [];
@@ -1333,10 +1430,11 @@ function render(regenCaption){
   $("igopts").innerHTML = optsHtml(DAY, R);
   $("ighead").placeholder = R.head || ""; $("igsub").placeholder = R.sub || "";
   const keep = document.activeElement;
-  if(keep !== $("ighead")) $("ighead").value = (S.words[DAY] || {}).head || "";
-  if(keep !== $("igsub")) $("igsub").value = (S.words[DAY] || {}).sub || "";
+  if(keep !== $("ighead")) $("ighead").value = (S.words[wk(DAY)] || {}).head || "";
+  if(keep !== $("igsub")) $("igsub").value = (S.words[wk(DAY)] || {}).sub || "";
   if(keep !== $("ighandle")) $("ighandle").value = S.handle || "";
   const box = $("igslides"); box.innerHTML = "";
+  R.slides.forEach(LIGHT);
   R.slides.forEach((svg, i) => { const d = document.createElement("div"); d.className = "ig-slide"; d.dataset.i = i; d.appendChild(svg); box.appendChild(d); });
   if(regenCaption || !$("igcap").value) $("igcap").value = R.caption || "";
   $("igsave").textContent = R.slides.length > 1 ? `Save ${R.slides.length} images` : "Save image";
@@ -1402,13 +1500,13 @@ $("igcopy").onclick = () => {
     () => { $("igcap").select(); document.execCommand && document.execCommand("copy"); toast("Caption copied"); });
 };
 $("igbuild").onclick = () => { render(true); toast("Post built"); };
-$("ighook").onclick = () => { S.hooks[DAY] = (S.hooks[DAY] || 0) + 1; save(); render(true); };
-$("igreset").onclick = () => { S.words[DAY] = {}; save(); render(true); };
+$("ighook").onclick = () => { S.hooks[wk(DAY)] = (S.hooks[wk(DAY)] || 0) + 1; save(); render(true); };
+$("igreset").onclick = () => { S.words[wk(DAY)] = {}; save(); render(true); };
 $("igdays").addEventListener("click", e => {
   const b = e.target.closest(".ig-day"); if(!b) return;
-  DAY = b.dataset.day; S.day = DAY; save(); $("igcap").value = ""; render(true);
+  DAY = b.dataset.day; if(MLB()) S.dayMlb = DAY; else S.day = DAY; save(); $("igcap").value = ""; render(true);
 });
-const setWord = (k, v) => { (S.words[DAY] = S.words[DAY] || {})[k] = v; save(); };
+const setWord = (k, v) => { (S.words[wk(DAY)] = S.words[wk(DAY)] || {})[k] = v; save(); };
 $("ighead").addEventListener("input", e => { setWord("head", e.target.value); render(false); });
 $("igsub").addEventListener("input", e => { setWord("sub", e.target.value); render(false); });
 $("ighandle").addEventListener("input", e => { S.handle = e.target.value; save(); render(false); });
@@ -1463,7 +1561,7 @@ const amerOfDec = d => Math.round(d >= 2 ? (d - 1) * 100 : -100 / (d - 1));
 function ladderNow(){
   // The ladder tab's own saved state: the bankroll going into the next bet.
   let L = null;
-  try { L = JSON.parse(localStorage.getItem("alp-ladder-v2") || "null"); } catch(e) {}
+  try { L = JSON.parse(localStorage.getItem(MLB() ? "alp-ladder-mlb-v1" : "alp-ladder-v2") || "null"); } catch(e) {}
   if(!L) return null;
   const ok = o => Number.isFinite(o) && (o >= 100 || o <= -100);
   let amt = +L.start || 25, hits = 0;
@@ -1534,7 +1632,7 @@ let BET_NOW = null;
 // Ladder captions: hook by where the ladder is (first rung, climbing, last rung).
 function betCaption(){
   const b = BET_NOW; if(!b || !b.legs.length) return "";
-  const n = (S.hooks.bet || 0), pick = (arr, bump) => arr[(n + (bump || 0)) % arr.length];
+  const n = (S.hooks[wk("bet")] || 0), pick = (arr, bump) => arr[(n + (bump || 0)) % arr.length];
   const money = v => "$" + Math.round(v).toLocaleString("en-US");
   const G = money(b.goal), last = b.ret >= b.goal - 0.005;
   const hook = b.rung <= 1 ? pick([
@@ -1561,7 +1659,7 @@ function betCaption(){
   return [hook,
     `Rung ${b.rung} bet: ${b.sTxt} → ${b.rTxt}\n\n${legLines}\n\n💰 Pays ${odds(b.pays)}`,
     `Goal: ${money(b.start)} → ${G}. Every rung posted, win or lose 📊`,
-    pick(ctas, 1), `21+ | Bet responsibly\n#ladderchallenge #nflparlays #playerprops #sportsbetting #parlay #nfl`].join("\n\n");
+    pick(ctas, 1), `21+ | Bet responsibly\n#ladderchallenge ${TAGS("#nflparlays #playerprops #sportsbetting #parlay #nfl", "#mlbparlays #MLBPlayoffs #playerprops #sportsbetting #parlay #MLB")}`].join("\n\n");
 }
 function betCard(legs){
   const H = 1350, s = canvas(H), L = ladderNow();
@@ -1616,7 +1714,7 @@ function renderBet(){
   $("betopts").innerHTML = betOptsHtml(legs);
   const box = $("betslide"); box.innerHTML = ""; BET_FILE = null;
   if(!legs) return;
-  const svg = betCard(legs), d = document.createElement("div");
+  const svg = LIGHT(betCard(legs)), d = document.createElement("div");
   if($("betcap")) $("betcap").value = betCaption();
   d.className = "ig-slide"; d.appendChild(svg); box.appendChild(d);
   toPng(svg).then(async blob => {
@@ -1641,7 +1739,7 @@ if($("betopts")){
     }
     renderBet();
   });
-  $("bethook").onclick = () => { S.hooks.bet = (S.hooks.bet || 0) + 1; save(); $("betcap").value = betCaption(); };
+  $("bethook").onclick = () => { S.hooks[wk("bet")] = (S.hooks[wk("bet")] || 0) + 1; save(); $("betcap").value = betCaption(); };
   $("betcopy").onclick = () => {
     const t = $("betcap").value;
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Caption copied"),
@@ -1667,6 +1765,7 @@ if($("betopts")){
 window.BET_SHOW = renderBet;
 
 window.IG_SHOW = () => { render(false); };
+if(window.ALP) window.ALP.onSport.push(() => { applySport(); $("igcap").value = ""; render(true); renderBet(); });
 loadFeed().then(() => { if(!$("igview").hidden) render(true); renderBet(); });
 render(true);
 })();
