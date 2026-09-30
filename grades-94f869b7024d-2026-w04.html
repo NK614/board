@@ -1,0 +1,1346 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow"><meta name="theme-color" content="#05070d">
+<title>Track record</title>
+<style>
+:root{--bg:#05070d;--card:#0c111c;--card2:#121a29;--line:rgba(148,163,209,.16);--ink:#eef2ff;--sec:#b3bcd8;--mut:#8e98b6;
+  --acc:#2de2ff;--good:#27e89c;--goodt:#5cf2bb;--bad:#ff6b6b;--badt:#ff8a8a;--warn:#ffc86b;
+  --ui:-apple-system,"SF Pro Text",system-ui,sans-serif;--num:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 var(--ui)}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px calc(40px + env(safe-area-inset-bottom))}
+.eyebrow{font:700 11px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
+h1{margin:6px 0 4px;font-size:26px;letter-spacing:-.02em}
+.sub{color:var(--mut);font-size:12.5px;line-height:1.5}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 6px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.kpi b{display:block;font:700 26px/1 var(--num);letter-spacing:-.02em}
+.kpi span{display:block;margin-top:6px;font-size:12px;color:var(--mut);line-height:1.35}
+.kpi.wide{grid-column:1/-1}
+.kpi em{font-style:normal;font-weight:650}
+.kpi.note{padding:12px 14px}
+.kpi.note p{margin:0;font-size:12.5px;line-height:1.5;color:var(--sec)}
+.kpi.note strong{color:var(--ink)}
+.kpi.note .flag{display:inline-block;margin:0 4px 0 0;color:var(--warn);font-size:10px;line-height:1.5}
+h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;margin:0 -16px;padding-left:16px;padding-right:16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;appearance:none;border:1px solid var(--line);background:var(--card);color:var(--sec);
+  border-radius:999px;padding:8px 14px;font:600 13.5px/1 var(--ui);white-space:nowrap;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#05070d}
+.rows{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.row{display:grid;grid-template-columns:62px 1fr 74px;align-items:center;gap:12px;padding:13px 14px;border-top:1px solid var(--line);cursor:pointer}
+.row:first-child{border-top:0}
+.row .t{font:700 15px/1 var(--num)}
+.bar{height:8px;border-radius:99px;background:rgba(148,163,209,.14);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px}
+.row .r{text-align:right;font:700 16px/1 var(--num)}
+.row .r small{display:block;margin-top:4px;font:500 11.5px/1 var(--ui);color:var(--mut)}
+.hi{color:var(--goodt)}.mid{color:var(--warn)}.lo{color:var(--badt)}.none{color:var(--mut)}
+.fill-hi{background:var(--good)}.fill-mid{background:var(--warn)}.fill-lo{background:var(--bad)}
+.split{grid-column:1/-1;display:none;flex-wrap:wrap;gap:6px;margin-top:4px}
+.row.open .split{display:flex}
+.split span{font-size:12px;color:var(--sec);background:var(--card2);border-radius:8px;padding:5px 8px}
+.split span b{font-family:var(--num)}
+.picks{display:flex;flex-direction:column;gap:10px}
+.pick{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 14px;cursor:pointer}
+.pick .top{display:flex;align-items:center;gap:10px}
+.pick .what{flex:1;min-width:0}
+.pick .what b{font-size:15px}
+.pick .what small{display:block;margin-top:2px;color:var(--mut);font-size:12px}
+.pill{flex:none;border-radius:999px;padding:5px 10px;font:700 12px/1 var(--ui)}
+.pill.won{background:rgba(39,232,156,.14);color:var(--goodt)}
+.pill.lost{background:rgba(255,107,107,.14);color:var(--badt)}
+.pill.pending,.pill.void{background:rgba(148,163,209,.14);color:var(--sec)}
+.meta{margin-top:3px;color:var(--mut);font-size:12px}
+.dots{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:9px;font-size:12.5px;color:var(--sec)}
+.dots span{white-space:nowrap}
+.mk{display:inline-block;width:14px;text-align:center;font-weight:800}
+.mk.inj,.res.inj,.rs.inj{color:var(--warn)}
+.flag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:5px;background:rgba(255,200,107,.14);
+  color:var(--warn);font:700 10px/1.5 var(--ui);letter-spacing:.04em;text-transform:uppercase;vertical-align:1px}
+.mk.hit,.res.hit,.rs.hit{color:var(--goodt)}.mk.miss,.res.miss,.rs.miss{color:var(--badt)}.mk.pend,.res.pend,.rs.pend{color:var(--mut)}
+.res small{color:var(--ink)}
+.hint{margin:-4px 0 10px;color:var(--mut);font-size:12.5px}
+.legs{display:none;margin-top:10px;border-top:1px solid var(--line)}
+.pick.open .legs{display:block}.pick.open .dots{display:none}
+.leg{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.leg:first-child{border-top:0}
+.leg .l{flex:1;min-width:0}
+.leg .who{font-weight:650;font-size:14px}
+.leg .who em{font-style:normal;font-weight:600;font-size:11.5px;color:var(--mut);margin-left:4px}
+.leg .prop{font-size:13px;color:var(--sec);margin-top:2px}
+.leg .game{font-size:11.5px;color:var(--mut);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leg .res{flex:none;text-align:right;font:800 11.5px/1.2 var(--ui);letter-spacing:.06em;text-transform:uppercase}
+.leg .res small{display:block;margin-top:3px;font:700 15px/1 var(--num);letter-spacing:0;text-transform:none}
+.live{display:inline-block;margin-left:6px;padding:1px 5px;border-radius:5px;border:1px solid rgba(255,200,107,.45);
+  color:var(--warn);font:700 9.5px/1.4 var(--ui);letter-spacing:.06em;text-transform:uppercase;vertical-align:1px}
+.more{display:block;width:100%;margin-top:4px;appearance:none;border:1px solid var(--line);background:transparent;color:var(--acc);
+  border-radius:12px;padding:12px;font:600 14px var(--ui);cursor:pointer}
+.empty{color:var(--mut);font-size:14px;padding:14px;text-align:center}
+.tdgrid{display:flex;flex-direction:column;gap:10px}
+.tdcard{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.tdhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:13px 14px 10px}
+.tdhead b{font-size:15px}
+.tdhead span{font:700 15px/1 var(--num)}
+.tdhead small{display:block;margin-top:3px;font:500 12px/1.3 var(--ui);color:var(--mut)}
+.tdrow{display:grid;grid-template-columns:22px minmax(0,1fr) 44px 64px;gap:8px;align-items:center;padding:9px 14px;border-top:1px solid var(--line);font-size:13.5px}
+.tdrow .rk{font:700 12px/1 var(--num);color:var(--mut)}
+.tdrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tdrow .nm em{font-style:normal;color:var(--mut);font-size:11.5px;margin-left:5px}
+.tdrow .pp{font:600 12.5px/1 var(--num);color:var(--sec);text-align:right}
+.tdrow .rs{font:800 11px/1 var(--ui);letter-spacing:.06em;text-transform:uppercase;text-align:right}
+.wkwrap{position:relative;margin:12px 0 8px}
+.wkwrap::after{content:"";position:absolute;right:16px;top:50%;width:8px;height:8px;margin-top:-6px;
+  border:solid var(--acc);border-width:0 2px 2px 0;transform:rotate(45deg);pointer-events:none}
+.wksel{appearance:none;-webkit-appearance:none;width:100%;padding:13px 40px 13px 15px;border-radius:14px;
+  background:var(--card);border:1px solid var(--line);color:var(--ink);font:650 15px/1.2 var(--ui);cursor:pointer}
+.wksel:focus{outline:2px solid var(--acc);outline-offset:1px}
+.wkrow{display:grid;grid-template-columns:minmax(0,1fr) 104px 104px;gap:8px;align-items:center;padding:11px 14px;border-top:1px solid var(--line);font-size:13.5px}
+.wkrow:first-child{border-top:0}
+.wkrow.h{font:700 11px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.wkrow b{font:700 14px/1 var(--num);text-align:right}
+.wkrow .h2{text-align:right}
+.wkrow b small{display:block;margin-top:4px;font:500 11px/1 var(--ui);color:var(--mut);white-space:nowrap}
+.hint b{color:var(--sec)}
+.kpis.three{grid-template-columns:repeat(3,1fr);margin-top:0}
+.kpis.three .kpi b{font-size:22px}
+.lrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)}
+.lrow:first-child{border-top:0}
+.lrow .nm{font-weight:650;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .pr{margin-top:3px;font-size:12.5px;color:var(--sec)}
+.lrow .ct{text-align:right;font:700 15px/1.1 var(--num)}
+.lrow .ct small{display:block;margin-top:4px;font:500 11.5px/1.2 var(--ui);color:var(--mut)}
+.close{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:5px;background:rgba(255,200,107,.14);
+  color:var(--warn);font:700 10px/1.5 var(--ui);letter-spacing:.04em;text-transform:uppercase;vertical-align:1px}
+.foot{margin-top:24px;color:var(--mut);font-size:12px;line-height:1.55}
+.tabs{display:flex;gap:4px;margin:14px 0 4px;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.tabs button{flex:1;appearance:none;border:0;background:transparent;color:var(--mut);border-radius:10px;padding:10px 8px;
+  font:650 14px/1 var(--ui);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--card2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+#ladview{--cyan:#3fd6ff;--violet:#a855f7}
+.ld-shell{margin-top:14px;border-radius:18px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#ldcard{display:block;width:100%;height:auto;-webkit-user-select:none;user-select:none}
+#ldcard text{font-family:-apple-system,"SF Pro Display",system-ui,Helvetica,Arial,sans-serif}
+#ldcard .rung{cursor:pointer}
+.ld-panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:14px}
+.ld-panel h3{margin:0 0 10px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.ld-g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.ld-g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ld-panel label{display:block;font-size:11.5px;color:var(--mut);margin-bottom:5px}
+.ld-panel input[type=text],.ld-panel input[type=number]{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--ink);
+  border-radius:10px;padding:10px 11px;font:600 16px/1.2 var(--ui)}
+.ld-panel input:focus{outline:2px solid var(--cyan);outline-offset:0}
+.ld-btn{appearance:none;border:1px solid var(--line);background:var(--card2);color:var(--ink);border-radius:12px;
+  padding:11px 14px;font:650 14px var(--ui);cursor:pointer}
+.ld-btn.pri{background:var(--cyan);border-color:var(--cyan);color:#04121a}
+.ld-acts{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.ld-row{display:grid;grid-template-columns:22px 92px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.ld-row:first-child{border-top:0}
+.ld-row .n{font:700 13px var(--ui);color:var(--mut);text-align:center}
+.ld-row input[type=text],.ld-row input[type=number]{padding:8px 9px;font-size:16px}
+.ld-seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ld-seg button{appearance:none;border:0;background:transparent;color:var(--mut);width:34px;height:36px;font:800 15px var(--ui);cursor:pointer}
+.ld-seg button[aria-pressed=true].p{background:rgba(148,163,209,.18);color:var(--ink)}
+.ld-seg button[aria-pressed=true].h{background:rgba(39,232,156,.2);color:var(--good)}
+.ld-seg button[aria-pressed=true].m{background:rgba(255,107,107,.2);color:var(--bad)}
+.ld-check{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--sec);margin-top:12px}
+.ld-check input{width:18px;height:18px}
+.ld-hint{font-size:12.5px;color:var(--mut);line-height:1.45;margin:8px 0 0}
+.ld-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(13,18,32,.92);border:1px solid var(--line);
+  color:var(--sec);font-size:13px;padding:9px 14px;border-radius:999px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:10;white-space:nowrap}
+.ld-toast.on{opacity:1}
+body.shot{background:#000}
+body.shot .wrap > *:not(#ladview){display:none}
+body.shot #ladview > *:not(#ldshell){display:none}
+body.shot #ldshell{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);margin:0;border-radius:0;box-shadow:none;
+  width:min(100vw,calc(100vh * .8))}
+.ld-row .pay{font:800 17px/1 var(--num);color:var(--ink);text-align:right;padding-right:4px}
+#igview{--cyan:#3fd6ff;--violet:#a855f7}
+#igview .ig-days{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+#igview .ig-day{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--sec);border-radius:14px;
+  padding:10px 8px;text-align:left;cursor:pointer;font:650 14px/1.2 var(--ui)}
+#igview .ig-day small{display:block;margin-top:3px;font:500 11.5px/1.25 var(--ui);color:var(--mut)}
+#igview .ig-day[aria-pressed="true"]{border-color:#3fd6ff;background:rgba(63,214,255,.08);color:var(--ink)}
+#igview select,#igview textarea{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--ink);
+  border-radius:10px;padding:10px 11px;font:600 16px/1.3 var(--ui)}
+#igview select{appearance:none;-webkit-appearance:none}
+#igview textarea{min-height:110px;font-weight:500;font-size:15px;resize:vertical}
+#igview .ig-field{margin-top:10px}
+#igview .ig-note{font-size:13px;color:var(--warn);line-height:1.45;margin:10px 0 0}
+.ig-slides{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.ig-slide{border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.5);cursor:zoom-in}
+.ig-slide svg,.ig-slide img{display:block;width:100%;height:auto}
+.ig-slide img,.ig-full img{-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
+.ig-picks{display:flex;flex-direction:column}
+.ig-pick{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.ig-pick:first-child{border-top:0}
+.ig-pick small{color:var(--mut);font-size:12px}
+.ig-pick label{display:flex;align-items:center;gap:8px;margin:0;color:var(--ink);font-size:14px}
+.ig-pick input[type=checkbox]{width:18px;height:18px}
+.ig-full{position:fixed;inset:0;background:#000;z-index:20;display:flex;align-items:center;justify-content:center}
+.ig-full svg,.ig-full img{width:min(100vw,calc(100vh * var(--ar)));height:auto}
+body.igfull{overflow:hidden}
+#igview .ig-wins{display:flex;flex-wrap:wrap;gap:8px}
+#igview .ig-wins .chip{padding:8px 12px;font-size:13.5px}
+</style></head><body><div class="wrap">
+<div class="eyebrow">Parlay Generator</div>
+<h1 id="pagetitle">Track record</h1>
+<div class="tabs" role="tablist"><button id="tab-rec" role="tab" aria-selected="true">Record</button><button id="tab-lad" role="tab" aria-selected="false">Ladder</button><button id="tab-ig" role="tab" aria-selected="false">Instagram</button></div>
+<div id="recview">
+<div class="wkwrap" id="wkwrap" hidden><select class="wksel" id="wk" aria-label="Week"></select></div>
+<div class="sub" id="sub"></div>
+<div class="kpis" id="kpis"></div>
+
+<h2>Hit rate by target odds</h2><div class="hint">Tap a row to see each game window.</div>
+<div class="chips" id="win"></div>
+<div class="rows" id="rows"></div>
+
+<div id="lossec" hidden><h2>Why parlays lost</h2><div class="hint" id="loss-hint"></div>
+<div class="kpis three" id="loss-kpis"></div>
+<div class="rows" id="loss-legs"></div>
+<div class="hint" style="margin-top:10px">The test grid builds every leg count and target from the same best legs, so one
+bad leg shows up in many of these parlays.</div></div>
+
+<div id="tdsec" hidden><h2>Touchdown picks</h2><div class="hint">The board's top 10 for the whole week by chance to score. Didn't play = no action.</div>
+<div class="kpis" id="tdkpis"></div>
+<div class="tdgrid" id="tdgrid"></div></div>
+
+<div id="picksec"><h2>Every pick</h2><div class="hint">Tap a pick to see its legs and the actual stats.</div>
+<div class="chips" id="tgt"></div>
+<div class="picks" id="picks"></div></div>
+<div class="empty" id="seasonnote" hidden>Pick a week in the menu at the top to see every pick and its legs.</div>
+
+<p class="foot">Each pick is the generator's Best pick for that window, leg count and target, made before the games from the board's
+prices. Settled picks only in the hit rates — pending ones aren't counted.
+<span class="live">Live</span> marks a leg from a game already under way when the board was built.</p>
+</div>
+<div id="ladview" hidden>
+<div class="ld-shell" id="ldshell"><svg id="ldcard" viewBox="0 0 1080 1350" xmlns="http://www.w3.org/2000/svg" aria-label="Ladder challenge graphic"></svg></div>
+<div class="ld-panel">
+  <h3>Bets · odds in, payout out</h3>
+  <div id="ldrows"></div>
+  <p class="ld-hint">Type each bet's odds (e.g. -150 or +120) and its payout fills in. Blank = planned odds, shown with ~. Mark ✓ or ✕ when it settles, or tap the rung on the graphic.</p>
+</div>
+<div class="ld-panel">
+  <div class="ld-acts" style="margin-top:0">
+    <button class="ld-btn pri" id="ldshoot">Screenshot mode</button>
+    <button class="ld-btn" id="ldnew">Start a new ladder</button>
+  </div>
+  <p class="ld-hint">Screenshot mode shows only the graphic, in Instagram's 4:5 shape. Tap the title on the graphic to come back.
+  "Start a new ladder" clears the results and bumps the ladder number.</p>
+</div>
+<div class="ld-panel">
+  <h3>Set up</h3>
+  <div class="ld-g3">
+    <div><label for="ldstart">Start ($)</label><input id="ldstart" type="number" inputmode="decimal"></div>
+    <div><label for="ldgoal">Goal ($)</label><input id="ldgoal" type="number" inputmode="decimal"></div>
+    <div><label for="ldplan">Planned odds</label><input id="ldplan" type="text" inputmode="numbers-and-punctuation"></div>
+  </div>
+  <p class="ld-hint">Planned odds fill in any bet you haven't priced yet, so you can see how many bets the climb takes. Put each bet's real odds in the list above as you place it.</p>
+  <div class="ig-field" style="margin-top:12px"><label for="ldlabel">Bet type (shown after the odds)</label><input id="ldlabel" type="text" placeholder="parlay"></div>
+  <div class="ld-g2" style="margin-top:12px">
+    <div><label for="ldtag">Line under the title</label><input id="ldtag" type="text"></div>
+    <div><label for="ldhandle">Handle</label><input id="ldhandle" type="text"></div>
+  </div>
+  <label class="ld-check"><input type="checkbox" id="ldreal"> Show the real odds of finishing</label>
+  <p class="ld-hint">Saved on this phone only.</p>
+</div>
+<div class="ld-toast" id="ldtoast">Take your screenshot · tap the title to exit</div>
+</div>
+<div id="igview" hidden>
+<div class="ig-days" id="igdays"></div>
+<div class="ld-panel" id="igopts"></div>
+<div class="ld-panel">
+  <h3>Your words</h3>
+  <div class="ld-g2">
+    <div><label for="ighead">Headline</label><input id="ighead" type="text"></div>
+    <div><label for="igsub">Line under it</label><input id="igsub" type="text"></div>
+  </div>
+  <div class="ig-field"><label for="ighandle">Handle</label><input id="ighandle" type="text"></div>
+  <div class="ld-acts">
+    <button class="ld-btn pri" id="igbuild">Build post</button>
+    <button class="ld-btn" id="igreset">Reset my words</button>
+  </div>
+  <p class="ld-hint">Leave a box empty to use the suggested wording. Everything you change is kept on this phone.</p>
+</div>
+<p class="ld-hint" style="margin-top:14px">Press and hold a post to save it to Photos, or use Save below.</p>
+<div class="ig-slides" id="igslides"></div>
+<div class="ld-panel">
+  <div class="ld-acts" style="margin-top:0">
+    <button class="ld-btn pri" id="igsave">Save image</button>
+    <button class="ld-btn" id="igcopy">Copy caption</button>
+  </div>
+  <p class="ld-hint" id="igsavehint">Save sends every slide to the share sheet — tap “Save Images” to put them all in Photos at once. Tap a post to see it full screen.</p>
+  <div class="ig-field"><label for="igcap">Caption</label><textarea id="igcap"></textarea></div>
+</div>
+<div class="ld-toast" id="igtoast"></div>
+</div>
+</div><script>
+const DATA = {"sub": "48 picks from the board built Wed Sep 30 \u00b7 graded with the current generator rules", "boards": 1, "parlays": [{"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 2, "target": -150, "odds": -186, "prob": 0.7133, "mixed": false, "status": "pending", "results": ["pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 24.5, "price": -320, "p": 0.8039, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 2, "target": 100, "odds": -120, "prob": 0.6536, "mixed": false, "status": "pending", "results": ["pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -750, "p": 0.9072, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 2, "target": 200, "odds": 186, "prob": 0.4395, "mixed": false, "status": "pending", "results": ["pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 39.5, "price": -130, "p": 0.5587, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 2, "target": 300, "odds": 276, "prob": 0.3549, "mixed": false, "status": "pending", "results": ["pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 249.5, "price": 210, "p": 0.3587, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -470, "p": 0.8812, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 2, "target": 500, "odds": 448, "prob": 0.2599, "mixed": false, "status": "pending", "results": ["pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 249.5, "price": 210, "p": 0.3587, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 39.5, "price": -130, "p": 0.5587, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 2, "target": 1000, "odds": 1027, "prob": 0.1413, "mixed": false, "status": "pending", "results": ["pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 274.5, "price": 390, "p": 0.2293, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 49.5, "price": 130, "p": 0.3923, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 3, "target": -150, "odds": -190, "prob": 0.7097, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 149.5, "price": -670, "p": 0.8534, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -750, "p": 0.9072, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 3, "target": 100, "odds": -115, "prob": 0.6309, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 174.5, "price": -320, "p": 0.7682, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -470, "p": 0.8812, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 3, "target": 200, "odds": 178, "prob": 0.4707, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 2.5, "price": -290, "p": 0.7904, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 24.5, "price": -360, "p": 0.8014, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 3, "target": 300, "odds": 267, "prob": 0.3604, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 224.5, "price": 118, "p": 0.483, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 29.5, "price": -230, "p": 0.7257, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 3, "target": 500, "odds": 468, "prob": 0.2515, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 249.5, "price": 210, "p": 0.3587, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 29.5, "price": -230, "p": 0.7257, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 24.5, "price": -360, "p": 0.8014, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 3, "target": 1000, "odds": 916, "prob": 0.16, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 274.5, "price": 390, "p": 0.2293, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 39.5, "price": -130, "p": 0.5587, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 4, "target": -150, "odds": -192, "prob": 0.6449, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 149.5, "price": -670, "p": 0.8534, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1450, "p": 0.931, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 4, "target": 100, "odds": -122, "prob": 0.5824, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 174.5, "price": -320, "p": 0.7682, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -470, "p": 0.8812, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 4, "target": 200, "odds": 178, "prob": 0.4427, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 2.5, "price": -290, "p": 0.7904, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 4, "target": 300, "odds": 266, "prob": 0.3312, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 39.5, "price": -130, "p": 0.5587, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 4, "target": 500, "odds": 450, "prob": 0.2477, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 249.5, "price": 210, "p": 0.3587, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 29.5, "price": -230, "p": 0.7257, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 4, "target": 1000, "odds": 973, "prob": 0.1423, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 274.5, "price": 390, "p": 0.2293, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 39.5, "price": -130, "p": 0.5587, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 5, "target": -150, "odds": -191, "prob": 0.5742, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 124.5, "price": -1800, "p": 0.8995, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1450, "p": 0.931, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 5, "target": 100, "odds": -113, "prob": 0.5233, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 149.5, "price": -670, "p": 0.8534, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -470, "p": 0.8812, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 5, "target": 200, "odds": 187, "prob": 0.3992, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 24.5, "price": -320, "p": 0.8039, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 5, "target": 300, "odds": 264, "prob": 0.3022, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 24.5, "price": -320, "p": 0.8039, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 2.5, "price": -260, "p": 0.6429, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 5, "target": 500, "odds": 449, "prob": 0.2252, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 249.5, "price": 210, "p": 0.3587, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 24.5, "price": -320, "p": 0.8039, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 5, "target": 1000, "odds": 934, "prob": 0.1292, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 274.5, "price": 390, "p": 0.2293, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 29.5, "price": -230, "p": 0.7257, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 24.5, "price": -360, "p": 0.8014, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 6, "target": -150, "odds": -177, "prob": 0.4887, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 124.5, "price": -1800, "p": 0.8995, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1450, "p": 0.931, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 6, "target": 100, "odds": -119, "prob": 0.4493, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 149.5, "price": -670, "p": 0.8534, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1450, "p": 0.931, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 6, "target": 200, "odds": 175, "prob": 0.3594, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -750, "p": 0.9072, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 6, "target": 300, "odds": 267, "prob": 0.2757, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -470, "p": 0.8812, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 2.5, "price": -260, "p": 0.6429, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 6, "target": 500, "odds": 464, "prob": 0.1952, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 249.5, "price": 210, "p": 0.3587, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -470, "p": 0.8812, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 6, "target": 1000, "odds": 955, "prob": 0.1173, "mixed": false, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 274.5, "price": 390, "p": 0.2293, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 29.5, "price": -230, "p": 0.7257, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 7, "target": -150, "odds": -132, "prob": 0.4055, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 124.5, "price": -1800, "p": 0.8995, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1450, "p": 0.931, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 7, "target": 100, "odds": -116, "prob": 0.3966, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 124.5, "price": -1800, "p": 0.8995, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -750, "p": 0.9072, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 7, "target": 200, "odds": 177, "prob": 0.3117, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -1000, "p": 0.9165, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 7, "target": 300, "odds": 267, "prob": 0.268, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 2.5, "price": -290, "p": 0.7904, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 7, "target": 500, "odds": 456, "prob": 0.1698, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 24.5, "price": -320, "p": 0.8039, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 39.5, "price": -122, "p": 0.5546, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 7, "target": 1000, "odds": 909, "prob": 0.1071, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 249.5, "price": 210, "p": 0.3587, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 39.5, "price": -130, "p": 0.5587, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 24.5, "price": -360, "p": 0.8014, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 8, "target": -150, "odds": -114, "prob": 0.3613, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 124.5, "price": -1800, "p": 0.8995, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1450, "p": 0.931, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Michael Pittman", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1100, "p": 0.9347, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 8, "target": 100, "odds": -107, "prob": 0.3206, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 124.5, "price": -1800, "p": 0.8995, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1450, "p": 0.931, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 8, "target": 200, "odds": 173, "prob": 0.2662, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 174.5, "price": -320, "p": 0.7682, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -470, "p": 0.8812, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 8, "target": 300, "odds": 264, "prob": 0.2308, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -470, "p": 0.8812, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 8, "target": 500, "odds": 448, "prob": 0.15, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 2.5, "price": -290, "p": 0.7904, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 24.5, "price": -360, "p": 0.8014, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 2.5, "price": -260, "p": 0.6429, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 8, "target": 1000, "odds": 918, "prob": 0.0938, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 249.5, "price": 210, "p": 0.3587, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 39.5, "price": -130, "p": 0.5587, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 10, "target": -150, "odds": 177, "prob": 0.1529, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 124.5, "price": -1800, "p": 0.8995, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1450, "p": 0.931, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Michael Pittman", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1100, "p": 0.9347, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Roman Wilson", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -320, "p": 0.5102, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 10, "target": 100, "odds": 177, "prob": 0.1529, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 124.5, "price": -1800, "p": 0.8995, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1450, "p": 0.931, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Michael Pittman", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1100, "p": 0.9347, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Roman Wilson", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -320, "p": 0.5102, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 10, "target": 200, "odds": 177, "prob": 0.1529, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 124.5, "price": -1800, "p": 0.8995, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1450, "p": 0.931, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Michael Pittman", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1100, "p": 0.9347, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Roman Wilson", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -320, "p": 0.5102, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 10, "target": 300, "odds": 270, "prob": 0.1343, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 149.5, "price": -670, "p": 0.8534, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -470, "p": 0.8812, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Michael Pittman", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 9.5, "price": -1100, "p": 0.9347, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Roman Wilson", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -320, "p": 0.5102, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 10, "target": 500, "odds": 451, "prob": 0.1025, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 199.5, "price": -162, "p": 0.6833, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 2.5, "price": -290, "p": 0.7904, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 14.5, "price": -1200, "p": 0.9206, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Michael Pittman", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -800, "p": 0.914, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Roman Wilson", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -320, "p": 0.5102, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}, {"scope": "NFL \u00b7 TNF \u00b7 Thu Oct 1", "legs_n": 10, "target": 1000, "odds": 930, "prob": 0.0597, "mixed": true, "status": "pending", "results": ["pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending", "pending"], "board": "Wed Sep 30", "miss": [], "legs": [{"player": "Aaron Rodgers", "pos": "QB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "passing_yards", "threshold": 249.5, "price": 210, "p": 0.3587, "actual": null, "live": false}, {"player": "DK Metcalf", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -470, "p": 0.8812, "actual": null, "live": false}, {"player": "Harold Fannin Jr.", "pos": "TE", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receiving_yards", "threshold": 19.5, "price": -580, "p": 0.8873, "actual": null, "live": false}, {"player": "Quinshon Judkins", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1100, "p": 0.8494, "actual": null, "live": false}, {"player": "Darnell Washington", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -1000, "p": 0.7908, "actual": null, "live": false}, {"player": "Pat Freiermuth", "pos": "TE", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -900, "p": 0.8203, "actual": null, "live": false}, {"player": "Michael Pittman", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -800, "p": 0.914, "actual": null, "live": false}, {"player": "Raheim Sanders", "pos": "RB", "team": "CLE", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 0.5, "price": -800, "p": 0.8296, "actual": null, "live": false}, {"player": "Roman Wilson", "pos": "WR", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "receptions", "threshold": 1.5, "price": -320, "p": 0.5102, "actual": null, "live": false}, {"player": "Jaylen Warren", "pos": "RB", "team": "PIT", "game": "Pittsburgh Steelers @ Cleveland Browns", "stat": "rushing_yards", "threshold": 29.5, "price": -1800, "p": 0.8896, "actual": null, "live": false}]}], "td": [], "season": false, "nav": [{"suffix": "season", "label": "Cumulative"}, {"suffix": "2026-w04", "label": "Week 4 \u00b7 Wed Sep 30"}, {"suffix": "2026-w03", "label": "Week 3 \u00b7 Thu Sep 24"}, {"suffix": "2026-w02", "label": "Week 2 \u00b7 Thu Sep 17"}, {"suffix": "2026-w01", "label": "Week 1 \u00b7 Wed Sep 9"}], "me": "2026-w04"};
+const $ = id => document.getElementById(id);
+const fmt = a => (a > 0 ? "+" : "") + a;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shortScope = s => s.startsWith("MLB · ") ? s.slice(6) : s.replace(/^NFL · |^College · /, "").replace(/ · (?:[A-Z][a-z]{2} )?[A-Z][a-z]{2} \d{1,2}$/, "");
+const last = n => { const w = n.split(" ").filter(x => !/^(jr|sr|ii|iii|iv|v)\.?$/i.test(x)); return w[w.length - 1] || n; };
+DATA.parlays.forEach((p, i) => { p.i = i; p.win = shortScope(p.scope); });
+const PS = DATA.parlays;                             // test grid: every setting on its own
+const settled = ps => ps.filter(p => p.status === "won" || p.status === "lost");
+const tone = r => r >= .5 ? "hi" : r >= .25 ? "mid" : "lo";
+const LABEL = {won: "Won", lost: "Lost", pending: "Pending", void: "Void"};
+const RES = {hit: ["Hit", "hit", "✓"], miss: ["Miss", "miss", "✕"], void: ["DNP", "pend", "–"],
+             injury: ["Hit* · left injured", "inj", "✓"],
+             pending: ["Pending", "pend", "○"], norecord: ["No record", "pend", "○"]};
+let WIN = "All windows", TGT = "All", SHOW = 12;
+
+$("sub").textContent = DATA.sub;
+// The week menu: every week has its own page next to this one, named
+// <this page>-2026-w03.html; the season summary is <this page>-season.html.
+(function weekMenu(){
+  const nav = DATA.nav || [];
+  if(nav.length < 2) return;
+  const file = decodeURIComponent(location.pathname.split("/").pop() || "report.html");
+  const base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|season|other)$/, "");
+  const sel = $("wk");
+  sel.innerHTML = nav.map(n => `<option value="${esc(n.suffix)}">${esc(n.label)}</option>`).join("");
+  sel.value = DATA.me || nav[1].suffix;
+  sel.onchange = () => { location.href = `${base}-${sel.value}.html`; };
+  $("wkwrap").hidden = false;
+})();
+if(DATA.season){ $("picksec").hidden = true; $("seasonnote").hidden = false; }
+(function kpis(){
+  // One set for both tiles: parlays whose every leg is settled. (A parlay that
+  // lost early while another leg was still to play isn't counted yet -- it
+  // would make the hit rate look worse than the board's prediction for it.)
+  const OK = ["hit", "miss", "void", "injury"];
+  const done = settled(PS).filter(p => p.results.every(r => OK.includes(r)));
+  const w = done.filter(p => p.status === "won").length;
+  const exp = done.reduce((a, p) => a + p.prob, 0);
+  const hit = done.length ? Math.round(100 * w / done.length) : null;
+  const said = done.length ? Math.round(100 * exp / done.length) : null;
+  const pend = PS.filter(p => p.status === "pending" || (settled([p]).length && !done.includes(p))).length;
+  const hurt = done.filter(p => p.status === "won" && p.results.includes("injury")).length;
+  $("kpis").innerHTML =
+    `<div class="kpi"><b class="${hit == null ? "none" : tone(w / done.length)}">${hit == null ? "—" : hit + "%"}</b>
+       <span>of parlays hit<br>${w} of ${done.length}</span></div>`
+  + `<div class="kpi"><b>${said == null ? "—" : said + "%"}</b>
+       <span>the board predicted<br>${done.length ? `for the same ${done.length}` : ""}</span></div>`
+  + (pend ? `<div class="kpi wide note"><p>${pend} more pick${pend === 1 ? "" : "s"} still waiting on games or stats — not counted yet.</p></div>` : "")
+  + (hurt ? `<div class="kpi wide note"><p><span class="flag">Injury</span> <strong>${hurt}</strong> of these wins
+      count only because an injured player's leg was dropped — he left the game and didn't return. FanDuel's
+      Bet Protect removes that leg (free on NFL props through September 2026, a paid add-on otherwise), so
+      these wins need it.</p></div>` : "");
+})();
+
+const wins = ["All windows", ...new Set(PS.map(p => p.win))].sort((a, b) =>
+  (a === "All windows" ? -2 : a === "All games" ? 99 : 0) - (b === "All windows" ? -2 : b === "All games" ? 99 : 0));
+const tgts = [...new Set(PS.map(p => p.target))].sort((a, b) => a - b);
+function chips(el, list, cur, label, onpick){
+  el.innerHTML = list.map(v => `<button class="chip" aria-pressed="${v === cur}" data-v="${esc(v)}">${esc(label(v))}</button>`).join("");
+  el.onclick = ev => { const b = ev.target.closest(".chip"); if(b) onpick(b.dataset.v); };
+}
+function drawRows(){
+  chips($("win"), wins, WIN, v => v, v => { WIN = v; drawRows(); });
+  const base = PS.filter(p => WIN === "All windows" || p.win === WIN);
+  $("rows").innerHTML = tgts.map(t => {
+    const ps = base.filter(p => p.target === t), s = settled(ps), w = s.filter(p => p.status === "won").length;
+    const r = s.length ? w / s.length : null;
+    const split = WIN === "All windows" ? wins.slice(1).map(wn => {
+      const ss = settled(ps.filter(p => p.win === wn)); if(!ss.length) return "";
+      return `<span>${esc(wn)} <b>${ss.filter(p => p.status === "won").length}/${ss.length}</b></span>`; }).join("") : "";
+    return `<div class="row">
+      <div class="t">${fmt(t)}</div>
+      <div class="bar">${r == null ? "" : `<i class="fill-${tone(r)}" style="width:${Math.max(3, Math.round(r * 100))}%"></i>`}</div>
+      <div class="r ${r == null ? "none" : tone(r)}">${r == null ? "—" : Math.round(r * 100) + "%"}<small>${s.length ? `${w} of ${s.length}` : "pending"}</small></div>
+      ${split ? `<div class="split">${split}</div>` : ""}</div>`;
+  }).join("");
+  $("rows").onclick = ev => { const r = ev.target.closest(".row"); if(r) r.classList.toggle("open"); };
+  SHOW = 12; if(!DATA.season) drawPicks();
+  drawLosses();
+}
+// Why parlays lost: how many legs sank each one, and which legs sank the most.
+const STATN = {receptions: "catches", receiving_yards: "receiving yds", rushing_yards: "rushing yds", passing_yards: "passing yds",
+  hits: "hits", total_bases: "total bases", home_runs: "home runs", hrr: "H+R+RBI", pitcher_strikeouts: "strikeouts"};
+function drawLosses(){
+  const base = PS.filter(p => WIN === "All windows" || p.win === WIN);
+  const lost = base.filter(p => p.status === "lost");
+  $("lossec").hidden = !lost.length;
+  if(!lost.length) return;
+  // "Lost by 1 leg" needs every other leg settled: a parlay that lost early
+  // with a leg still to play can't be counted yet.
+  const done = lost.filter(p => p.results.every(r => r === "hit" || r === "miss" || r === "void"));
+  const waiting = lost.length - done.length;
+  const by = n => done.filter(p => (p.miss || []).length === n).length;
+  const one = by(1), two = by(2), more = done.length - one - two;
+  const pc = n => done.length ? Math.round(100 * n / done.length) + "%" : "—";
+  $("loss-hint").textContent = `${lost.length} lost parlay${lost.length === 1 ? "" : "s"}`
+    + (WIN === "All windows" ? "" : ` in ${WIN}`)
+    + (waiting ? ` · ${waiting} still waiting on another leg, not counted below` : "");
+  $("loss-kpis").innerHTML =
+    `<div class="kpi"><b class="mid">${pc(one)}</b><span>lost by 1 leg<br>${one} of ${done.length}</span></div>`
+  + `<div class="kpi"><b>${pc(two)}</b><span>by 2 legs<br>${two} of ${done.length}</span></div>`
+  + `<div class="kpi"><b>${pc(more)}</b><span>by 3 or more<br>${more} of ${done.length}</span></div>`;
+  // Which legs: every lost parlay counts each of its missed legs once.
+  const legs = new Map();
+  for(const p of lost){
+    const alone = (p.miss || []).length === 1 && done.includes(p);
+    for(const [player, team, stat, thr, actual] of p.miss || []){
+      const k = [player, team, stat, thr].join("|");
+      const e = legs.get(k) || {player, team, stat, thr, actual, n: 0, alone: 0};
+      e.n++; if(alone) e.alone++;
+      legs.set(k, e);
+    }
+  }
+  const top = [...legs.values()].sort((a, b) => b.n - a.n || b.alone - a.alone).slice(0, 6);
+  $("loss-legs").innerHTML = top.map(e => {
+    const need = Math.floor(e.thr) + 1, short = e.actual == null ? null : need - e.actual;
+    // "Just short": one catch away, or within 3 yards / 10% -- not a zero.
+    const close = short != null && e.actual > 0 && (e.stat === "receptions" ? short <= 1 : short <= Math.max(3, need * 0.1));
+    return `<div class="lrow"><div style="min-width:0"><div class="nm">${esc(e.player)}</div>
+        <div class="pr">${need}+ ${STATN[e.stat] || e.stat} · had ${e.actual == null ? "—" : e.actual}
+          ${close ? '<span class="close">Just short</span>' : ""}</div></div>
+      <div class="ct">in ${e.n} loss${e.n === 1 ? "" : "es"}<small>${e.alone ? `the only miss in ${e.alone}` : "never the only miss"}</small></div></div>`;
+  }).join("");
+}
+function drawTD(){
+  const T = DATA.td || [];
+  $("tdsec").hidden = !T.length;
+  if(!T.length) return;
+  // Always the week's lists, whatever window is picked above.
+  const pick = T.filter(t => t.scope === "Week" || t.scope === "All games");
+  // Settled picks only (scored / didn't); DNP and injury exits are no action.
+  const stat = rs => { const d = rs.filter(t => t.result === "hit" || t.result === "miss");
+    const h = d.filter(t => t.result === "hit").length, e = d.reduce((a, t) => a + t.p, 0);
+    return {n: d.length, h, e, hit: d.length ? Math.round(100 * h / d.length) : null,
+            said: d.length ? Math.round(100 * e / d.length) : null}; };
+  $("tdkpis").innerHTML = [["RB", "RBs"], ["REC", "WR/TE"]].map(([g, label]) => {
+    const s = stat(pick.filter(t => t.grp === g));
+    return `<div class="kpi"><b class="${s.hit == null ? "none" : tone(s.h / s.n)}">${s.hit == null ? "—" : s.hit + "%"}</b>
+      <span>${label}${s.n ? `: ${s.h} of ${s.n} scored` : ""}<br>${s.n
+        ? `board predicted ${s.said}%` : "not settled yet"}</span></div>`;
+  }).join("");
+  if(DATA.season){
+    // One line per week: how each week's two top 10s did.
+    const cell = rs => { const s = stat(rs);
+      return s.n ? `<b class="${tone(s.h / s.n)}">${s.h}/${s.n}<small>${s.hit}% · board ${s.said}%</small></b>`
+                 : `<b class="none">—</b>`; };
+    const weeks = [...new Set(pick.map(t => t.board))].reverse();
+    const all = g => pick.filter(t => t.grp === g);
+    $("tdgrid").innerHTML = `<div class="tdcard">
+      <div class="wkrow h"><span>Week</span><span class="h2">RBs</span><span class="h2">WR / TE</span></div>
+      <div class="wkrow"><span><strong>Season</strong></span>${cell(all("RB"))}${cell(all("REC"))}</div>
+      ${weeks.map(w => `<div class="wkrow"><span>${esc(w.split(" · ")[0])}</span>${cell(pick.filter(t => t.board === w && t.grp === "RB"))}${cell(pick.filter(t => t.board === w && t.grp === "REC"))}</div>`).join("")}</div>`;
+    return;
+  }
+  const RS = {hit: ["TD ✓", "hit"], miss: ["No TD", "miss"], void: ["DNP", "pend"], injury: ["Hurt · refund", "inj"],
+              pending: ["Pending", "pend"], norecord: ["Pending", "pend"]};
+  const cards = [];
+  // One list per week: Thursday's locked players and Sunday's fill-in are
+  // the same top 10, whichever update made each pick.
+  for(const board of ["week"]){
+    for(const [grp, title] of [["RB", "Running backs"], ["REC", "Receivers · WR / TE"]]){
+      const rs = pick.filter(t => t.grp === grp).sort((a, b) => b.p - a.p).map((t, i) => ({...t, rank: i + 1}));
+      if(!rs.length) continue;
+      const done = rs.filter(t => t.result === "hit" || t.result === "miss");
+      const hit = done.filter(t => t.result === "hit").length;
+      const exp = done.reduce((a, t) => a + t.p, 0);
+      const r = done.length ? hit / done.length : null;
+      cards.push(`<div class="tdcard"><div class="tdhead"><div><b>${title}</b>
+          ${done.length ? "" : "<small>not settled yet</small>"}</div>
+          <span class="${r == null ? "none" : tone(r)}">${done.length ? `${hit} of ${done.length}` : "—"}</span></div>
+        ${rs.map(t => { const [txt, c] = RS[t.result] || [t.result, "pend"];
+          return `<div class="tdrow"><span class="rk">${t.rank}</span>
+            <span class="nm">${esc(t.player)}<em>${esc(t.team)}</em></span>
+            <span class="pp">${Math.round(t.p * 100)}%</span><span class="rs ${c}">${txt}</span></div>`; }).join("")}</div>`);
+    }
+  }
+  $("tdgrid").innerHTML = cards.join("");
+}
+function legHtml(l, res){
+  const [t, c] = RES[res] || [res, "pend"];
+  const prop = `${Math.floor(l.threshold) + 1}+ ${l.stat.replace("hrr", "H+R+RBI").replace("pitcher_strikeouts", "strikeouts").replace(/_/g, " ").replace("receptions", "catches")} <span style="color:var(--mut)">${fmt(l.price)}</span>`;
+  return `<div class="leg"><div class="l">
+      <div class="who">${esc(l.player)}<em>${esc(l.pos)} · ${esc(l.team)}</em>${l.live ? '<span class="live">Live</span>' : ""}</div>
+      <div class="prop">${prop}</div><div class="game">${esc(l.game)}</div></div>
+    <div class="res ${c}">${t}${l.actual != null ? `<small>${l.actual}</small>` : ""}</div></div>`;
+}
+function drawPicks(){
+  chips($("tgt"), ["All", ...tgts.map(String)], String(TGT), v => v === "All" ? "All targets" : fmt(+v), v => { TGT = v; SHOW = 12; drawPicks(); });
+  let ps = PS.filter(p => (WIN === "All windows" || p.win === WIN) && (TGT === "All" || p.target === +TGT));
+  const ORD = {won: 0, lost: 0, void: 1, pending: 2};
+  ps.sort((a, b) => ORD[a.status] - ORD[b.status] || a.target - b.target || a.legs_n - b.legs_n || a.win.localeCompare(b.win));
+  if(!ps.length){ $("picks").innerHTML = `<div class="empty">No picks for this filter.</div>`; return; }
+  const shown = ps.slice(0, SHOW);
+  $("picks").innerHTML = shown.map(p => {
+    const dots = p.legs.map((l, k) => { const [, c, m] = RES[p.results[k]] || ["", "pend", "○"];
+      return `<span><span class="mk ${c}">${m}</span>${esc(last(l.player))}</span>`; }).join("");
+    return `<div class="pick" data-i="${p.i}">
+      <div class="top"><div class="what"><b>${p.legs_n} legs · ${fmt(p.target)}</b></div>
+        <span class="pill ${p.status}">${LABEL[p.status]}</span></div>
+      <div class="meta">${esc(p.win)} · ${esc(p.board)} · paid ${fmt(p.odds)} · board ${Math.round(p.prob * 100)}%${
+        p.results.includes("injury") ? '<span class="flag">Injury — needs Bet Protect</span>' : ""}</div>
+      <div class="dots">${dots}</div>
+      <div class="legs">${p.legs.map((l, k) => legHtml(l, p.results[k])).join("")}</div></div>`;
+  }).join("") + (ps.length > SHOW ? `<button class="more" id="more">Show more (${ps.length - SHOW} left)</button>` : "");
+  $("picks").onclick = ev => {
+    if(ev.target.id === "more"){ SHOW += 24; drawPicks(); return; }
+    const c = ev.target.closest(".pick"); if(c) c.classList.toggle("open");
+  };
+}
+drawRows(); drawTD();
+</script><script>
+// ---- Tabs: Track record | Ladder (#ladder in the address keeps you on it) ----
+(function(){
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const VIEWS = {record: ["recview", "tab-rec", "Track record", ""], ladder: ["ladview", "tab-lad", "Ladder challenge", "#ladder"],
+               instagram: ["igview", "tab-ig", "Instagram posts", "#instagram"]};
+function tab(which){
+  if(!VIEWS[which]) which = "record";
+  for(const [k, [view, btn]] of Object.entries(VIEWS)){
+    const on = k === which;
+    if($(view)) $(view).hidden = !on;
+    if($(btn)) $(btn).setAttribute("aria-selected", on);
+  }
+  $("pagetitle").textContent = VIEWS[which][2];
+  if(history.replaceState) history.replaceState(null, "", VIEWS[which][3] || location.pathname + location.search);
+  if(which === "ladder") draw();
+  if(which === "instagram" && window.IG_SHOW) window.IG_SHOW();
+}
+$("tab-rec").onclick = () => tab("record");
+$("tab-lad").onclick = () => tab("ladder");
+$("tab-ig").onclick = () => tab("instagram");
+
+// ---- The ladder: saved in this browser only ----
+// You set the start, the goal and each bet's odds; every rung's dollar amount
+// is the bankroll rolled over at those odds. Bets you haven't priced yet use
+// the planned odds, and the ladder ends at the first rung that reaches the goal.
+const KEY = "alp-ladder-v2";
+let S = null;
+try { S = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e) { S = null; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} };
+const MAXR = 15;
+const money = v => "$" + Math.round(v).toLocaleString("en-US");
+const odd = o => (o > 0 ? "+" : "") + o;
+const valid = o => Number.isFinite(o) && (o >= 100 || o <= -100);
+const dec = o => o > 0 ? 1 + o / 100 : 1 + 100 / -o;
+const parseOdds = v => { const t = String(v).trim(); if(!t) return null; const n = Math.round(+t);
+  return valid(n) ? n : null; };
+if(!S){
+  // Carry over the first version's ladder (its labels held the odds).
+  let old = null;
+  try { old = JSON.parse(localStorage.getItem("alp-ladder-v1") || "null"); } catch(e) {}
+  S = {start: 25, goal: 1000, plan: -150, label: "parlay", odds: [], st: [], tag: "Ladder #1", handle: "@altlineparlays", real: true};
+  if(old && Array.isArray(old.rungs)){
+    Object.assign(S, {start: old.start || 25, goal: old.goal || 1000, tag: old.tag || S.tag, handle: old.handle || S.handle, real: old.real !== false});
+    S.st = old.rungs.map(r => r.st || "p");
+  }
+}
+function compute(){
+  S.start = Math.max(1, +S.start || 25);
+  S.goal = Math.max(S.start + 1, +S.goal || 1000);
+  if(!valid(S.plan)) S.plan = -150;
+  const out = [];
+  let amt = S.start;
+  for(let i = 0; i < MAXR && amt < S.goal - 0.005; i++){
+    const set = valid(S.odds[i]) ? S.odds[i] : null, o = set == null ? S.plan : set;
+    amt = amt * dec(o);
+    out.push({amt, odds: o, planned: set == null, st: S.st[i] || "p"});
+  }
+  S.rungs = out;
+  return out;
+}
+compute();
+
+function el(tag, attrs, parent, text){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(text != null) e.textContent = text;
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function draw(){
+  const svg = $("ldcard"); svg.innerHTML = "";
+  const R = compute(), n = R.length;
+  const busted = R.findIndex(r => r.st === "m");
+  let hits = 0; while(hits < n && R[hits].st === "h") hits++;       // climbed = hits in a row from the bottom
+  const done = hits === n;
+  const bank = hits ? R[hits - 1].amt : S.start;
+
+  const d = el("defs", {}, svg);
+  const bg = el("radialGradient", {id: "ldbg", cx: "30%", cy: "18%", r: "95%"}, d);
+  el("stop", {offset: "0", "stop-color": "#10204a"}, bg); el("stop", {offset: ".55", "stop-color": "#070c1d"}, bg);
+  el("stop", {offset: "1", "stop-color": "#04060d"}, bg);
+  const sp = el("linearGradient", {id: "ldspine", x1: "0", y1: "1", x2: "0", y2: "0"}, d);
+  el("stop", {offset: "0", "stop-color": "#a855f7"}, sp); el("stop", {offset: "1", "stop-color": "#3fd6ff"}, sp);
+  const bar = el("linearGradient", {id: "ldbar", x1: "0", x2: "1"}, d);
+  el("stop", {offset: "0", "stop-color": "#3fd6ff"}, bar); el("stop", {offset: "1", "stop-color": "#a855f7"}, bar);
+  const metal = el("linearGradient", {id: "ldmetal", x1: "0", y1: "0", x2: "0", y2: "1"}, d);
+  el("stop", {offset: "0", "stop-color": "#ffffff"}, metal); el("stop", {offset: ".55", "stop-color": "#c9d1e6"}, metal);
+  el("stop", {offset: "1", "stop-color": "#8e98b3"}, metal);
+  const glow = el("filter", {id: "ldglow", x: "-50%", y: "-50%", width: "200%", height: "200%"}, d);
+  el("feGaussianBlur", {stdDeviation: "7", result: "b"}, glow);
+  const m = el("feMerge", {}, glow); el("feMergeNode", {in: "b"}, m); el("feMergeNode", {in: "SourceGraphic"}, m);
+  const soft = el("filter", {id: "ldsoft", x: "-50%", y: "-50%", width: "200%", height: "200%"}, d);
+  el("feGaussianBlur", {stdDeviation: "14"}, soft);
+
+  el("rect", {width: 1080, height: 1350, fill: "url(#ldbg)"}, svg);
+  const grid = el("g", {opacity: .06, stroke: "#9fb4ff", "stroke-width": 1}, svg);
+  for(let x = 60; x < 1080; x += 60) el("line", {x1: x, y1: 0, x2: x, y2: 1350}, grid);
+  for(let y = 60; y < 1350; y += 60) el("line", {x1: 0, y1: y, x2: 1080, y2: y}, grid);
+
+  const tg = el("g", {id: "ldtitle", style: "cursor:pointer"}, svg);
+  el("rect", {x: 60, y: 58, width: 960, height: 116, rx: 58, fill: "rgba(63,214,255,.06)", stroke: "#3fd6ff", "stroke-opacity": .55, "stroke-width": 2.5}, tg);
+  const fs = Math.min(56, Math.floor(1500 / ((money(S.start) + money(S.goal)).length + 16)));
+  const t = el("text", {x: 540, y: 116 + fs * .35, "text-anchor": "middle", "font-weight": 800, "font-size": fs, fill: "#fff", "letter-spacing": 1}, tg);
+  el("tspan", {}, t, "THE "); el("tspan", {fill: "#3fd6ff"}, t, money(S.start));
+  el("tspan", {}, t, " → "); el("tspan", {fill: "#3fd6ff"}, t, money(S.goal)); el("tspan", {}, t, " LADDER");
+  el("text", {x: 540, y: 228, "text-anchor": "middle", "font-weight": 700, "font-size": 26, fill: "#8e98b8", "letter-spacing": 5}, svg,
+     (S.tag || "").toUpperCase());
+
+  const top = 300, bottom = 1100, pts = [];
+  for(let i = 0; i <= n; i++) pts.push([130 + 300 * i / n, bottom - (bottom - top) * i / n]);
+  const path = (a, b) => pts.slice(a, b + 1).map((p, k) => (k ? "L" : "M") + p[0] + " " + p[1]).join(" ");
+  el("path", {d: path(0, n), fill: "none", stroke: "#56607f", "stroke-width": 6, "stroke-opacity": .35, "stroke-dasharray": "2 14", "stroke-linecap": "round"}, svg);
+  if(hits > 0){
+    el("path", {d: path(0, hits), fill: "none", stroke: "url(#ldspine)", "stroke-width": 10, "stroke-linecap": "round", filter: "url(#ldsoft)", opacity: .8}, svg);
+    el("path", {d: path(0, hits), fill: "none", stroke: "url(#ldspine)", "stroke-width": 6, "stroke-linecap": "round"}, svg);
+  }
+  if(busted >= 0 && busted === hits)
+    el("path", {d: path(hits, hits + 1), fill: "none", stroke: "#ff6b6b", "stroke-width": 6, "stroke-linecap": "round"}, svg);
+
+  for(let i = 0; i <= n; i++){
+    const [x, y] = pts[i];
+    const isStart = i === 0, r = isStart ? null : R[i - 1];
+    const st = isStart ? "h" : r.st;
+    const dead = busted >= 0 && i - 1 > busted;
+    const next = !isStart && busted < 0 && i === hits + 1;
+    const g = el("g", {class: isStart ? "" : "rung", "data-i": i - 1, opacity: dead ? .32 : 1}, svg);
+    const x0 = x + 58, x1 = 1000, yb = y + 26;
+    el("rect", {x: x0, y: yb, width: x1 - x0, height: 12, rx: 6, fill: "rgba(148,163,209,.13)"}, g);
+    if(st === "h") el("rect", {x: x0, y: yb, width: x1 - x0, height: 12, rx: 6, fill: "url(#ldbar)", filter: "url(#ldglow)"}, g);
+    if(st === "m") el("rect", {x: x0, y: yb, width: x1 - x0, height: 12, rx: 6, fill: "#ff6b6b", opacity: .85}, g);
+    el("text", {x: x0, y: y + 2, "font-weight": 800, "font-size": isStart ? 40 : 46,
+       fill: st === "m" ? "#ff9d9d" : r && r.planned && st === "p" ? "#c9d1e6" : "#fff"}, g,
+       isStart ? money(S.start) : (r.planned && st === "p" ? "~" : "") + money(r.amt));
+    // The bet's odds on the right, shrunk if it would run into the amount.
+    const amtTxt = isStart ? money(S.start) : (r.planned && st === "p" ? "~" : "") + money(r.amt);
+    let lab = isStart ? "START" : ((i === n ? "GOAL · " : "") + `${odd(r.odds)} ${S.label || ""}`).trim().toUpperCase();
+    const room = x1 - (x0 + amtTxt.length * (isStart ? 26 : 31) + 44);
+    if(lab.length * .66 * 19 > room) lab = lab.replace(/^GOAL · /, "");      // tight top rung: the odds matter more
+    const lfs = Math.max(14, Math.min(24, room / Math.max(1, lab.length * .66)));
+    el("text", {x: x1, y: y + 2, "text-anchor": "end", "font-weight": 650, "font-size": lfs, fill: "#8e98b8", "letter-spacing": 1}, g, lab);
+    if(next) el("circle", {cx: x, cy: y, r: 50, fill: "none", stroke: "#3fd6ff", "stroke-width": 3, opacity: .45, filter: "url(#ldglow)"}, g);
+    const ring = st === "h" ? "#27e89c" : st === "m" ? "#ff6b6b" : next ? "#3fd6ff" : "#56607f";
+    el("circle", {cx: x, cy: y, r: 38, fill: "#0b1124", stroke: ring, "stroke-width": 5, filter: st === "p" && !next ? "none" : "url(#ldglow)"}, g);
+    if(st === "h" && !isStart)
+      el("path", {d: `M${x - 15} ${y + 1} l10 11 l21 -24`, fill: "none", stroke: "#27e89c", "stroke-width": 7, "stroke-linecap": "round", "stroke-linejoin": "round"}, g);
+    else if(st === "m")
+      el("path", {d: `M${x - 13} ${y - 13} l26 26 M${x + 13} ${y - 13} l-26 26`, fill: "none", stroke: "#ff6b6b", "stroke-width": 7, "stroke-linecap": "round"}, g);
+    else
+      el("text", {x, y: y + 12, "text-anchor": "middle", "font-weight": 800, "font-size": 32,
+        fill: isStart ? "#27e89c" : next ? "#3fd6ff" : "#aab3cf"}, g, isStart ? "$" : String(i));
+    if(!isStart) el("rect", {x: x - 50, y: y - 55, width: 1000 - x + 60, height: 105, fill: "transparent"}, g);
+  }
+
+  const P = el("g", {}, svg);
+  el("rect", {x: 60, y: 1150, width: 960, height: 150, rx: 26, fill: "rgba(11,17,36,.88)", stroke: "#a855f7", "stroke-opacity": .5, "stroke-width": 2}, P);
+  const w = el("text", {x: 100, y: 1222, "font-weight": 900, "font-size": 58, "font-style": "italic", "letter-spacing": 2}, P);
+  el("tspan", {fill: "url(#ldmetal)"}, w, "A"); el("tspan", {fill: "#3fd6ff", filter: "url(#ldglow)"}, w, "L"); el("tspan", {fill: "url(#ldmetal)"}, w, "P");
+  el("text", {x: 100, y: 1266, "font-weight": 800, "font-size": 22, fill: "#b7c0dc", "letter-spacing": 6}, P, "TRACKER");
+  const status = done ? ["COMPLETE", "#27e89c"] : busted >= 0 ? ["BUSTED", "#ff6b6b"] : ["ACTIVE", "#27e89c"];
+  const lab = (x, txt, anchor) => el("text", {x, y: 1206, "text-anchor": anchor || "start", "font-weight": 700, "font-size": 24, fill: "#8e98b8", "letter-spacing": 3}, P, txt);
+  lab(300, "BANKROLL"); lab(560, "RUNG"); lab(985, "STATUS", "end");
+  el("text", {x: 300, y: 1250, "font-weight": 800, "font-size": 40, fill: busted >= 0 ? "#ff9d9d" : "#fff"}, P, busted >= 0 ? "$0" : money(bank));
+  el("text", {x: 560, y: 1250, "font-weight": 800, "font-size": 40, fill: "#fff"}, P, `${hits} / ${n}`);
+  el("text", {x: 985, y: 1250, "text-anchor": "end", "font-weight": 900, "font-size": 40, fill: status[1]}, P, status[0]);
+  el("rect", {x: 300, y: 1270, width: 685, height: 10, rx: 5, fill: "rgba(148,163,209,.15)"}, P);
+  if(hits) el("rect", {x: 300, y: 1270, width: 685 * hits / n, height: 10, rx: 5, fill: busted >= 0 ? "#ff6b6b" : "url(#ldbar)"}, P);
+
+  const last = n ? R[n - 1].amt : S.goal;
+  const foot = [S.handle, S.real ? `Real odds of finishing: about 1 in ${Math.max(2, Math.round(last / S.start))}` : "",
+                "21+ · Bet responsibly"].filter(Boolean).join("   ·   ");
+  el("text", {x: 540, y: 1330, "text-anchor": "middle", "font-weight": 600, "font-size": 20, fill: "#6f7898", "letter-spacing": 1}, svg, foot);
+
+  svg.querySelectorAll(".rung").forEach(g => g.onclick = () => {
+    const i = +g.dataset.i; S.st[i] = {p: "h", h: "m", m: "p"}[S.st[i] || "p"];
+    save(); draw(); rows();
+  });
+  $("ldtitle").onclick = () => document.body.classList.remove("shot");
+}
+
+function rows(){
+  const R = compute();
+  $("ldrows").innerHTML = R.map((r, i) => `<div class="ld-row">
+      <span class="n">${i + 1}</span>
+      <input type="text" inputmode="numbers-and-punctuation" value="${r.planned ? "" : odd(r.odds)}" placeholder="${odd(S.plan)}"
+        data-i="${i}" aria-label="Bet ${i + 1} odds">
+      <span class="pay" data-pay="${i}">${r.planned ? "~" : ""}${money(r.amt)}</span>
+      <div class="ld-seg" role="group" aria-label="Bet ${i + 1} result">
+        <button class="p" aria-pressed="${r.st === "p"}" data-s="p" data-i="${i}" title="Pending">·</button>
+        <button class="h" aria-pressed="${r.st === "h"}" data-s="h" data-i="${i}" title="Hit">✓</button>
+        <button class="m" aria-pressed="${r.st === "m"}" data-s="m" data-i="${i}" title="Miss">✕</button>
+      </div></div>`).join("")
+    + (R.length >= MAXR && R[R.length - 1].amt < S.goal ? `<p class="ld-hint">Stopped at ${MAXR} bets — raise the odds to reach the goal sooner.</p>` : "");
+}
+function form(){
+  $("ldstart").value = S.start; $("ldgoal").value = S.goal; $("ldplan").value = odd(S.plan); $("ldlabel").value = S.label || "";
+  $("ldtag").value = S.tag || ""; $("ldhandle").value = S.handle || ""; $("ldreal").checked = !!S.real;
+}
+// Typing odds updates the payouts as you go; the list redraws when you leave the box
+// (a new bet may appear or drop off the end).
+$("ldrows").addEventListener("input", e => {
+  const t = e.target; if(t.dataset.i == null) return;
+  const i = +t.dataset.i, o = parseOdds(t.value);
+  S.odds[i] = o; save(); const R = compute(); draw();
+  R.forEach((r, k) => { const c = document.querySelector(`[data-pay="${k}"]`); if(c) c.textContent = (r.planned ? "~" : "") + money(r.amt); });
+});
+$("ldrows").addEventListener("change", e => { if(e.target.dataset.i != null) rows(); });
+$("ldrows").addEventListener("click", e => {
+  const b = e.target.closest("button[data-s]"); if(!b) return;
+  S.st[+b.dataset.i] = b.dataset.s; save(); draw(); rows();
+});
+const reset = () => {
+  S.start = +$("ldstart").value || S.start; S.goal = +$("ldgoal").value || S.goal;
+  const pl = parseOdds($("ldplan").value); if(pl != null) S.plan = pl;
+  save(); form(); draw(); rows();
+};
+["ldstart", "ldgoal", "ldplan"].forEach(id => $(id).addEventListener("change", reset));
+$("ldlabel").oninput = e => { S.label = e.target.value; save(); draw(); };
+$("ldtag").oninput = e => { S.tag = e.target.value; save(); draw(); };
+$("ldhandle").oninput = e => { S.handle = e.target.value; save(); draw(); };
+$("ldreal").onchange = e => { S.real = e.target.checked; save(); draw(); };
+$("ldnew").onclick = () => {
+  S.st = []; S.odds = [];
+  S.tag = (S.tag || "").replace(/#(\d+)/, (_, k) => "#" + (+k + 1));
+  save(); form(); draw(); rows();
+};
+$("ldshoot").onclick = () => {
+  document.body.classList.add("shot"); window.scrollTo(0, 0);
+  const t = $("ldtoast"); t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 2200);
+};
+
+form(); rows();
+tab(location.hash === "#ladder" ? "ladder" : location.hash === "#instagram" ? "instagram" : "record");
+})();
+</script><script>
+// ---- Instagram tab: pick a day, build that day's post from the grades and the live board ----
+(function(){
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const FONT = "Helvetica Neue, Helvetica, Arial, sans-serif";
+const W = 1080;
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const pct = x => Math.round(100 * x) + "%";
+const odds = a => (a > 0 ? "+" : "") + a;
+const nick = team => String(team || "").trim().split(" ").pop();
+const shortGame = g => String(g || "").split(" @ ").map(nick).join(" @ ");
+const STAT = {receptions: ["catch", "catches"], receiving_yards: ["rec yd", "rec yds"], rushing_yards: ["rush yd", "rush yds"],
+              passing_yards: ["pass yd", "pass yds"], tds: ["TD", "TDs"],
+              hits: ["hit", "hits"], total_bases: ["total base", "total bases"], home_runs: ["HR", "HRs"],
+              hrr: ["H+R+RBI", "H+R+RBI"], pitcher_strikeouts: ["K", "Ks"]};
+const prop = l => { const n = Math.floor(l.threshold) + 1, s = STAT[l.stat] || [l.stat, l.stat]; return `${n}+ ${n === 1 ? s[0] : s[1]}`; };
+
+// ---------- saved choices ----------
+const KEY = "alp-ig-v1";
+let S = {};
+try { S = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch(e) { S = {}; }
+S.words = S.words || {}; S.opts = S.opts || {}; S.marks = S.marks || {};
+if(S.handle == null) S.handle = "@altlineparlays";
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} };
+const opt = (day, k, dflt) => (S.opts[day] && S.opts[day][k] != null) ? S.opts[day][k] : dflt;
+const setOpt = (day, k, v) => { (S.opts[day] = S.opts[day] || {})[k] = v; save(); };
+
+// ---------- data: the grades on this page, and the live board's feed ----------
+const D = typeof DATA === "object" ? DATA : {parlays: [], td: []};
+const PS = D.parlays || [];
+const weekLabel = (() => {
+  if(D.season) return "Season so far";
+  const me = (D.nav || []).find(n => n.suffix === D.me);
+  return me ? me.label.split(" · ")[0] : "This week";
+})();
+let FEED = null, FEED_ERR = "";
+function loadFeed(){
+  const file = decodeURIComponent(location.pathname.split("/").pop() || "");
+  const base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|season|other)$/, "");
+  if(!/^https?:$/.test(location.protocol) || !base){ FEED_ERR = "The board's data loads when this page is opened from its web address."; return Promise.resolve(); }
+  return fetch(`${base}-live.json`, {cache: "no-store"}).then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(j => { FEED = j; }).catch(() => { FEED_ERR = "No board data yet — it appears after the next Build (scheduled or manual)."; });
+}
+const WIN_ORDER = ["TNF", "Sun morning", "Sun 1 PM", "Sun 4 PM", "SNF", "MNF", "All games"];
+const WINS = [...new Set(PS.map(p => p.win))].sort((a, b) =>
+  ((WIN_ORDER.indexOf(a) + 1) || 50) - ((WIN_ORDER.indexOf(b) + 1) || 50) || a.localeCompare(b));
+const pickedWins = () => { const w = opt("res", "wins", null); return Array.isArray(w) ? w.filter(x => WINS.includes(x)) : null; };
+const PSW = () => { const w = pickedWins(); return w && w.length ? PS.filter(p => w.includes(p.win)) : PS; };
+const winNote = () => { const w = pickedWins(); return w && w.length && w.length < WINS.length ? w.join(" + ") : ""; };
+const settledAll = ps => ps.filter(p => (p.status === "won" || p.status === "lost")
+  && p.results.every(r => ["hit", "miss", "void", "injury"].includes(r)));
+const tdPicks = () => (D.td || []).filter(t => t.scope === "Week" || t.scope === "All games");
+function tdStat(rs){
+  const d = rs.filter(t => t.result === "hit" || t.result === "miss");
+  const h = d.filter(t => t.result === "hit").length;
+  return {n: d.length, h, e: d.reduce((a, t) => a + t.p, 0)};
+}
+
+// ---------- drawing ----------
+function el(tag, attrs, parent, text){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(text != null) e.textContent = text;
+  if(parent) parent.appendChild(e);
+  return e;
+}
+const T = (parent, x, y, txt, o) => el("text", Object.assign({x, y, fill: "#fff", "font-weight": 700, "font-size": 32}, o || {}), parent, txt);
+function wrap(text, size, width, maxLines){
+  const per = Math.max(6, Math.floor(width / (size * .56)));
+  const words = String(text || "").split(/\s+/).filter(Boolean), lines = [];
+  let cur = "";
+  for(const w of words){
+    if((cur + " " + w).trim().length > per && cur){ lines.push(cur); cur = w; } else cur = (cur + " " + w).trim();
+  }
+  if(cur) lines.push(cur);
+  if(maxLines && lines.length > maxLines){ lines.length = maxLines; lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, "") + "…"; }
+  return lines;
+}
+function canvas(h){
+  const svg = el("svg", {xmlns: NS, viewBox: `0 0 ${W} ${h}`, width: W, height: h, "font-family": FONT});
+  const d = el("defs", {}, svg);
+  const bg = el("radialGradient", {id: "igbg", cx: "25%", cy: "12%", r: "100%"}, d);
+  el("stop", {offset: "0", "stop-color": "#10204a"}, bg); el("stop", {offset: ".55", "stop-color": "#070c1d"}, bg);
+  el("stop", {offset: "1", "stop-color": "#04060d"}, bg);
+  const bar = el("linearGradient", {id: "igbar", x1: "0", x2: "1"}, d);
+  el("stop", {offset: "0", "stop-color": "#3fd6ff"}, bar); el("stop", {offset: "1", "stop-color": "#a855f7"}, bar);
+  const metal = el("linearGradient", {id: "igmetal", x1: "0", y1: "0", x2: "0", y2: "1"}, d);
+  el("stop", {offset: "0", "stop-color": "#ffffff"}, metal); el("stop", {offset: ".55", "stop-color": "#c9d1e6"}, metal);
+  el("stop", {offset: "1", "stop-color": "#8e98b3"}, metal);
+  const glow = el("filter", {id: "igglow", x: "-50%", y: "-50%", width: "200%", height: "200%"}, d);
+  el("feGaussianBlur", {stdDeviation: "6", result: "b"}, glow);
+  const m = el("feMerge", {}, glow); el("feMergeNode", {in: "b"}, m); el("feMergeNode", {in: "SourceGraphic"}, m);
+  el("rect", {width: W, height: h, fill: "url(#igbg)"}, svg);
+  const g = el("g", {opacity: .06, stroke: "#9fb4ff", "stroke-width": 1}, svg);
+  for(let x = 60; x < W; x += 60) el("line", {x1: x, y1: 0, x2: x, y2: h}, g);
+  for(let y = 60; y < h; y += 60) el("line", {x1: 0, y1: y, x2: W, y2: y}, g);
+  return svg;
+}
+// Shared frame: wordmark + tag on top, headline, footer. Returns the y where content starts.
+function frame(svg, h, tag, head, sub){
+  const top = h > 1600 ? 190 : 0, bot = h > 1600 ? 200 : 0;
+  const w = el("text", {x: 70, y: 118 + top, "font-weight": 900, "font-size": 56, "font-style": "italic", "letter-spacing": 2}, svg);
+  el("tspan", {fill: "url(#igmetal)"}, w, "A"); el("tspan", {fill: "#3fd6ff", filter: "url(#igglow)"}, w, "L"); el("tspan", {fill: "url(#igmetal)"}, w, "P");
+  T(svg, 212, 116 + top, "ALT LINE PARLAYS", {"font-size": 22, fill: "#8e98b8", "letter-spacing": 5, "font-weight": 800});
+  if(tag){
+    const tw = Math.max(150, tag.length * 15 + 56);
+    el("rect", {x: W - 70 - tw, y: 76 + top, width: tw, height: 56, rx: 28, fill: "rgba(63,214,255,.08)", stroke: "#3fd6ff", "stroke-opacity": .5, "stroke-width": 2}, svg);
+    T(svg, W - 70 - tw / 2, 113 + top, tag.toUpperCase(), {"text-anchor": "middle", "font-size": 22, fill: "#3fd6ff", "letter-spacing": 3, "font-weight": 800});
+  }
+  let y = 250 + top;
+  wrap((head || "").toUpperCase(), 76, 940, 2).forEach(l => { T(svg, 70, y, l, {"font-size": 76, "font-weight": 900, "letter-spacing": 1}); y += 84; });
+  if(sub){ wrap(sub, 32, 940, 2).forEach(l => { T(svg, 70, y + 4, l, {"font-size": 32, "font-weight": 600, fill: "#b7c0dc"}); y += 42; }); y += 10; }
+  el("line", {x1: 70, y1: h - 92 - bot, x2: W - 70, y2: h - 92 - bot, stroke: "#56607f", "stroke-opacity": .5, "stroke-width": 2}, svg);
+  T(svg, 70, h - 50 - bot, S.handle || "", {"font-size": 24, fill: "#8e98b8", "font-weight": 700});
+  T(svg, W - 70, h - 50 - bot, "21+ · Bet responsibly", {"text-anchor": "end", "font-size": 22, fill: "#6f7898", "font-weight": 600});
+  return y + 20;
+}
+function statTile(svg, x, y, w, big, bigFill, label, small){
+  el("rect", {x, y, width: w, height: 190, rx: 26, fill: "rgba(11,17,36,.85)", stroke: "#56607f", "stroke-opacity": .45, "stroke-width": 2}, svg);
+  T(svg, x + 34, y + 96, big, {"font-size": 84, "font-weight": 900, fill: bigFill});
+  T(svg, x + 34, y + 140, label, {"font-size": 26, fill: "#b7c0dc", "font-weight": 700, "letter-spacing": 1});
+  if(small) T(svg, x + 34, y + 172, small, {"font-size": 22, fill: "#8e98b8", "font-weight": 600});
+}
+function mark(svg, x, y, st, r){
+  r = r || 22;
+  if(st === "void"){                     // didn't play: say so instead of an empty circle
+    el("rect", {x: x - r * 1.15, y: y - r * .7, width: r * 2.3, height: r * 1.4, rx: r * .7, fill: "#0b1124", stroke: "#8e98b8", "stroke-width": 3}, svg);
+    T(svg, x, y + r * .31, "DNP", {"text-anchor": "middle", "font-size": r * .85, fill: "#b7c0dc", "font-weight": 900});
+    return;
+  }
+  const c = st === "hit" ? "#27e89c" : st === "miss" ? "#ff6b6b" : st === "injury" ? "#ffc86b" : "#56607f";
+  el("circle", {cx: x, cy: y, r, fill: "#0b1124", stroke: c, "stroke-width": 4}, svg);
+  const k = r / 22;
+  if(st === "hit") el("path", {d: `M${x - 9 * k} ${y + 1} l${6 * k} ${7 * k} l${13 * k} ${-15 * k}`, fill: "none", stroke: c, "stroke-width": 5, "stroke-linecap": "round", "stroke-linejoin": "round"}, svg);
+  else if(st === "miss") el("path", {d: `M${x - 8 * k} ${y - 8 * k} l${16 * k} ${16 * k} M${x + 8 * k} ${y - 8 * k} l${-16 * k} ${16 * k}`, fill: "none", stroke: c, "stroke-width": 5, "stroke-linecap": "round"}, svg);
+  else if(st === "injury") T(svg, x, y + 9 * k, "+", {"text-anchor": "middle", "font-size": 28 * k, fill: c, "font-weight": 900});
+}
+const tone = r => r >= .5 ? "#5cf2bb" : r >= .25 ? "#ffc86b" : "#ff8a8a";
+
+// Leg rows between y0 and y1: roomy two-line rows while they fit, one line each for long parlays.
+function legRows(s, y0, y1, rows, numbered){
+  const h = Math.min(118, (y1 - y0) / Math.max(1, rows.length)), tight = h < 96;
+  rows.forEach((r, k) => {
+    const top = y0 + k * h, mid = top + (h - 12) / 2;
+    el("rect", {x: 70, y: top, width: 940, height: h - 12, rx: tight ? 14 : 20, fill: r.bad ? "rgba(255,107,107,.08)" : "rgba(11,17,36,.85)",
+      stroke: r.bad ? "#ff6b6b" : numbered ? "#3fd6ff" : "#56607f", "stroke-opacity": r.bad ? .6 : .35, "stroke-width": 2}, s);
+    const rad = tight ? Math.min(18, (h - 12) / 2 - 6) : 22;
+    if(numbered){
+      el("circle", {cx: 70 + 26 + rad, cy: mid, r: rad, fill: "#0b1124", stroke: "#3fd6ff", "stroke-width": 4}, s);
+      T(s, 70 + 26 + rad, mid + rad * .42, String(k + 1), {"text-anchor": "middle", "font-size": rad * 1.15, fill: "#3fd6ff", "font-weight": 900});
+    } else mark(s, 70 + 26 + rad, mid, r.mark, rad);
+    const x = 70 + 52 + 2 * rad;
+    if(tight){
+      const fs = Math.max(20, Math.min(28, h * .42));
+      const nm = el("text", {x, y: mid + fs * .36, "font-size": fs, "font-weight": 800, fill: "#fff"}, s);
+      el("tspan", {}, nm, r.name + "  ");
+      el("tspan", {fill: "#b7c0dc", "font-weight": 600, "font-size": fs * .78}, nm, r.detail);
+      T(s, 980, mid + fs * .36, r.right, {"text-anchor": "end", "font-size": fs, "font-weight": 800, fill: r.rightFill || "#fff"});
+    } else {
+      T(s, x, mid - 4, r.name, {"font-size": 32, "font-weight": 800});
+      T(s, x, mid + 30, r.detail, {"font-size": 22, fill: "#b7c0dc", "font-weight": 600});
+      T(s, 980, mid - 4, r.right, {"text-anchor": "end", "font-size": 30, "font-weight": 800, fill: r.rightFill || "#fff"});
+      T(s, 980, mid + 28, r.small, {"text-anchor": "end", "font-size": 20, fill: "#8e98b8", "font-weight": 600});
+    }
+  });
+}
+
+// ---------- the six posts ----------
+const DAYS = [
+  {k: "tue", name: "Tue", what: "Weekly results"},
+  {k: "wed", name: "Wed", what: "Why it lost"},
+  {k: "thu", name: "Thu", what: "TNF parlay"},
+  {k: "fri", name: "Fri", what: "Comment a player"},
+  {k: "sunam", name: "Sun AM", what: "ATD top 3"},
+  {k: "sunpm", name: "Sun night", what: "Scoring update"},
+];
+function defaultDay(){
+  const et = new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"}));
+  const wd = et.getDay(), h = et.getHours();
+  return wd === 0 ? (h >= 16 ? "sunpm" : "sunam") : wd === 1 || wd === 2 ? "tue" : wd === 3 ? "wed" : wd === 4 ? "thu" : "fri";
+}
+let DAY = S.day && DAYS.some(d => d.k === S.day) ? S.day : defaultDay();
+
+// Each builder returns {slides: [svg...], head, sub, caption, note}
+const B = {};
+
+B.tue = () => {
+  const done = settledAll(PSW()), w = done.filter(p => p.status === "won").length;
+  const exp = done.reduce((a, p) => a + p.prob, 0);
+  const show = {cover: opt("tue", "cover", true), odds: opt("tue", "odds", true), atd: opt("tue", "atd", true), close: opt("tue", "close", true)};
+  const head = `${weekLabel} receipts`, sub = winNote() ? `${winNote()} parlays · every pick graded.` : "Every pick graded. Wins and losses.";
+  const slides = [];
+  const H = 1350;
+  if(show.cover){
+    const s = canvas(H); const y = frame(s, H, weekLabel, words("head", head), words("sub", sub));
+    // One column of equal tiles down the left edge.
+    let ty = y + 10;
+    const tile = (big, fill, label, small) => { statTile(s, 70, ty, 460, big, fill, label, small); ty += 210; };
+    if(done.length) tile(pct(w / done.length), tone(w / done.length), "PARLAYS HIT", `${w} of ${done.length}`);
+    const td = tdPicks();
+    const rb = tdStat(td.filter(t => t.grp === "RB")), rc = tdStat(td.filter(t => t.grp === "REC"));
+    if(rb.n) tile(pct(rb.h / rb.n), tone(rb.h / rb.n), "ANYTIME TD · RBs", `${rb.h} of ${rb.n}`);
+    if(rc.n) tile(pct(rc.h / rc.n), tone(rc.h / rc.n), "ANYTIME TD · WR/TE", `${rc.h} of ${rc.n}`);
+    T(s, 70, H - 150, "Swipe for the breakdown →", {"font-size": 28, fill: "#3fd6ff", "font-weight": 800});
+    slides.push(s);
+  }
+  if(show.odds){
+    const s = canvas(H); let y = frame(s, H, weekLabel, "Hit rate by odds", winNote() ? `${winNote()} · how often each target hit.` : "How often each target hit.");
+    const tg = [...new Set(done.map(p => p.target))].sort((a, b) => a - b);
+    const rowH = Math.min(120, (H - 200 - y) / Math.max(1, tg.length));
+    tg.forEach((t, i) => {
+      const ps = done.filter(p => p.target === t), won = ps.filter(p => p.status === "won").length;
+      const r = won / ps.length, yy = y + i * rowH + 50;
+      T(s, 70, yy + 12, odds(t), {"font-size": 40, "font-weight": 900});
+      el("rect", {x: 250, y: yy - 12, width: 520, height: 24, rx: 12, fill: "rgba(148,163,209,.14)"}, s);
+      el("rect", {x: 250, y: yy - 12, width: Math.max(10, 520 * r), height: 24, rx: 12, fill: "url(#igbar)"}, s);
+      T(s, W - 70, yy + 2, pct(r), {"text-anchor": "end", "font-size": 40, "font-weight": 900, fill: tone(r)});
+      T(s, W - 70, yy + 34, `${won} of ${ps.length}`, {"text-anchor": "end", "font-size": 20, fill: "#8e98b8", "font-weight": 600});
+    });
+    slides.push(s);
+  }
+  if(show.atd){
+    const td = tdPicks();
+    if(td.length){
+      const s = canvas(H); let y = frame(s, H, weekLabel, "Anytime TD list", "Our model's top 10 at each position.");
+      [["RB", "RUNNING BACKS", 70], ["REC", "WR / TE", 560]].forEach(([g, label, x]) => {
+        const rs = td.filter(t => t.grp === g).sort((a, b) => b.p - a.p).slice(0, 10), st = tdStat(rs);
+        T(s, x, y + 20, label, {"font-size": 24, fill: "#8e98b8", "letter-spacing": 3, "font-weight": 800});
+        T(s, x + 450, y + 20, st.n ? `${st.h}/${st.n}` : "", {"text-anchor": "end", "font-size": 30, "font-weight": 900, fill: st.n ? tone(st.h / st.n) : "#fff"});
+        rs.forEach((t, i) => {
+          const yy = y + 80 + i * 70;
+          mark(s, x + 22, yy - 10, ["hit", "miss", "void"].includes(t.result) ? t.result : "p", 20);
+          T(s, x + 58, yy, wrap(t.player, 28, 300, 1)[0], {"font-size": 28, "font-weight": 700, fill: t.result === "miss" ? "#b7c0dc" : "#fff"});
+          T(s, x + 450, yy, pct(t.p), {"text-anchor": "end", "font-size": 24, fill: "#8e98b8", "font-weight": 700});
+        });
+      });
+      slides.push(s);
+    }
+  }
+  if(show.close){
+    const lost = settledAll(PSW()).filter(p => p.status === "lost");
+    if(lost.length){
+      const one = lost.filter(p => (p.miss || []).length === 1).length;
+      const legs = new Map();
+      lost.forEach(p => (p.miss || []).forEach(m => { const k = `${m[0]}|${m[2]}|${m[3]}`;
+        const o = legs.get(k) || {m, n: 0}; o.n++; legs.set(k, o); }));
+      const top = [...legs.values()].sort((a, b) => b.n - a.n).slice(0, 3);
+      const s = canvas(H); let y = frame(s, H, weekLabel, "Where we missed", winNote() ? `${winNote()} · the losses, out in the open.` : "The losses, out in the open.");
+      statTile(s, 70, y + 10, 940, pct(one / lost.length), "#ffc86b", "OF LOSSES MISSED BY ONE LEG", "");
+      y += 270;
+      T(s, 70, y, "LEGS THAT COST US THE MOST", {"font-size": 24, fill: "#8e98b8", "letter-spacing": 3, "font-weight": 800});
+      top.forEach((o, i) => {
+        const yy = y + 70 + i * 110, [pl, , stat, th, act] = o.m;
+        el("rect", {x: 70, y: yy - 50, width: 940, height: 92, rx: 20, fill: "rgba(11,17,36,.85)", stroke: "#ff6b6b", "stroke-opacity": .35, "stroke-width": 2}, s);
+        T(s, 100, yy - 6, pl, {"font-size": 32, "font-weight": 800});
+        T(s, 100, yy + 26, `${prop({stat, threshold: th})} · had ${act == null ? "—" : act}`, {"font-size": 22, fill: "#b7c0dc", "font-weight": 600});
+        T(s, 980, yy + 8, `in ${pct(o.n / lost.length)} of losses`, {"text-anchor": "end", "font-size": 28, fill: "#ff8a8a", "font-weight": 800});
+      });
+      slides.push(s);
+    }
+  }
+  const cap = done.length
+    ? `${weekLabel} receipts 🧾${winNote() ? ` (${winNote()})` : ""}\n\nParlays hit ${pct(w / done.length)} (${w} of ${done.length}).\n\nEvery pick graded — wins and losses. Swipe for the breakdown.\n\n21+ | Bet responsibly\n#nflparlays #playerprops #sportsbetting #anytimetd`
+    : "";
+  return {slides, head, sub, caption: cap, note: slides.length ? "" : "Nothing graded on this page yet — open a week in the Track record tab."};
+};
+
+B.wed = () => {
+  const lost = settledAll(PSW()).filter(p => p.status === "lost" && (p.legs || []).length);
+  if(!lost.length) return {slides: [], head: "", sub: "", caption: "",
+    note: D.season ? "Open a week page first (menu in the Track record tab) — this one has no legs to show." : "No lost parlays with every leg settled on this page."};
+  lost.sort((a, b) => ((a.miss || []).length === 1 ? 0 : 1) - ((b.miss || []).length === 1 ? 0 : 1)
+    || (b.legs_n >= 3 && b.legs_n <= 6) - (a.legs_n >= 3 && a.legs_n <= 6) || b.target - a.target || b.prob - a.prob);
+  let idx = Math.min(opt("wed", "pick", 0), lost.length - 1);
+  const p = lost[idx];
+  OPTS_EXTRA.wed = lost;
+  const missed = p.legs.filter((l, k) => p.results[k] === "miss");
+  const hitN = p.results.filter(r => r === "hit").length;
+  const head = missed.length === 1 ? "One leg away" : `${missed.length} legs short`;
+  const sub = `${p.legs_n}-leg parlay at ${odds(p.odds)}`;
+  const H = 1350, s = canvas(H);
+  let y = frame(s, H, weekLabel, words("head", head), words("sub", sub));
+  legRows(s, y, H - 330, p.legs.map((l, k) => {
+    const r = p.results[k], bad = r === "miss";
+    return {mark: r === "void" ? "p" : r, bad, name: l.player, detail: `${prop(l)} · ${odds(l.price)}`,
+      right: l.actual == null ? "—" : `had ${l.actual}`, rightFill: bad ? "#ff8a8a" : r === "hit" ? "#5cf2bb" : "#b7c0dc",
+      small: r === "injury" ? "left injured" : ""};
+  }));
+  const m = missed[0];
+  const take = missed.length === 1 && m
+    ? `${hitN} of ${p.legs_n} legs hit. ${m.player} needed ${prop(m)} and finished with ${m.actual == null ? "less" : m.actual}.`
+    : `${hitN} of ${p.legs_n} legs hit.`;
+  const takeaway = words("take", take);
+  let ty = H - 220;
+  wrap(takeaway, 30, 940, 2).forEach(l => { T(s, 70, ty, l, {"font-size": 30, "font-weight": 700, fill: "#fff"}); ty += 40; });
+  const cap = `${head}. ${take}\n\nWe post the losses too — that's how you know the wins are real.\n\n21+ | Bet responsibly\n#nflparlays #playerprops #sportsbetting`;
+  return {slides: [s], head, sub, caption: cap, take};
+};
+
+B.thu = () => {
+  if(!FEED || !(FEED.windows || []).length) return {slides: [], head: "", sub: "", caption: "", note: FEED_ERR || "No games on the board yet."};
+  const wins = FEED.windows;
+  let wi = Math.min(opt("thu", "win", Math.max(0, wins.findIndex(w => w.name === "TNF"))), wins.length - 1);
+  const w = wins[wi];
+  const mode = opt("thu", "mode", "best");
+  let legs, pOdds, prob;
+  if(mode === "mine"){
+    const chosen = (opt("thu", "mine", []) || []).map(i => w.top[i]).filter(Boolean);
+    legs = chosen;
+    const dec = chosen.reduce((a, l) => a * (l.price > 0 ? 1 + l.price / 100 : 1 + 100 / -l.price), 1);
+    pOdds = chosen.length ? Math.round(dec >= 2 ? (dec - 1) * 100 : -100 / (dec - 1)) : 0;
+    prob = chosen.reduce((a, l) => a * l.p, 1);
+  } else {
+    const n = +opt("thu", "legs", 3), t = +opt("thu", "target", 200);
+    const pl = w.parlays.find(x => x.legs_n === n && x.target === t) || w.parlays[0];
+    legs = pl ? pl.legs : []; pOdds = pl ? pl.odds : 0; prob = pl ? pl.prob : 0;
+  }
+  const head = `${w.name} parlay`, sub = `${shortGame(w.games[0])}${w.games.length > 1 ? ` + ${w.games.length - 1} more` : ""} · built by our model`;
+  const H = 1350, s = canvas(H);
+  let y = frame(s, H, w.name, words("head", head), words("sub", sub));
+  if(!legs.length){ T(s, 70, y + 60, "Pick some legs in the options.", {"font-size": 32, fill: "#8e98b8"}); }
+  legRows(s, y, H - 360, legs.map(l => ({name: l.player, detail: `${l.team} · ${prop(l)}`, right: odds(l.price), small: ""})), true);
+  if(legs.length){
+    statTile(s, 70, H - 330, 940, odds(pOdds), "#fff", "PAYS", `${legs.length} legs · FanDuel prices`);
+  }
+  const cap = `${head} 🏈\n\n${legs.map(l => `• ${l.player} ${prop(l)} (${odds(l.price)})`).join("\n")}\n\nPays ${odds(pOdds)}.\nWe'll post the result either way.\n\n21+ | Bet responsibly\n#TNF #nflparlays #playerprops`;
+  return {slides: [s], head, sub, caption: cap};
+};
+
+B.fri = () => {
+  const head = "Comment a player", sub = "We'll run him through our model and reply with his best props.";
+  const H = 1350, s = canvas(H);
+  let y = frame(s, H, "Prop Assist", words("head", head), words("sub", sub));
+  const ex = opt("fri", "ex", true);
+  if(ex && FEED){
+    const seen = new Set(), picks = [];
+    (FEED.windows || []).forEach(w => (w.top || []).forEach(l => { if(!seen.has(l.player) && l.price > -600){ seen.add(l.player); picks.push(l); } }));
+    picks.sort((a, b) => b.p - a.p);
+    T(s, 70, y + 30, "LIKE THIS", {"font-size": 24, fill: "#8e98b8", "letter-spacing": 3, "font-weight": 800});
+    picks.slice(0, 3).forEach((l, k) => {
+      const yy = y + 110 + k * 120;
+      el("rect", {x: 70, y: yy - 50, width: 940, height: 100, rx: 20, fill: "rgba(11,17,36,.85)", stroke: "#a855f7", "stroke-opacity": .4, "stroke-width": 2}, s);
+      T(s, 100, yy - 4, l.player, {"font-size": 34, "font-weight": 800});
+      T(s, 100, yy + 30, `${l.team} · ${prop(l)} · ${odds(l.price)}`, {"font-size": 22, fill: "#b7c0dc", "font-weight": 600});
+      T(s, 980, yy + 12, pct(l.p), {"text-anchor": "end", "font-size": 46, "font-weight": 900, fill: tone(l.p)});
+    });
+  }
+  el("rect", {x: 70, y: H - 330, width: 940, height: 170, rx: 30, fill: "rgba(63,214,255,.08)", stroke: "#3fd6ff", "stroke-opacity": .6, "stroke-width": 3}, s);
+  T(s, 540, H - 250, "DROP A NAME BELOW ↓", {"text-anchor": "middle", "font-size": 52, "font-weight": 900, fill: "#3fd6ff"});
+  T(s, 540, H - 200, words("cta", "We reply to as many as we can"), {"text-anchor": "middle", "font-size": 26, fill: "#b7c0dc", "font-weight": 600});
+  const cap = `Comment a player 👇\n\nWe'll run him through our model and reply with his best props for Sunday.\n\n21+ | Bet responsibly\n#nfl #playerprops #fantasyfootball`;
+  return {slides: [s], head, sub, caption: cap};
+};
+
+function atdList(){
+  if(!FEED || !(FEED.td || []).length) return null;
+  const g = opt("sunam", "grp", "mix");
+  const rs = FEED.td.filter(t => g === "mix" || t.grp === g).slice().sort((a, b) => b.p - a.p);
+  return rs;
+}
+B.sunam = () => {
+  const rs = atdList();
+  if(!rs) return {slides: [], head: "", sub: "", caption: "", note: FEED_ERR || "No ATD list yet — it appears after Thursday's first ATD run."};
+  const n = Math.max(1, Math.min(5, +opt("sunam", "n", 3)));
+  const top = rs.slice(0, n);
+  const head = `Anytime TD · top ${n}`, sub = FEED.tdFinal ? "Our model's likeliest scorers this Sunday." : "Early look — the final list posts Sunday morning.";
+  const H = 1350, s = canvas(H);
+  let y = frame(s, H, "ATD", words("head", head), words("sub", sub));
+  const rowH = Math.min(150, (H - 470 - y) / top.length);
+  top.forEach((t, k) => {
+    const yy = y + k * rowH + 50;
+    el("rect", {x: 70, y: yy - 52, width: 940, height: rowH - 18, rx: 24, fill: "rgba(11,17,36,.85)", stroke: k === 0 ? "#3fd6ff" : "#56607f", "stroke-opacity": k === 0 ? .7 : .4, "stroke-width": 2}, s);
+    T(s, 110, yy + 14, String(k + 1), {"font-size": 56, "font-weight": 900, fill: "#3fd6ff"});
+    T(s, 190, yy - 2, t.player, {"font-size": 38, "font-weight": 800});
+    T(s, 190, yy + 34, `${t.pos} · ${t.team} · ${shortGame(t.game)}`, {"font-size": 22, fill: "#b7c0dc", "font-weight": 600});
+    T(s, 980, yy + 18, pct(t.p), {"text-anchor": "end", "font-size": 56, "font-weight": 900, fill: tone(t.p)});
+  });
+  const showRec = opt("sunam", "rec", true);
+  if(showRec){
+    const td = tdPicks(), a = tdStat(td);
+    if(a.n) T(s, 70, H - 300, `Our record${D.season ? " this season" : ` · ${weekLabel}`}: ${a.h} of ${a.n} scored (${pct(a.h / a.n)})`,
+      {"font-size": 24, fill: "#8e98b8", "font-weight": 600});
+  }
+  el("rect", {x: 70, y: H - 260, width: 940, height: 130, rx: 26, fill: "rgba(63,214,255,.08)", stroke: "#3fd6ff", "stroke-opacity": .6, "stroke-width": 3}, s);
+  T(s, 540, H - 182, words("cta", "Full top 20 in the tool · link in bio"), {"text-anchor": "middle", "font-size": 36, "font-weight": 900, fill: "#3fd6ff"});
+  const cap = `Anytime TD — our model's top ${n} for today 🏈\n\n${top.map((t, k) => `${k + 1}. ${t.player} (${t.team}) — ${pct(t.p)}`).join("\n")}\n\nFull top 20 in the tool. We'll post how they did tonight.\n\n21+ | Bet responsibly\n#anytimetd #nflparlays #playerprops`;
+  return {slides: [s], head, sub, caption: cap};
+};
+
+B.sunpm = () => {
+  if(!FEED || !(FEED.td || []).length) return {slides: [], head: "", sub: "", caption: "", note: FEED_ERR || "No ATD list yet."};
+  const n = Math.max(3, Math.min(10, +opt("sunpm", "n", 5)));
+  const graded = new Map(tdPicks().map(t => [t.player + "|" + t.team, t.result]));
+  const pick = g => FEED.td.filter(t => t.grp === g).slice().sort((a, b) => b.p - a.p).slice(0, n);
+  const lists = [["RB", "RUNNING BACKS", pick("RB")], ["REC", "WR / TE", pick("REC")]];
+  const st = t => S.marks[t.player + "|" + t.team] || graded.get(t.player + "|" + t.team) || "p";
+  OPTS_EXTRA.sunpm = lists;
+  const all = lists.flatMap(x => x[2]), hit = all.filter(t => st(t) === "hit").length, doneN = all.filter(t => ["hit", "miss"].includes(st(t))).length;
+  const head = "ATD scoring update", sub = `${hit} of ${all.length} have scored`;
+  const H = 1920, s = canvas(H);
+  let y = frame(s, H, "Live", words("head", head), words("sub", sub));
+  const rowH = Math.min(110, (H - 460 - y) / (all.length + 2.5));
+  lists.forEach(([g, label, rs]) => {
+    T(s, 70, y + 30, label, {"font-size": 26, fill: "#8e98b8", "letter-spacing": 3, "font-weight": 800});
+    y += 50;
+    rs.forEach(t => {
+      const m = st(t), yy = y + rowH / 2;
+      const mr = Math.min(24, rowH * .36), fs = Math.min(36, rowH * .6);      // smaller rows when the list is long
+      mark(s, 70 + mr * 1.2, yy - fs * .22, ["hit", "miss", "void"].includes(m) ? m : "p", mr);
+      T(s, 70 + mr * 2.4 + 22, yy + fs * .12, t.player, {"font-size": fs, "font-weight": 800, fill: m === "miss" || m === "void" ? "#8e98b8" : "#fff"});
+      T(s, 1010, yy + fs * .1, m === "hit" ? "SCORED" : m === "miss" ? "NO TD" : m === "void" ? "DID NOT PLAY" : pct(t.p), {"text-anchor": "end", "font-size": Math.min(28, fs * .8), "font-weight": 900,
+        fill: m === "hit" ? "#5cf2bb" : m === "miss" ? "#ff8a8a" : "#8e98b8", "letter-spacing": m === "p" ? 0 : 2});
+      y += rowH;
+    });
+    y += 30;
+  });
+  const cap = `ATD update: ${hit} of ${all.length} have scored${doneN < all.length ? " so far" : ""} ✅\n\n21+ | Bet responsibly\n#anytimetd #nfl`;
+  return {slides: [s], head, sub, caption: cap, story: true};
+};
+
+// ---------- options per day ----------
+const OPTS_EXTRA = {};
+function chk(day, k, dflt, label){
+  return `<label class="ld-check"><input type="checkbox" data-day="${day}" data-k="${k}" ${opt(day, k, dflt) ? "checked" : ""}> ${esc(label)}</label>`;
+}
+function sel(day, k, dflt, label, items){
+  const v = String(opt(day, k, dflt));
+  return `<div class="ig-field"><label>${esc(label)}</label><select data-day="${day}" data-k="${k}">${
+    items.map(([val, txt]) => `<option value="${esc(val)}" ${String(val) === v ? "selected" : ""}>${esc(txt)}</option>`).join("")}</select></div>`;
+}
+function winsHtml(){
+  if(WINS.length < 2) return "";
+  const w = pickedWins(), on = x => !w || !w.length || w.includes(x);
+  return `<div class="ig-field"><label>Game windows to include</label><div class="ig-wins">
+    <button class="chip" data-win="*" aria-pressed="${!w || !w.length || w.length === WINS.length}">All</button>${
+    WINS.map(x => `<button class="chip" data-win="${esc(x)}" aria-pressed="${!!(w && w.length && w.length < WINS.length && on(x))}">${esc(x)}</button>`).join("")}</div></div>`;
+}
+function optsHtml(day, R){
+  const h = [`<h3>${esc(DAYS.find(d => d.k === day).what)} · options</h3>`];
+  if(day === "tue" || day === "wed") h.push(winsHtml());
+  if(day === "tue"){
+    h.push(`<p class="ld-hint" style="margin-top:0">A carousel from the grades on this page (${esc(weekLabel)}). Pick another week in the Track record tab to post that one.</p>`,
+      chk("tue", "cover", true, "Slide 1 · headline numbers"), chk("tue", "odds", true, "Slide 2 · hit rate by odds"),
+      chk("tue", "atd", true, "Slide 3 · anytime TD list"), chk("tue", "close", true, "Slide 4 · where we missed"));
+  } else if(day === "wed"){
+    const lost = OPTS_EXTRA.wed || [];
+    if(lost.length) h.push(sel("wed", "pick", 0, "Which losing parlay", lost.slice(0, 40).map((p, i) => [i,
+      `${p.legs_n} legs · ${odds(p.target)} · ${p.win} · missed ${(p.miss || []).map(m => m[0]).join(", ")}`])));
+    h.push(`<div class="ig-field"><label for="igtake">Takeaway (bottom line)</label><input id="igtake" type="text" data-w="take" value="${esc(S.words.wed && S.words.wed.take || "")}" placeholder="${esc(R.take || "")}"></div>`);
+  } else if(day === "thu"){
+    if(FEED && (FEED.windows || []).length){
+      const wins = FEED.windows;
+      h.push(sel("thu", "win", Math.max(0, wins.findIndex(w => w.name === "TNF")), "Games", wins.map((w, i) => [i, w.label])));
+      h.push(sel("thu", "mode", "best", "Legs", [["best", "Our model's best parlay"], ["mine", "Let me pick the legs"]]));
+      const wi = Math.min(opt("thu", "win", 0), wins.length - 1), w = wins[wi];
+      if(opt("thu", "mode", "best") === "best"){
+        const ns = [...new Set(w.parlays.map(p => p.legs_n))], ts = [...new Set(w.parlays.map(p => p.target))];
+        h.push(`<div class="ld-g2">${sel("thu", "legs", 3, "Legs", ns.map(n => [n, n + " legs"]))}${sel("thu", "target", 200, "Target odds", ts.map(t => [t, odds(t)]))}</div>`);
+      } else {
+        const mine = new Set(opt("thu", "mine", []) || []);
+        h.push(`<div class="ig-field"><label>Pick up to 6 legs (the model's likeliest lines for these games)</label><div class="ig-picks">${
+          (w.top || []).map((l, i) => `<div class="ig-pick"><label><input type="checkbox" data-mine="${i}" ${mine.has(i) ? "checked" : ""}>
+            <span>${esc(l.player)} <small>${esc(prop(l))} · ${odds(l.price)}</small></span></label><small>${pct(l.p)}</small></div>`).join("")}</div></div>`);
+      }
+    }
+  } else if(day === "fri"){
+    h.push(chk("fri", "ex", true, "Show 3 example players from this week's board"),
+      `<div class="ig-field"><label for="igcta">Small line under the button</label><input id="igcta" type="text" data-w="cta" value="${esc(S.words.fri && S.words.fri.cta || "")}" placeholder="We reply to as many as we can"></div>`);
+  } else if(day === "sunam"){
+    h.push(`<div class="ld-g2">${sel("sunam", "grp", "mix", "Who", [["mix", "Everyone"], ["RB", "Running backs"], ["REC", "WR / TE"]])}${
+      sel("sunam", "n", 3, "How many", [1, 2, 3, 4, 5].map(n => [n, "Top " + n]))}</div>`,
+      chk("sunam", "rec", true, "Show our ATD record from this page"),
+      `<div class="ig-field"><label for="igcta">Bottom button text</label><input id="igcta" type="text" data-w="cta" value="${esc(S.words.sunam && S.words.sunam.cta || "")}" placeholder="Full top 20 in the tool · link in bio"></div>`);
+  } else if(day === "sunpm"){
+    h.push(sel("sunpm", "n", 5, "Players per position", [3, 4, 5, 6, 8, 10].map(n => [n, "Top " + n])));
+    h.push(`<p class="ld-hint" style="margin-top:6px">Tap as they score. After Monday's grading the results fill in on their own. It's an Instagram Story (tall).</p>`);
+    (OPTS_EXTRA.sunpm || []).forEach(([g, label, rs]) => {
+      h.push(`<div class="ig-field"><label>${esc(label)}</label><div class="ig-picks">${rs.map(t => {
+        const k = t.player + "|" + t.team, m = S.marks[k] || "";
+        return `<div class="ig-pick"><span>${esc(t.player)} <small>${esc(t.team)} · ${pct(t.p)}</small></span>
+          <div class="ld-seg"><button class="p" aria-pressed="${!m}" data-mk="${esc(k)}" data-s="">·</button>
+          <button class="h" aria-pressed="${m === "hit"}" data-mk="${esc(k)}" data-s="hit">✓</button>
+          <button class="m" aria-pressed="${m === "miss"}" data-mk="${esc(k)}" data-s="miss">✕</button></div></div>`; }).join("")}</div></div>`);
+    });
+  }
+  if(R.note) h.push(`<p class="ig-note">${esc(R.note)}</p>`);
+  return h.join("");
+}
+function words(k, dflt){ const w = S.words[DAY] || {}; return (w[k] || "").trim() || dflt; }
+
+// ---------- build, show, save ----------
+let CUR = null, FILES = [];
+function render(regenCaption){
+  const R = B[DAY]();
+  CUR = R;
+  $("igopts").innerHTML = optsHtml(DAY, R);
+  $("ighead").placeholder = R.head || ""; $("igsub").placeholder = R.sub || "";
+  const keep = document.activeElement;
+  if(keep !== $("ighead")) $("ighead").value = (S.words[DAY] || {}).head || "";
+  if(keep !== $("igsub")) $("igsub").value = (S.words[DAY] || {}).sub || "";
+  if(keep !== $("ighandle")) $("ighandle").value = S.handle || "";
+  const box = $("igslides"); box.innerHTML = "";
+  R.slides.forEach((svg, i) => { const d = document.createElement("div"); d.className = "ig-slide"; d.dataset.i = i; d.appendChild(svg); box.appendChild(d); });
+  if(regenCaption || !$("igcap").value) $("igcap").value = R.caption || "";
+  $("igsave").textContent = R.slides.length > 1 ? `Save ${R.slides.length} images` : "Save image";
+  $("igsave").disabled = !R.slides.length;
+  $("igdays").innerHTML = DAYS.map(d => `<button class="ig-day" aria-pressed="${d.k === DAY}" data-day="${d.k}">${d.name}<small>${d.what}</small></button>`).join("");
+  prepFiles();
+}
+let prepTimer = 0, GEN = 0;
+const asDataUrl = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); });
+// Draw each slide as a real PNG: it feeds the Save button, and it replaces the
+// preview so pressing and holding a post offers "Save to Photos".
+function prepFiles(){
+  clearTimeout(prepTimer); FILES = [];
+  const svgs = (CUR && CUR.slides) || [], gen = ++GEN;
+  prepTimer = setTimeout(async () => {
+    const out = [];
+    for(let i = 0; i < svgs.length; i++){
+      let blob;
+      try { blob = await toPng(svgs[i]); } catch(e) { if(gen === GEN) FILES = []; return; }
+      if(gen !== GEN) return;                        // the post changed while drawing
+      out.push(new File([blob], `alp-${DAY}-${i + 1}.png`, {type: "image/png"}));
+      try {
+        const url = await asDataUrl(blob), box = document.querySelector(`#igslides .ig-slide[data-i="${i}"]`);
+        if(gen !== GEN || !box) return;
+        const img = new Image(); img.src = url; img.alt = `Post ${i + 1}`; img.className = "ig-img";
+        img.width = +svgs[i].getAttribute("width"); img.height = +svgs[i].getAttribute("height");
+        box.replaceChildren(img);
+      } catch(e) {}
+    }
+    if(gen === GEN) FILES = out;
+  }, 250);
+}
+function toPng(svg){
+  const w = +svg.getAttribute("width"), h = +svg.getAttribute("height");
+  const xml = new XMLSerializer().serializeToString(svg);
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas"); c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        c.toBlob(b => b ? res(b) : rej(new Error("no image")), "image/png");
+      } catch(e) { rej(e); }
+    };
+    img.onerror = rej;
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
+  });
+}
+function toast(msg){ const t = $("igtoast"); t.textContent = msg; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 2600); }
+
+$("igsave").onclick = () => {
+  if(!FILES.length){ toast("Still drawing — tap again in a second"); prepFiles(); return; }
+  if(navigator.canShare && navigator.canShare({files: FILES})){
+    navigator.share({files: FILES}).catch(() => {});
+  } else {
+    FILES.forEach(f => { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name;
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); });
+  }
+};
+$("igcopy").onclick = () => {
+  const t = $("igcap").value;
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Caption copied"),
+    () => { $("igcap").select(); document.execCommand && document.execCommand("copy"); toast("Caption copied"); });
+};
+$("igbuild").onclick = () => { render(true); toast("Post built"); };
+$("igreset").onclick = () => { S.words[DAY] = {}; save(); render(true); };
+$("igdays").addEventListener("click", e => {
+  const b = e.target.closest(".ig-day"); if(!b) return;
+  DAY = b.dataset.day; S.day = DAY; save(); $("igcap").value = ""; render(true);
+});
+const setWord = (k, v) => { (S.words[DAY] = S.words[DAY] || {})[k] = v; save(); };
+$("ighead").addEventListener("input", e => { setWord("head", e.target.value); render(false); });
+$("igsub").addEventListener("input", e => { setWord("sub", e.target.value); render(false); });
+$("ighandle").addEventListener("input", e => { S.handle = e.target.value; save(); render(false); });
+$("igopts").addEventListener("change", e => {
+  const t = e.target;
+  if(t.dataset.k){ setOpt(t.dataset.day, t.dataset.k, t.type === "checkbox" ? t.checked : (isNaN(+t.value) ? t.value : +t.value)); render(true); }
+  else if(t.dataset.mine != null){
+    let mine = (opt("thu", "mine", []) || []).slice(); const i = +t.dataset.mine;
+    mine = t.checked ? [...new Set([...mine, i])].slice(0, 6) : mine.filter(x => x !== i);
+    setOpt("thu", "mine", mine); render(true);
+  }
+});
+$("igopts").addEventListener("input", e => {
+  const t = e.target; if(!t.dataset.w) return;
+  setWord(t.dataset.w, t.value); const id = t.id; render(false);
+  const back = $(id); if(back){ back.focus(); back.setSelectionRange(back.value.length, back.value.length); }
+});
+$("igopts").addEventListener("click", e => {
+  const c = e.target.closest("button[data-win]");
+  if(c){
+    const x = c.dataset.win; let w = pickedWins() || [];
+    if(x === "*" || w.length >= WINS.length) w = x === "*" ? [] : [x];
+    else w = w.includes(x) ? w.filter(y => y !== x) : [...w, x];
+    if(w.length >= WINS.length) w = [];
+    setOpt("res", "wins", w); render(true); return;
+  }
+  const b = e.target.closest("button[data-mk]"); if(!b) return;
+  if(b.dataset.s) S.marks[b.dataset.mk] = b.dataset.s; else delete S.marks[b.dataset.mk];
+  save(); render(true);
+});
+$("igslides").addEventListener("click", e => {
+  const d = e.target.closest(".ig-slide"); if(!d) return;
+  const src = d.querySelector("img, svg"); if(!src) return;
+  const svg = src.cloneNode(true);
+  const w = +(src.getAttribute("width") || src.width), h = +(src.getAttribute("height") || src.height);
+  const f = document.createElement("div"); f.className = "ig-full";
+  f.style.setProperty("--ar", (w / h).toFixed(4));
+  f.appendChild(svg); document.body.appendChild(f); document.body.classList.add("igfull");
+  f.onclick = () => { f.remove(); document.body.classList.remove("igfull"); };
+});
+
+window.IG_SHOW = () => { render(false); };
+loadFeed().then(() => { if(!$("igview").hidden) render(true); });
+render(true);
+})();
+</script></body></html>
