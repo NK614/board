@@ -280,6 +280,7 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
   <div class="ld-acts" style="margin-top:0">
     <button class="ld-btn pri" id="igsave">Save image</button>
     <button class="ld-btn" id="igcopy">Copy caption</button>
+    <button class="ld-btn" id="ighook">New hook</button>
   </div>
   <p class="ld-hint" id="igsavehint">Save sends every slide to the share sheet — tap “Save Images” to put them all in Photos at once. Tap a post to see it full screen.</p>
   <div class="ig-field"><label for="igcap">Caption</label><textarea id="igcap"></textarea></div>
@@ -337,9 +338,8 @@ if(DATA.season){ $("picksec").hidden = true; $("seasonnote").hidden = false; }
        <span>the board predicted<br>${done.length ? `for the same ${done.length}` : ""}</span></div>`
   + (pend ? `<div class="kpi wide note"><p>${pend} more pick${pend === 1 ? "" : "s"} still waiting on games or stats — not counted yet.</p></div>` : "")
   + (hurt ? `<div class="kpi wide note"><p><span class="flag">Injury</span> <strong>${hurt}</strong> of these wins
-      count only because an injured player's leg was dropped — he left the game and didn't return. FanDuel's
-      Bet Protect removes that leg (free on NFL props through September 2026, a paid add-on otherwise), so
-      these wins need it.</p></div>` : "");
+      count only because an injured player's leg was dropped — he left the game and didn't return. Some books'
+      injury protection removes that leg (sometimes free, sometimes a paid add-on), so these wins need it.</p></div>` : "");
 })();
 
 const wins = ["All windows", ...new Set(PS.map(p => p.win))].sort((a, b) =>
@@ -488,7 +488,7 @@ function drawPicks(){
       <div class="top"><div class="what"><b>${p.legs_n} legs · ${fmt(p.target)}</b></div>
         <span class="pill ${p.status}">${LABEL[p.status]}</span></div>
       <div class="meta">${esc(p.win)} · ${esc(p.board)} · paid ${fmt(p.odds)} · board ${Math.round(p.prob * 100)}%${
-        p.results.includes("injury") ? '<span class="flag">Injury — needs Bet Protect</span>' : ""}</div>
+        p.results.includes("injury") ? '<span class="flag">Injury — needs injury protection</span>' : ""}</div>
       <div class="dots">${dots}</div>
       <div class="legs">${p.legs.map((l, k) => legHtml(l, p.results[k])).join("")}</div></div>`;
   }).join("") + (ps.length > SHOW ? `<button class="more" id="more">Show more (${ps.length - SHOW} left)</button>` : "");
@@ -633,9 +633,9 @@ function draw(){
        isStart ? money(S.start) : (r.planned && st === "p" ? "~" : "") + money(r.amt));
     // The bet's odds on the right, shrunk if it would run into the amount.
     const amtTxt = isStart ? money(S.start) : (r.planned && st === "p" ? "~" : "") + money(r.amt);
-    let lab = isStart ? "START" : ((i === n ? "GOAL · " : "") + `${odd(r.odds)} ${S.label || ""}`).trim().toUpperCase();
+    // The top rung is the finish line, so it just says GOAL.
+    const lab = isStart ? "START" : i === n ? "GOAL" : `${odd(r.odds)} ${S.label || ""}`.trim().toUpperCase();
     const room = x1 - (x0 + amtTxt.length * (isStart ? 26 : 31) + 44);
-    if(lab.length * .66 * 19 > room) lab = lab.replace(/^GOAL · /, "");      // tight top rung: the odds matter more
     const lfs = Math.max(14, Math.min(24, room / Math.max(1, lab.length * .66)));
     el("text", {x: x1, y: y + 2, "text-anchor": "end", "font-weight": 650, "font-size": lfs, fill: "#8e98b8", "letter-spacing": 1}, g, lab);
     if(next) el("circle", {cx: x, cy: y, r: 50, fill: "none", stroke: "#3fd6ff", "stroke-width": 3, opacity: .45, filter: "url(#ldglow)"}, g);
@@ -912,6 +912,22 @@ function defaultDay(){
 }
 let DAY = S.day && DAYS.some(d => d.k === S.day) ? S.day : defaultDay();
 
+// ---------- captions: a rotating hook on top, the facts, a call to action ----------
+// "New hook" steps through each day's list; hooks never promise a win.
+S.hooks = S.hooks || {};
+const pickOf = (arr, bump) => arr[((S.hooks[DAY] || 0) + (bump || 0)) % arr.length];
+const handleTag = () => { const h = (S.handle || "").trim(); return h ? (h[0] === "@" ? h : "@" + h) : ""; };
+const CTAS = [
+  () => `🔔 Follow ${handleTag() || "us"} so you never miss a post`,
+  () => `🔗 Full board + parlay builder → link in bio`,
+  () => `📌 Save this for game day`,
+  () => `🔔 Turn on post notifications. ${handleTag()} drops picks every week`,
+];
+const cta = () => pickOf(CTAS, 1)().replace(/\s+$/, "");
+const FOOT = "21+ | Bet responsibly";
+const caption = (hook, body, tags) => [hook, body, cta(), FOOT + "\n" + tags].filter(Boolean).join("\n\n");
+const PRIME = /^(TNF|SNF|MNF)$/;
+
 // Each builder returns {slides: [svg...], head, sub, caption, note}
 const B = {};
 
@@ -990,9 +1006,27 @@ B.tue = () => {
       slides.push(s);
     }
   }
-  const cap = done.length
-    ? `${weekLabel} receipts 🧾${winNote() ? ` (${winNote()})` : ""}\n\nParlays hit ${pct(w / done.length)} (${w} of ${done.length}).\n\nEvery pick graded — wins and losses. Swipe for the breakdown.\n\n21+ | Bet responsibly\n#nflparlays #playerprops #sportsbetting #anytimetd`
-    : "";
+  let cap = "";
+  if(done.length){
+    const good = w >= exp, wk = weekLabel === "Season so far" ? "the season" : weekLabel;
+    const hook = pickOf(good ? [
+      `🧾 RECEIPTS ARE IN and ${wk} COOKED 🔥`,
+      `We said we'd post every pick. Glad we did 😤🧾`,
+      `${w} parlays cashed. Every single pick below 👇🔥`,
+      `Another week, another stack of receipts 🧾💰`,
+    ] : [
+      `🧾 Receipts are in. Not every week is a heater, and we post them all anyway 💪`,
+      `Some weeks cook, some weeks don't. Here's ALL of it 🧾`,
+      `Win or lose, the receipts go up. That's the deal 🤝`,
+      `Tough week, full transparency. Every pick graded 🧾👇`,
+    ]);
+    const td = tdPicks(), rb = tdStat(td.filter(t => t.grp === "RB")), rc = tdStat(td.filter(t => t.grp === "REC"));
+    const lines = [`✅ Parlays hit: ${pct(w / done.length)} (${w} of ${done.length})${winNote() ? ` · ${winNote()}` : ""}`];
+    if(rb.n) lines.push(`🏈 ATD RBs: ${rb.h} of ${rb.n} scored`);
+    if(rc.n) lines.push(`🏈 ATD WR/TE: ${rc.h} of ${rc.n} scored`);
+    cap = caption(hook, lines.join("\n") + `\n\nNo deleted posts. No hiding the losses. Just results 📊\nSwipe for the full breakdown →`,
+      "#nfl #nflparlays #playerprops #sportsbetting #anytimetd #parlay");
+  }
   return {slides, head, sub, caption: cap, note: slides.length ? "" : "Nothing graded on this page yet — open a week in the Track record tab."};
 };
 
@@ -1024,7 +1058,18 @@ B.wed = () => {
   const takeaway = words("take", take);
   let ty = H - 220;
   wrap(takeaway, 30, 940, 2).forEach(l => { T(s, 70, ty, l, {"font-size": 30, "font-weight": 700, fill: "#fff"}); ty += 40; });
-  const cap = `${head}. ${take}\n\nWe post the losses too — that's how you know the wins are real.\n\n21+ | Bet responsibly\n#nflparlays #playerprops #sportsbetting`;
+  const hook = missed.length === 1 ? pickOf([
+      `SO. CLOSE. 😤`,
+      `One leg. ONE. 😩`,
+      `The one that got away 💔`,
+      `${hitN} of ${p.legs_n} legs cashed... and then this 🫠`,
+    ]) : pickOf([
+      `Not every parlay cashes. Here's one that didn't 👇`,
+      `Loss breakdown, because we don't hide these 🔍`,
+      `Taking the L out loud 📉 Here's what happened`,
+    ]);
+  const cap = caption(hook, `${take}\n\nWe post the losses too. That's how you know the wins are real 💯\nOn to the next one 💪`,
+    "#nfl #nflparlays #playerprops #sportsbetting #parlay");
   return {slides: [s], head, sub, caption: cap, take};
 };
 
@@ -1052,9 +1097,21 @@ B.thu = () => {
   if(!legs.length){ T(s, 70, y + 60, "Pick some legs in the options.", {"font-size": 32, fill: "#8e98b8"}); }
   legRows(s, y, H - 360, legs.map(l => ({name: l.player, detail: `${l.team} · ${prop(l)}`, right: odds(l.price), small: ""})), true);
   if(legs.length){
-    statTile(s, 70, H - 330, 940, odds(pOdds), "#fff", "PAYS", `${legs.length} legs · FanDuel prices`);
+    statTile(s, 70, H - 330, 940, odds(pOdds), "#fff", "PAYS", `${legs.length} legs`);
   }
-  const cap = `${head} 🏈\n\n${legs.map(l => `• ${l.player} ${prop(l)} (${odds(l.price)})`).join("\n")}\n\nPays ${odds(pOdds)}.\nWe'll post the result either way.\n\n21+ | Bet responsibly\n#TNF #nflparlays #playerprops`;
+  const hook = pickOf(PRIME.test(w.name) ? [
+      `🚨 ${w.name} PARLAY IS LIVE 🚨`,
+      `Primetime needs a parlay 🏈🔥`,
+      `Lights on. ${w.name} is HERE and so is our parlay 💡🏈`,
+      `Built by the model, leg by leg. ${w.name} let's GO 🔥`,
+    ] : [
+      `🚨 ${w.name} PARLAY IS LIVE 🚨`,
+      `${w.name} slate needs a parlay 🏈🔥`,
+      `Built by the model, leg by leg 👇🔥`,
+    ]);
+  const cap = caption(hook,
+    `${legs.map(l => `🎯 ${l.player} ${prop(l)} (${odds(l.price)})`).join("\n")}\n\n💰 Pays ${odds(pOdds)}\n\nTail it, fade it, or just sweat it with us 😤 Result goes up either way 📊`,
+    `#${w.name.replace(/[^A-Za-z0-9]/g, "")} #nfl #nflparlays #playerprops #sportsbetting #parlay`);
   return {slides: [s], head, sub, caption: cap};
 };
 
@@ -1099,8 +1156,15 @@ B.fri = () => {
     T(s, 1010, mid + 4 * k, `${x.floor}+`, {"text-anchor": "end", "font-size": 46 * k, "font-weight": 900, fill: "#5cf2bb"});
     T(s, 1010, mid + 34 * k, `${unit} · ${len}/${len}`, {"text-anchor": "end", "font-size": 18 * k, fill: "#8e98b8", "font-weight": 700, "letter-spacing": 1});
   });
-  const cap = `Heaters 🔥 ${label.toLowerCase()}, ${len} straight games\n\n${top.map((x, i) =>
-    `${i + 1}. ${x.player} (${x.team}) — ${x.floor}+ ${unit} in each of his last ${len}`).join("\n")}\n\nWho keeps it going this week?\n\n21+ | Bet responsibly\n#nfl #playerprops #fantasyfootball`;
+  const hook = pickOf([
+      `🔥 THESE GUYS ARE COOKING 🔥`,
+      `${len} straight games. Every. Single. One. 🔥`,
+      `Heaters only 🥵 ${label.toLowerCase()} edition`,
+      `Don't bet against a streak like this 👀🔥`,
+    ]);
+  const cap = caption(hook, `${top.map((x, i) =>
+    `${i + 1}. ${x.player} (${x.team}): ${x.floor}+ ${unit} in each of his last ${len} 🔥`).join("\n")}\n\nWho keeps it rolling this week? 👀`,
+    "#nfl #playerprops #fantasyfootball #nflbetting #sportsbetting");
   return {slides: [s], head, sub, caption: cap};
 };
 
@@ -1135,7 +1199,15 @@ B.sunam = () => {
   }
   el("rect", {x: 70, y: H - 260, width: 940, height: 130, rx: 26, fill: "rgba(63,214,255,.08)", stroke: "#3fd6ff", "stroke-opacity": .6, "stroke-width": 3}, s);
   T(s, 540, H - 182, words("cta", "Full top 20 in the tool · link in bio"), {"text-anchor": "middle", "font-size": 36, "font-weight": 900, fill: "#3fd6ff"});
-  const cap = `Anytime TD — our model's top ${n} for today 🏈\n\n${top.map((t, k) => `${k + 1}. ${t.player} (${t.team}) — ${pct(t.p)}`).join("\n")}\n\nFull top 20 in the tool. We'll post how they did tonight.\n\n21+ | Bet responsibly\n#anytimetd #nflparlays #playerprops`;
+  const hook = pickOf([
+      `🏈 GAME DAY. Who's finding the end zone? 🏈`,
+      `🚨 SUNDAY TD LIST IS HERE 🚨`,
+      `Our model's top ${n} to score today 👀🔥`,
+      `Six points incoming? Here's who the model likes 🙌`,
+    ]);
+  const cap = caption(hook,
+    `${top.map((t, k) => `${["🥇", "🥈", "🥉"][k] || `${k + 1}.`} ${t.player} (${t.team}) · ${pct(t.p)}`).join("\n")}\n\nFull top 20 in the tool. We'll post how they did tonight, win or lose 📊`,
+    "#nfl #anytimetd #nflparlays #playerprops #sportsbetting #nflsunday");
   return {slides: [s], head, sub, caption: cap};
 };
 
@@ -1166,7 +1238,13 @@ B.sunpm = () => {
     });
     y += 30;
   });
-  const cap = `ATD update: ${hit} of ${all.length} have scored${doneN < all.length ? " so far" : ""} ✅\n\n21+ | Bet responsibly\n#anytimetd #nfl`;
+  const live = doneN < all.length;
+  const hook = hit ? pickOf([
+      `🚨 TD ALERT 🚨 ${hit} of ${all.length} have found the end zone${live ? " so far" : ""}`,
+      `They're SCORING 🙌 ${hit} of ${all.length}${live ? " and counting" : ""}`,
+      `Touchdown tracker 🏈 ${hit} of ${all.length} have cashed${live ? " so far" : ""} ✅`,
+    ]) : live ? `Still waiting on the first one 👀 ${all.length} scorers on the list` : `Rough day for the TD list 😤 0 of ${all.length}. Back at it next week 💪`;
+  const cap = caption(hook, "", "#nfl #anytimetd #nflsunday");
   return {slides: [s], head, sub, caption: cap, story: true};
 };
 
@@ -1319,6 +1397,7 @@ $("igcopy").onclick = () => {
     () => { $("igcap").select(); document.execCommand && document.execCommand("copy"); toast("Caption copied"); });
 };
 $("igbuild").onclick = () => { render(true); toast("Post built"); };
+$("ighook").onclick = () => { S.hooks[DAY] = (S.hooks[DAY] || 0) + 1; save(); render(true); };
 $("igreset").onclick = () => { S.words[DAY] = {}; save(); render(true); };
 $("igdays").addEventListener("click", e => {
   const b = e.target.closest(".ig-day"); if(!b) return;
