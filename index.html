@@ -1098,8 +1098,7 @@ function render(){
     // One sentence, in the reader's terms. The previous version explained the
     // internals and printed a terminal command, which is a developer's answer
     // to a question the page can answer plainly.
-    board.innerHTML = `<div class="empty">No active lines for this prop on `
-      + `${bookName(book)}.</div>`;
+    board.innerHTML = `<div class="empty">No active lines for this prop right now.</div>`;
     return;
   }
 
@@ -1127,7 +1126,7 @@ function render(){
 
     if(stale){
       notes.push(`<div class="note-strip s-crit"><span class="tag">Role changed</span>
-        <span><b>Check the injury report.</b> ${bookName(p.book)}'s line
+        <span><b>Check the injury report.</b> The sportsbook's line
         (${p.std_line}) sits well below his ${p.mean.toFixed(1)} ${unit} average.
         They know something the history doesn't.</span></div>`);
     }
@@ -1285,7 +1284,7 @@ function render(){
         <div class="pfacts">
           <div class="st"><span class="k">Avg</span><span class="v">${p.mean.toFixed(1)}</span></div>
           <div class="st"><span class="k">Median</span><span class="v">${med != null ? fmtNum(med) : "—"}</span></div>
-          <div class="st hl"><span class="k">${({fanduel: "FD", draftkings: "DK"})[p.book] || bookName(p.book)} line</span><span class="v">${p.std_line != null ? p.std_line : "—"}</span></div>
+          <div class="st hl"><span class="k">Book line</span><span class="v">${p.std_line != null ? p.std_line : "—"}</span></div>
           <div class="st"><span class="k">Games</span><span class="v">${p.games}<small>/${p.eligible}</small></span></div>
         </div>
         <div class="pmeta">${unit ? `${unit[0].toUpperCase() + unit.slice(1)} · ` : ""}back to <b>${p.since || "—"}</b>${p.dnp > 0 ? ` · sat out ${p.dnp} (not counted)` : ""}${missed > 0 ? ` · ${missed} game${missed === 1 ? "" : "s"} not recorded` : ""}${elsewhere > 0 ? ` · <b>${withTeam}</b> with ${p.team}, ${elsewhere} with ${prior.join("/")}` : ""}</div>
@@ -1418,10 +1417,10 @@ function renderSlip(){
   $("slip-n").textContent = n;
   $("slip-label").textContent = n === 1 ? "leg" : "legs";
   const used = BOOKS.filter(([b]) => [...SLIP.values()].some(r => r.book === b));
-  $("slip-gos").innerHTML = used.map(([b, name]) => {
+  $("slip-gos").innerHTML = used.map(([b, name], i) => {
     const bl = [...SLIP.values()].filter(r => r.book === b), k = bl.length;
     const odds = fmtAmer(amerOf(parlayDec(bl)));
-    const text = used.length === 1 ? `${name} ${odds}` : `${name} (${k}) ${odds}`;
+    const text = used.length === 1 ? `Open in ${name} ${odds}` : `${name} (${k}) ${odds}`;
     return `<a class="slip-go${b === "draftkings" ? " dk" : ""}" data-book="${b}"
       href="${esc(slipUrl(b))}" target="_blank" rel="noopener">${text}</a>`;
   }).join("");
@@ -1429,9 +1428,9 @@ function renderSlip(){
   const legs = used.map(([b, name]) => {
     const bl = [...SLIP.values()].filter(r => r.book === b), d = parlayDec(bl);
     const sgp = sameGame(bl);
-    const head = `<div class="leg-book"><span>${name} · ${bl.length} leg${bl.length === 1 ? "" : "s"}</span>
+    const head = `<div class="leg-book"><span>${bl.length} leg${bl.length === 1 ? "" : "s"}</span>
       <span class="parlay-odds">${fmtAmer(amerOf(d))}${sgp ? "*" : ""}
-      <span class="payout">$10 pays $${(10 * d).toFixed(2)}</span></span></div>`;
+      <span class="payout">$10 wins $${(10 * (d - 1)).toFixed(2)}</span></span></div>`;
     return head + [...SLIP.entries()].filter(([, r]) => r.book === b).map(([id, r]) => {
     const unit = (SHARED.units || {})[r.market] || "";
     return `<div class="leg">
@@ -1782,7 +1781,7 @@ function buildParlayOnce(nLegs, targetAmer, book, scope, exclude, strict, noAlon
   const players = pgPool(book, scope, exclude, strict, noAlone);
   if(players.length < nLegs && !players.some(os => os.some(o => o.w === 2))){
     return {error: `Only ${players.length} player${players.length === 1 ? " has" : "s have"} `
-      + `${bookName(book)} lines in this selection. Pick ${players.length} leg${players.length === 1 ? "" : "s"} or fewer, `
+      + `lines in this selection. Pick ${players.length} leg${players.length === 1 ? "" : "s"} or fewer, `
       + `or widen the games.`};
   }
   const target = Math.log(decOf(targetAmer));
@@ -1993,7 +1992,7 @@ function pgRender(res){
   out.innerHTML = nav + `
     <div class="pg-sum">
       <div class="row"><span class="big">${fmtAmer(odds)}</span>
-        <span>${res.legs.length} leg${res.legs.length === 1 ? "" : "s"} at ${name} · target ${fmtAmer(target)}</span></div>
+        <span>${res.legs.length} leg${res.legs.length === 1 ? "" : "s"} · target ${fmtAmer(target)}</span></div>
       <div class="row"><span>Board estimate it hits: <b>${(res.prob * 100).toFixed(res.prob < 0.01 ? 2 : 1)}%</b></span>
         <span>$10 wins $${(10 * (res.d - 1)).toFixed(2)} · returns $${(10 * res.d).toFixed(2)}</span></div>
     </div>
@@ -2005,7 +2004,7 @@ function pgRender(res){
     ${res.inBand ? "" : `<div class="pg-warn">Nothing on this board lands within 10% of
       ${fmtAmer(target)} with ${res.legs.length} leg${res.legs.length === 1 ? "" : "s"}.
       This is the closest it can build.</div>`}
-    ${sgp ? `<div class="pg-warn">Some legs share a game. ${name} prices same-game legs
+    ${sgp ? `<div class="pg-warn">Some legs share a game. Sportsbooks price same-game legs
       together, so its price will differ from ${fmtAmer(odds)}.</div>` : ""}
     ${res.legs.some(o => o.why.length) ? `<p class="pg-hint">Tap a flag to see what it means.</p>` : ""}
     <div class="pg-cols"><span>Leg</span><span><b>Model prediction<br>hit rate</b>Historical hit rate</span></div>
@@ -2013,7 +2012,7 @@ function pgRender(res){
     <div class="pg-actions">
       <button class="btn" id="pg-add">Add to slip</button>
       <a class="btn ghost" id="pg-open-book" target="_blank" rel="noopener"
-         href="${esc(pgSlipUrl(res))}">Open in ${name}</a>
+         href="${esc(pgSlipUrl(res))}">Open in ${esc(name)}</a>
     </div>
     <p class="pg-fine">How it picks: each line's hit rate is pulled toward the
       book's own price (so small samples can't run wild), blended with the last
