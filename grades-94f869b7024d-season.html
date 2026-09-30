@@ -186,6 +186,7 @@ body.igfull{overflow:hidden}
 #igview .ig-wins .chip{padding:8px 12px;font-size:13.5px}
 #betpanel select{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:10px 11px;font:600 16px/1.3 var(--ui);appearance:none;-webkit-appearance:none}
 #betpanel .ig-field{margin-top:10px}
+#betpanel textarea{width:100%;min-height:220px;background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:15px;line-height:1.45;resize:vertical;box-sizing:border-box}
 #betpanel .bet-ov{display:grid;grid-template-columns:.7fr 1fr 1fr;gap:10px}
 #betpanel .ig-note{font-size:13px;color:var(--warn);line-height:1.45;margin:10px 0 0}
 #betpanel .ig-picks{max-height:360px;overflow-y:auto}
@@ -233,8 +234,10 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
   <p class="ld-hint" style="margin-top:0">The parlay you're placing for the next rung, with the model's hit rate, the historical hit rate and the flags — ready to post.</p>
   <div id="betopts"></div>
   <div class="ig-slides" id="betslide"></div>
-  <div class="ld-acts"><button class="ld-btn pri" id="betsave">Save image</button></div>
+  <div class="ld-acts"><button class="ld-btn pri" id="betsave">Save image</button>
+    <button class="ld-btn" id="betcopy">Copy caption</button><button class="ld-btn" id="bethook">New hook</button></div>
   <p class="ld-hint">Or press and hold the picture and pick "Save to Photos".</p>
+  <div class="ig-field"><label for="betcap">Caption</label><textarea id="betcap"></textarea></div>
 </div>
 <div class="ld-panel">
   <div class="ld-acts" style="margin-top:0">
@@ -1469,7 +1472,7 @@ function ladderNow(){
     if((L.st || [])[i] !== "h") break;
     amt *= decOf(ok((L.odds || [])[i]) ? L.odds[i] : plan); hits++;
   }
-  return {bank: amt, rung: hits + 1, busted: (L.st || [])[hits] === "m"};
+  return {bank: amt, rung: hits + 1, busted: (L.st || [])[hits] === "m", start: +L.start || 25, goal: +L.goal || 1000};
 }
 function betLegs(){
   if(!FEED || !(FEED.windows || []).length) return null;
@@ -1527,14 +1530,49 @@ function rateLegs(s, y, bottom, legs){
 const cash = (v, typed) => "$" + (typed && Math.round(v * 100) % 100
   ? v.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2})
   : Math.round(v).toLocaleString("en-US"));
+let BET_NOW = null;
+// Ladder captions: hook by where the ladder is (first rung, climbing, last rung).
+function betCaption(){
+  const b = BET_NOW; if(!b || !b.legs.length) return "";
+  const n = (S.hooks.bet || 0), pick = (arr, bump) => arr[(n + (bump || 0)) % arr.length];
+  const money = v => "$" + Math.round(v).toLocaleString("en-US");
+  const G = money(b.goal), last = b.ret >= b.goal - 0.005;
+  const hook = b.rung <= 1 ? pick([
+      `🪜 THE ${money(b.start)} → ${G} LADDER STARTS NOW 🪜`,
+      `${money(b.start)} to ${G}. Rung 1. Let's climb 🧗‍♂️🔥`,
+      `Day one of the ladder challenge. Here's the first bet 👇`,
+      `Every ladder starts with one bet. This is ours 🪜`,
+    ]) : last ? pick([
+      `🚨 ONE RUNG FROM ${G} 🚨`,
+      `This is the one. Final rung 👀🔥`,
+      `${b.sTxt} on the line. ${G} is ONE bet away 😤`,
+    ]) : pick([
+      `🪜 RUNG ${b.rung} 🪜 Still climbing 🔥`,
+      `${b.rung - 1} down. Rung ${b.rung} is LIVE 🚨`,
+      `${money(b.start)} → ${b.sTxt} and we're not done 📈`,
+      `The ladder keeps climbing. Rung ${b.rung} 👇🔥`,
+    ]);
+  const legLines = b.legs.map(l => {
+    const hot = (l.flags || []).some(f => /hot streak/i.test(f[0])) ? " 🔥" : "";
+    return `🎯 ${l.player} ${propLong(l)} (${odds(l.price)})${hot}\n     Model ${pct(l.p)}${l.n ? ` · hit in ${l.hits} of ${l.n}` : ""}`;
+  }).join("\n");
+  const ctas = [`🔔 Follow ${handleTag() || "along"} to watch every rung`, `📌 Save this and check back after the game`,
+                `🔗 Full board + parlay builder → link in bio`, `🔔 Turn on post notifications so you catch the next rung`];
+  return [hook,
+    `Rung ${b.rung} bet: ${b.sTxt} → ${b.rTxt}\n\n${legLines}\n\n💰 Pays ${odds(b.pays)}`,
+    `Goal: ${money(b.start)} → ${G}. Every rung posted, win or lose 📊`,
+    pick(ctas, 1), `21+ | Bet responsibly\n#ladderchallenge #nflparlays #playerprops #sportsbetting #parlay #nfl`].join("\n\n");
+}
 function betCard(legs){
   const H = 1350, s = canvas(H), L = ladderNow();
   const dec = legs.reduce((a, l) => a * decOf(l.price), 1), odds = legs.length ? amerOfDec(dec) : 0;
   // Rung, bet and return follow the ladder unless typed in under the picture.
   const ov = opt("bet", "ov", {}) || {};
   const rung = ov.rung > 0 ? Math.round(ov.rung) : L ? L.rung : 1;
-  const stake = ov.stake > 0 ? ov.stake : L ? L.bank : 0;
+  const stake = ov.stake > 0 ? ov.stake : L ? L.bank : 25;          // 25 = the ladder's default start
   const ret = ov.ret > 0 ? ov.ret : stake * dec;
+  BET_NOW = {rung, stake, ret, pays: odds, legs, start: L ? L.start : 25, goal: L ? L.goal : 1000,
+             sTxt: cash(stake, ov.stake > 0), rTxt: cash(ret, ov.ret > 0)};
   let y = frame(s, H, `Rung ${rung}`, `Rung ${rung} bet`,
     stake ? `${cash(stake, ov.stake > 0)} → ${cash(ret, ov.ret > 0)}` : "");
   rateLegs(s, y, H - 300, legs);
@@ -1579,6 +1617,7 @@ function renderBet(){
   const box = $("betslide"); box.innerHTML = ""; BET_FILE = null;
   if(!legs) return;
   const svg = betCard(legs), d = document.createElement("div");
+  if($("betcap")) $("betcap").value = betCaption();
   d.className = "ig-slide"; d.appendChild(svg); box.appendChild(d);
   toPng(svg).then(async blob => {
     BET_FILE = new File([blob], "alp-ladder-bet.png", {type: "image/png"});
@@ -1602,6 +1641,12 @@ if($("betopts")){
     }
     renderBet();
   });
+  $("bethook").onclick = () => { S.hooks.bet = (S.hooks.bet || 0) + 1; save(); $("betcap").value = betCaption(); };
+  $("betcopy").onclick = () => {
+    const t = $("betcap").value;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Caption copied"),
+      () => { $("betcap").select(); document.execCommand && document.execCommand("copy"); toast("Caption copied"); });
+  };
   $("betopts").addEventListener("click", e => {
     if(e.target.id === "betovreset"){ setOpt("bet", "ov", {}); renderBet(); }
   });
