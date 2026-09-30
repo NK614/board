@@ -362,6 +362,9 @@ tbody tr:last-child td{border-bottom:none}
 tbody tr{transition:background .12s}
 tbody tr:hover td{background:rgba(255,255,255,.025)}
 td.target{font:700 16px/1 var(--num);color:var(--ink);text-align:left}
+td.target .hot{display:block;width:max-content;margin-top:5px;padding:2px 6px;border-radius:999px;
+  font:700 9px/1.3 var(--display);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--good-text);border:1px solid rgba(39,232,156,.45);background:rgba(39,232,156,.08)}
 td.mono{font-family:var(--num)}
 td .sub{display:block;margin-top:4px;font:500 11px/1 var(--num);color:var(--muted)}
 td.hit,td.rate{font-weight:650;color:var(--ink)}
@@ -510,7 +513,14 @@ body.has-slip{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
   border:1px solid rgba(255,191,71,.22);border-radius:12px;padding:9px 12px;line-height:1.45}
 .pg-leg{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--hairline)}
 .pg-leg:first-child{border-top:0}
-.pg-leg .p{flex:none;min-width:52px;text-align:right;font:750 17px/1.1 var(--num);color:var(--accent)}
+.pg-leg .leg-main{flex:1;min-width:0}
+.pg-leg .leg-rate{flex:none;min-width:64px;text-align:right}
+.pg-leg .p{display:block;font:750 17px/1.1 var(--num);color:var(--accent)}
+.pg-leg .h{display:block;margin-top:4px;font:600 12.5px/1 var(--num);color:var(--muted)}
+.pg-cols{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:12px;padding-bottom:8px;
+  border-bottom:1px solid var(--hairline);font:700 9.5px/1.35 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pg-cols span:last-child{text-align:right;max-width:170px}
+.pg-cols b{display:block;color:var(--accent);font-weight:700}
 .pg-leg .why{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
 .pg-pos{font:700 10px/1 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-left:5px}
 .pg-chip{font:700 9.5px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;
@@ -856,6 +866,10 @@ function slotOf(game, sportKey){
   const d = kickOf(game);
   if(!d) return {key: "tbd", name: "Time TBD", label: "Time TBD", t: Infinity};
   const e = etParts(d), cfb = (sportKey || SPORT) === "cfb";
+  if((sportKey || SPORT) === "mlb"){                 // baseball: one window per day
+    const day = `${e.wd} ${e.mon} ${e.day}`;
+    return {key: `mlb|${day}`, name: day, label: day, t: d.getTime()};
+  }
   let name;
   if(cfb){
     name = `${e.wd} ${e.h < 15 ? "noon" : e.h < 19 ? "afternoon" : "night"}`;
@@ -1255,7 +1269,8 @@ function render(){
           aria-label="${on ? "Remove" : "Add"} ${player} ${Math.ceil(r.threshold)}+ ${unit} ${on ? "from" : "to"} parlay"
           >${on ? "&#10003;" : "+"}</button>` : ""}</td>`;
       return `<tr${on ? ' class="picked"' : ""}>
-        <td class="target">${Math.ceil(r.threshold)}+</td>
+        <td class="target">${Math.ceil(r.threshold)}+${(() => { const x = rateOver(last10, r.threshold);
+          return x.n >= 10 && x.k === x.n ? '<span class="hot" title="Hit in each of his last 10 games">Hot</span>' : ""; })()}</td>
         <td class="mono">${american(r.price)}</td>
         <td class="mono hit${p.short ? " few" : ""}">${pct(r.hit)}<span class="sub">${r.hits}/${r.n}</span><span class="meter"><i style="--w:${Math.round(r.hit * 100)}%"></i></span></td>
         ${rateCell(rateOver(last10, r.threshold), "Hit rate in his last 10 games")}
@@ -1512,6 +1527,10 @@ function rateLeg(sportKey, r){
     const vals = ((prof.stats || {})[stat] || {}).values || [];
     const l10 = vals.slice(-10), h10 = l10.filter(v => v > r.threshold).length;
     let p = l10.length ? 0.75 * pFull + 0.25 * (h10 + k * q) / (l10.length + k) : pFull;
+    // HOT STREAK. Cleared this number in every one of his last 10 games. A
+    // flag only: the last 10 are already in the estimate above.
+    if(l10.length >= 10 && h10 === l10.length) why.push(["Hot streak", "up",
+      `He has cleared this number in each of his last 10 games. That streak is already part of the estimate; the flag just points it out.`]);
 
     // VOLUME. Catches are a count: a receiver averaging 2.5 a game goes
     // catchless roughly one game in twelve however many games in a row he
@@ -1965,7 +1984,10 @@ function pgRender(res){
         <div class="leg-where">${esc(o.r.game)}${kickOf(o.r.game) ? ` · ${kickText(o.r.game)}` : ""}</div>
         ${chips ? `<div class="why">${chips}</div><div class="pg-tip" hidden></div>` : ""}
       </div>
-      <span class="p" title="Board estimate for this leg">${Math.round(o.p * 100)}%</span>
+      <div class="leg-rate">
+        <span class="p" title="The model's chance this leg hits">${Math.round(o.p * 100)}%</span>
+        ${o.r.n ? `<span class="h" title="Historical hit rate: games he cleared this number">${o.r.hits}/${o.r.n}</span>` : ""}
+      </div>
     </div>`;
   }).join("");
   out.innerHTML = nav + `
@@ -1973,7 +1995,7 @@ function pgRender(res){
       <div class="row"><span class="big">${fmtAmer(odds)}</span>
         <span>${res.legs.length} leg${res.legs.length === 1 ? "" : "s"} at ${name} · target ${fmtAmer(target)}</span></div>
       <div class="row"><span>Board estimate it hits: <b>${(res.prob * 100).toFixed(res.prob < 0.01 ? 2 : 1)}%</b></span>
-        <span>$10 pays $${(10 * res.d).toFixed(2)}</span></div>
+        <span>$10 wins $${(10 * (res.d - 1)).toFixed(2)} · returns $${(10 * res.d).toFixed(2)}</span></div>
     </div>
     ${res.repeats ? `<div class="pg-warn">Not enough players left who aren't already in your other bets,
       so this one repeats some. Use fewer legs or tick more games.</div>` : ""}
@@ -1986,7 +2008,8 @@ function pgRender(res){
     ${sgp ? `<div class="pg-warn">Some legs share a game. ${name} prices same-game legs
       together, so its price will differ from ${fmtAmer(odds)}.</div>` : ""}
     ${res.legs.some(o => o.why.length) ? `<p class="pg-hint">Tap a flag to see what it means.</p>` : ""}
-    <div style="margin-top:6px">${legsHtml}</div>
+    <div class="pg-cols"><span>Leg</span><span><b>Model prediction<br>hit rate</b>Historical hit rate</span></div>
+    <div>${legsHtml}</div>
     <div class="pg-actions">
       <button class="btn" id="pg-add">Add to slip</button>
       <a class="btn ghost" id="pg-open-book" target="_blank" rel="noopener"
