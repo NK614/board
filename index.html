@@ -662,6 +662,7 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .rv-bar{position:relative;height:10px;border-radius:5px;background:var(--surface-3)}
 .rv-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--grad)}
 .rv-bar em{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fff;border-radius:1px}
+.rv-sub{margin-top:6px;font-size:11.5px;line-height:1.35;color:var(--muted)}
 .rv-note{margin:12px 0 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
 .rv-legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:8px 2px 0}
 .rv-legend i{display:inline-block;width:12px;height:8px;border-radius:2px;background:var(--grad);margin-right:5px}
@@ -2647,26 +2648,42 @@ fetch("record.json", {cache: "no-store"}).then(r => r.ok ? r.json() : null)
 const pct0 = x => Math.round(100 * x) + "%";
 function recFor(){ return RECORD && RECORD[SPORT === "mlb" ? "mlb" : "nfl"]; }
 /* THE HIGHLIGHTS. Real numbers only, picked for being the strongest true
-   things to say: the best target-odds group (with a fair sample), the
-   profit on flat stakes when there is one, and a hot recent stretch when it
-   beats the season. Each is worked out from record.json every time, so a
-   line drops away by itself the day it stops being true. */
+   things to say -- and judged against what a bettor needs: the hit rate a
+   price has to beat to make money (-150 needs 60%, +300 needs 25%), not
+   only what the model forecast. Each line is worked out from record.json
+   every time, so it drops away by itself the day it stops being true, and
+   every number it quotes is also in the full tables below it. */
 const fmtT = t => (t > 0 ? "+" : "") + t;
 const money = u => (u >= 0 ? "+$" : "−$") + Math.abs(Math.round(10 * u)).toLocaleString("en-US");
-function recHighlights(R){
-  const P = R.parlays, out = {};
-  const good = (R.byTarget || []).filter(x => x.n >= 10).sort((a, b) => b.won / b.n - a.won / a.n);
-  if(good.length && good[0].won / good[0].n > P.won / P.n) out.best = good[0];
-  if(P.u != null && P.u > 0) out.profit = P.u;
+const needFor = t => t > 0 ? 100 / (t + 100) : -t / (-t + 100);
+const listAnd = a => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+function recRecent(R){
   const W = (R.weeks || []).filter(w => w.n);
-  if(W.length >= 3){
-    const rec = W.slice(-2), early = W.slice(0, -2);
-    const rn = rec.reduce((a, w) => a + w.n, 0), rw = rec.reduce((a, w) => a + w.won, 0);
-    const worst = early.slice().sort((a, b) => a.won / a.n - b.won / b.n)[0];
-    if(rw / rn >= P.won / P.n + 0.05 && worst.won / worst.n < P.won / P.n)
-      out.trend = {label: /^Week /.test(rec[0].label) ? `Weeks ${rec[0].label.slice(5)}–${rec[1].label.slice(5)}`
-        : `${rec[0].label}–${rec[1].label.replace(/^\D+/, "")}`, won: rw, n: rn, worst};
+  if(W.length < 3) return null;
+  const rec = W.slice(-2), early = W.slice(0, -2), sum = k => rec.reduce((a, w) => a + (w[k] || 0), 0);
+  const byT = {};
+  rec.forEach(w => (w.byTarget || []).forEach(x => { const o = byT[x.target] = byT[x.target] || {target: x.target, n: 0, won: 0, u: 0};
+    o.n += x.n; o.won += x.won; o.u += x.u || 0; }));
+  return {label: /^Week /.test(rec[0].label) ? `Weeks ${rec[0].label.slice(5)}–${rec[1].label.slice(5)}`
+            : `${rec[0].label}–${rec[1].label.replace(/^\D+/, "")}`,
+          n: sum("n"), won: sum("won"), u: sum("u"), byT, worst: early.slice().sort((a, b) => a.won / a.n - b.won / b.n)[0]};
+}
+function recHighlights(R){
+  const P = R.parlays, out = {}, rr = recRecent(R);
+  if(P.u > 0) out.profit = P.u;
+  if(rr && rr.won / rr.n >= P.won / P.n + 0.05 && rr.worst.won / rr.worst.n < P.won / P.n) out.trend = rr;
+  if(out.trend){
+    const c = Object.values(rr.byT).filter(x => x.n >= 20 && x.u > 0 && x.won / x.n > needFor(x.target)).sort((a, b) => b.won / b.n - a.won / a.n);
+    if(c.length) out.hot = c[0];
   }
+  const T = (R.byTarget || []).filter(x => x.n >= 20);
+  const madeMoney = x => x.u != null ? x.u > 0 : x.won / x.n > needFor(x.target);
+  out.beat = T.filter(madeMoney);
+  out.nT = T.length;
+  const m = T.filter(madeMoney).map(x => ({...x, edge: x.won / x.n - needFor(x.target)})).filter(x => x.edge > 0).sort((a, b) => b.edge - a.edge);
+  if(m.length) out.best = m[0];
+  const L = SPORT === "mlb" ? R.dinger : R.atd;
+  if(L && L.n >= 20 && L.h / L.n > L.pred) out.list = L;
   return out;
 }
 function recordTile(){
@@ -2674,16 +2691,16 @@ function recordTile(){
   if(!R || !R.parlays || !R.parlays.n){ t.hidden = true; return; }
   t.hidden = false;
   const P = R.parlays, H = recHighlights(R);
-  $("rec-head").textContent = H.best ? `${pct0(H.best.won / H.best.n)} of our ${fmtT(H.best.target)} parlays have hit`
-    : H.trend ? `${pct0(H.trend.won / H.trend.n)} of parlays hit over ${H.trend.label}`
+  $("rec-head").textContent = H.trend ? `${pct0(H.trend.won / H.trend.n)} of our parlays hit over ${H.trend.label}`
+    : H.best ? `Our ${fmtT(H.best.target)} parlays hit ${pct0(H.best.won / H.best.n)} — they need ${pct0(needFor(H.best.target))} to profit`
     : `${pct0(P.won / P.n)} of parlays hit · our model predicted ${pct0(P.pred)}`;
   const extra = SPORT === "mlb"
     ? (R.dinger && R.dinger.n ? `Dinger Predictor ${R.dinger.h} of ${R.dinger.n} homered` : "")
     : (R.atd && R.atd.n ? `ATD list ${R.atd.h} of ${R.atd.n} scored` : "");
   $("rec-sub").textContent = [
-    H.profit ? `$10 on every pick: ${money(H.profit)}` : "",
-    H.best && H.trend ? `${pct0(H.trend.won / H.trend.n)} over ${H.trend.label}` : "",
-    `${P.won} of ${P.n} overall${R.scope ? " · " + R.scope : ""}`, extra].filter(Boolean).join(" · ");
+    H.hot ? `${fmtT(H.hot.target)}s: ${pct0(H.hot.won / H.hot.n)} over ${H.trend.label}` : "",
+    H.profit ? `$10 on every pick: ${money(H.profit)} this season` : "",
+    extra, `${P.won} of ${P.n} overall${R.scope ? " · " + R.scope : ""}`].filter(Boolean).join(" · ");
 }
 function renderRecord(){
   const board = $("board"), R = recFor();
@@ -2691,26 +2708,38 @@ function renderRecord(){
     board.innerHTML = `<div class="empty">${RECORD ? "No graded picks for this sport yet." : "The record loads when the board is opened from its web address."}</div>`;
     return;
   }
-  const P = R.parlays, tone = (hit, pred) => hit >= pred - 0.03 ? "hi" : hit >= pred - 0.10 ? "mid" : "lo";
+  const P = R.parlays, H = recHighlights(R), rr = recRecent(R);
+  const tone = (hit, pred) => hit >= pred - 0.03 ? "hi" : hit >= pred - 0.10 ? "mid" : "lo";
+  const vsNeed = (hit, need, u) => (u != null ? u > 0 : hit >= need) ? "hi" : hit >= need - 0.05 ? "mid" : "lo";
   const kpi = (big, cls, line) => `<div class="rv-kpi"><b class="${cls}">${big}</b><span>${line}</span></div>`;
-  const bars = rs => `<div class="rv-rows">${rs.map(x => `<div class="rv-row"><span class="t">${esc(x.label)}</span>
-      <div class="rv-bar"><i style="width:${Math.max(2, Math.round(100 * x.won / x.n))}%"></i><em style="left:${Math.round(100 * x.pred)}%"></em></div>
-      <span class="r ${tone(x.won / x.n, x.pred)}">${pct0(x.won / x.n)}<small>${x.won} of ${x.n} · said ${pct0(x.pred)}</small></span></div>`).join("")}</div>`;
-  const h = [], H = recHighlights(R);
+  const h = [];
   h.push(`<div class="td-intro"><b>Every pick the model made, graded.</b> Wins and losses, next to what it predicted before
     kickoff. Nothing is deleted or hand-picked. ${esc(R.scope || "")}${R.updated ? ` · updated ${esc(R.updated)}` : ""}</div>`);
   const hl = [];
-  if(H.best) hl.push(`<b>${pct0(H.best.won / H.best.n)}</b> of our ${fmtT(H.best.target)} parlays have hit (${H.best.won} of ${H.best.n}).`);
-  if(H.profit) hl.push(`<b>${money(H.profit)}</b> if you'd put $10 on every pick below, at the price when it was posted.`);
-  if(H.trend) hl.push(`<b>${pct0(H.trend.won / H.trend.n)}</b> hit over ${esc(H.trend.label)} (${H.trend.won} of ${H.trend.n}). ${esc(H.trend.worst.label)} was our
-    roughest ${/^Week /.test(H.trend.worst.label) ? "week" : "day"} (${pct0(H.trend.worst.won / H.trend.worst.n)}) — that's what pulls the season number down.`);
+  if(H.trend) hl.push(`<b>${pct0(H.trend.won / H.trend.n)}</b> of our parlays hit over ${esc(H.trend.label)} (${H.trend.won} of ${H.trend.n})${
+    H.trend.u > 0 ? ` — ${money(H.trend.u)} at $10 a pick` : ""}. ${esc(H.trend.worst.label)} was our roughest
+    ${/^Week /.test(H.trend.worst.label) ? "week" : "day"} (${pct0(H.trend.worst.won / H.trend.worst.n)}) and had the most picks
+    (${H.trend.worst.n}), so it weighs on the season number.`);
+  if(H.hot) hl.push(`<b>${pct0(H.hot.won / H.hot.n)}</b> of our ${fmtT(H.hot.target)} parlays hit over ${esc(H.trend.label)} (${H.hot.won} of ${H.hot.n}).`);
+  if(H.profit) hl.push(`<b>${money(H.profit)}</b> for the season if you'd put $10 on every pick, at the price when it was posted.`);
+  if(H.beat.length) hl.push(`<b>${H.beat.length} of ${H.nT}</b> odds levels beat their price: ${listAnd(H.beat.map(x => fmtT(x.target)))}
+    made money at the prices posted.`);
+  if(H.list) hl.push(`<b>${pct0(H.list.h / H.list.n)}</b> of our ${SPORT === "mlb" ? "Dinger Predictor picks homered" : "ATD picks scored"}
+    (${H.list.h} of ${H.list.n}) — the model said ${pct0(H.list.pred)}.`);
   if(R.legs && R.legs.n && R.legs.hit >= 0.6) hl.push(`<b>${pct0(R.legs.hit)}</b> of the ${R.legs.n} legs we picked hit.`);
   if(hl.length) h.push(`<div class="rv-h">Highlights</div><div class="rv-hl">${hl.map(x => `<p>${x}</p>`).join("")}</div>`);
-  h.push(`<div class="rv-kpis">${kpi(pct0(P.won / P.n), tone(P.won / P.n, P.pred), `of parlays hit<br>${P.won} of ${P.n}`)}${
-    kpi(pct0(P.pred), "", "the model predicted<br>for the same parlays")}</div>`);
+  h.push(`<div class="rv-kpis">${kpi(pct0(P.won / P.n), "", `of parlays hit · ${P.won} of ${P.n}<br>the model predicted ${pct0(P.pred)}`)}${
+    P.u != null ? kpi(money(P.u), P.u >= 0 ? "hi" : "lo", "$10 on every pick<br>at the posted price") : ""}</div>`);
   if((R.byTarget || []).length){
-    h.push(`<div class="rv-h">By target odds</div>` + bars(R.byTarget.map(x => ({...x, label: fmtT(x.target)}))));
-    h.push(`<div class="rv-legend"><span><i></i>actual</span><span><em></em>model predicted</span></div>`);
+    h.push(`<div class="rv-h">By target odds</div><div class="rv-rows">${R.byTarget.map(x => {
+      const r = x.won / x.n, need = needFor(x.target), rec = rr && rr.byT[x.target];
+      const sub = [`model said ${pct0(x.pred)}`, rec && rec.n ? `${esc(rr.label)}: ${pct0(rec.won / rec.n)} (${rec.won} of ${rec.n})` : "",
+        x.u != null ? money(x.u) : ""].filter(Boolean).join(" · ");
+      return `<div class="rv-row"><span class="t">${fmtT(x.target)}</span>
+        <div><div class="rv-bar"><i style="width:${Math.max(2, Math.round(100 * r))}%"></i><em style="left:${Math.round(100 * need)}%"></em></div>
+          <div class="rv-sub">${sub}</div></div>
+        <span class="r ${vsNeed(r, need, x.u)}">${pct0(r)}<small>${x.won} of ${x.n} · needs ${pct0(need)}</small></span></div>`; }).join("")}</div>`);
+    h.push(`<div class="rv-legend"><span><i></i>hit rate</span><span><em></em>needed to profit at that price</span></div>`);
   }
   const L = SPORT === "mlb" ? R.dinger : R.atd;
   if(L && L.n) h.push(`<div class="rv-h">${SPORT === "mlb" ? "Dinger Predictor" : "Anytime TD list"}</div>
@@ -2725,10 +2754,16 @@ function renderRecord(){
       .map(([k, d]) => `<div class="rv-row"><span class="t" style="font-family:var(--ui);font-size:13px">${k}</span><span style="font-size:12.5px;color:var(--muted)">${d}</span>
         <span class="r">${pct0((B[k] || 0) / B.n)}<small>${B[k] || 0} of ${B.n}</small></span></div>`).join("")}</div>`);
   }
-  if((R.weeks || []).length) h.push(`<div class="rv-h">${SPORT === "mlb" ? "By day" : "Week by week"}</div>` + bars(R.weeks));
-  h.push(`<p class="rv-note">“Model predicted” is the chance the board gave each pick before the game, averaged. When the
-    actual rate sits near it, the model is honest about its odds. Profit counts $10 on every pick here, many of which share
-    legs, so one leg can swing several. 21+. Past results don't promise future ones.</p>`);
+  if((R.weeks || []).length) h.push(`<div class="rv-h">${SPORT === "mlb" ? "By day" : "Week by week"}</div><div class="rv-rows">${R.weeks.map(w => {
+      const r = w.won / w.n;
+      return `<div class="rv-row"><span class="t">${esc(w.label)}</span>
+        <div><div class="rv-bar"><i style="width:${Math.max(2, Math.round(100 * r))}%"></i></div>
+          <div class="rv-sub">model said ${pct0(w.pred)}${w.n ? ` · ${w.n} picks` : ""}</div></div>
+        <span class="r ${w.u == null ? "" : w.u >= 0 ? "hi" : "lo"}">${pct0(r)}<small>${w.won} of ${w.n}${w.u != null ? " · " + money(w.u) : ""}</small></span></div>`; }).join("")}</div>`);
+  h.push(`<p class="rv-note">“Needs” is the hit rate that price has to beat to make money. “Model said” is the chance the board
+    gave each pick before the game, averaged. A parlay's real price lands near its target, not on it, so a row can
+    clear “needs” and still be slightly down. Profit counts $10 on every pick at the price when it was posted; many picks share
+    legs, so one leg can swing several. A week with more game windows has more picks. 21+. Past results don't promise future ones.</p>`);
   board.innerHTML = h.join("");
 }
 
