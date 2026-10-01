@@ -631,7 +631,10 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .tour[hidden]{display:none}
 .tour-card{position:relative;width:min(440px,100%);max-height:88vh;overflow:auto;background:var(--surface);border:1px solid var(--hairline-2);
   border-radius:22px;padding:22px 20px 18px;box-shadow:var(--shadow)}
-.tour-x{position:absolute;right:12px;top:12px}
+.tour-top{display:flex;align-items:center;justify-content:space-between;margin:-8px -6px 10px 0}
+.tour-x{position:static}
+.tour-never{appearance:none;border:1px solid var(--hairline-2);background:var(--surface-2);color:var(--secondary);
+  font:600 13px/1 var(--ui);padding:9px 12px;border-radius:999px;cursor:pointer}
 .tour-step{font:700 11px/1 var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
 .tour h2{margin:8px 0 10px;font:750 22px/1.2 var(--display)}
 .tour p,.tour li{font-size:14.5px;line-height:1.5;color:var(--secondary)}
@@ -668,6 +671,10 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .pg-why{margin:12px 0 0;padding:11px 13px;border-radius:12px;background:var(--accent-soft);border:1px solid rgba(45,226,255,.22);
   font-size:13.5px;line-height:1.45;color:var(--ink)}
 .pg-why b{color:var(--accent)}
+.rv-hl{background:linear-gradient(135deg,rgba(45,226,255,.10),rgba(165,123,255,.08));border:1px solid rgba(45,226,255,.25);
+  border-radius:16px;padding:6px 16px;margin-bottom:6px}
+.rv-hl p{margin:10px 0;font-size:14.5px;line-height:1.45;color:var(--secondary)}
+.rv-hl b{color:var(--good-text, #5cf2bb);font-size:17px;margin-right:2px}
 .q-try{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px}
 .filters .search input{width:100%}
 
@@ -789,7 +796,8 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 
 <div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tour-h">
   <div class="tour-card">
-    <button class="leg-x tour-x" id="tour-x" aria-label="Close">&times;</button>
+    <div class="tour-top"><button type="button" class="tour-never" id="tour-never">Don't show again</button>
+      <button class="leg-x tour-x" id="tour-x" aria-label="Close">&times;</button></div>
     <div id="tour-body"></div>
     <div class="tour-dots" id="tour-dots"></div>
     <div class="tour-nav" id="tour-nav">
@@ -798,7 +806,6 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
     </div>
     <div class="tour-end" id="tour-end" hidden>
       <button class="btn" id="tour-close">Got it</button>
-      <button class="btn ghost" id="tour-never">Don't show again</button>
     </div>
   </div>
 </div>
@@ -989,7 +996,7 @@ function buildSportSeg(){
   const keys = Object.keys(SPORTS);
   // Nothing left in the bar (one sport, and no Send on a friend's copy):
   // drop the bar rather than show an empty strip.
-  document.querySelector(".topbar").hidden = keys.length < 2 && !$("sendbtn");
+  document.querySelector(".topbar").hidden = keys.length < 2 && !$("sendbtn") && !$("helpbtn");
   if(keys.length < 2){ seg.style.display = "none"; return; }
   seg.innerHTML = "";
   keys.forEach(k => {
@@ -997,7 +1004,8 @@ function buildSportSeg(){
     b.textContent = SPORTS[k].label || k.toUpperCase();
     b.setAttribute("role","tab");
     b.setAttribute("aria-selected", String(k === SPORT));
-    b.onclick = () => { SPORT = k; buildSportSeg(); buildFilters(); render(); homeInfo(); };
+    b.onclick = () => { SPORT = k; buildSportSeg(); buildFilters(); render(); homeInfo();
+      if(VIEW === "parlay"){ PG_HIST = []; PG_IDX = -1; PG_LAST = null; $("pg-out").innerHTML = ""; pgFillForm(); } };
     seg.appendChild(b);
   });
 }
@@ -1421,7 +1429,16 @@ function render(){
   const rows = (s.rows || []).filter(r =>
     (q ? r.player.toLowerCase().includes(q) : games.includes(r.game)) && r.market === market && r.book === book);
   if(q && !rows.length){
-    const other = (s.rows || []).filter(r => r.player.toLowerCase().includes(q) && r.book === book);
+    // He has no line in this stat: open the stat he has the most lines in.
+    const mine = (s.rows || []).filter(r => r.player.toLowerCase().includes(q) && r.book === book);
+    if(mine.length){
+      const cnt = {}; mine.forEach(r => cnt[r.market] = (cnt[r.market] || 0) + 1);
+      const best = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0][0];
+      const sel = $("f-market");
+      if([...sel.options].some(o => o.value === best) && sel.value !== best){
+        sel.value = best; sel.dispatchEvent(new Event("change", {bubbles: true})); return; }
+    }
+    const other = mine;
     const mk = [...new Set(other.map(r => r.market))];
     board.innerHTML = `<div class="empty">${other.length ? `No ${esc((SHARED.labels || {})[market] || "")} lines for “${esc(q)}”. Try:
       <div class="q-try">${mk.map(m => `<button type="button" class="pg-chip up" data-mk="${esc(m)}">${esc((SHARED.labels || {})[m] || m)}</button>`).join("")}</div>`
@@ -2221,7 +2238,7 @@ function buildBest(nLegs, targetAmer, book, scope, exclude, green){
    the best parlay using NONE of the players in any option so far -- new
    people, not just new rungs -- and the estimate shows what that variety
    costs. Every option is kept, so Back and Next move between them. */
-let PG_LAST = null, PG_HIST = [], PG_IDX = -1, PG_SCOPE = null;
+let PG_LAST = null, PG_HIST = [], PG_IDX = -1, PG_SCOPE = null, PG_SCOPES = {};
 
 /* NO REPEATS ACROSS YOUR BETS. Players already in a parlay you took -- added
    to the slip, or opened in the sportsbook -- are left out of the next one,
@@ -2477,14 +2494,18 @@ function pgFillForm(){
   }
   // Games: every TV window of every sport on the board, soonest first.
   // All ticked the first time; kept as left after that.
-  const groups = Object.keys(SPORTS).flatMap(k => slotGroups(k).map(g => Object.assign(g, {
+  $("pg-title").textContent = `${S().label || ""} Parlay Generator`.trim();
+  // Only the sport picked at the top (NFL or MLB): each keeps its own ticks.
+  const groups = [SPORT].filter(k => SPORTS[k]).flatMap(k => slotGroups(k).map(g => Object.assign(g, {
     items: g.items.map(i => Object.assign({}, i, {value: k + "|" + i.value}))})));
   const allKeys = groups.flatMap(g => g.items.map(i => i.value));
-  if(!PG_SCOPE){ PG_SCOPE = new Set(allKeys); }
-  else { [...PG_SCOPE].forEach(v => { if(!allKeys.includes(v)) PG_SCOPE.delete(v); }); }
+  PG_SCOPES[SPORT] = PG_SCOPES[SPORT] || new Set(allKeys);
+  PG_SCOPE = PG_SCOPES[SPORT];
+  [...PG_SCOPE].forEach(v => { if(!allKeys.includes(v)) PG_SCOPE.delete(v); });
+  if(!PG_SCOPE.size) allKeys.forEach(v => PG_SCOPE.add(v));
   multiPick($("pg-scope"), groups, PG_SCOPE, () => {}, "game");
 
-  const books = BOOKS.filter(([b]) => Object.values(SPORTS).some(sp =>
+  const books = BOOKS.filter(([b]) => [S()].some(sp =>
     (sp.rows || []).some(r => r.book === b && legId(r))));
   const prev = book.value;
   book.innerHTML = books.map(([b, n]) => `<option value="${b}">${n}</option>`).join("");
@@ -2625,16 +2646,44 @@ fetch("record.json", {cache: "no-store"}).then(r => r.ok ? r.json() : null)
   .then(j => { RECORD = j; homeInfo(); if(VIEW === "record") render(); }).catch(() => {});
 const pct0 = x => Math.round(100 * x) + "%";
 function recFor(){ return RECORD && RECORD[SPORT === "mlb" ? "mlb" : "nfl"]; }
+/* THE HIGHLIGHTS. Real numbers only, picked for being the strongest true
+   things to say: the best target-odds group (with a fair sample), the
+   profit on flat stakes when there is one, and a hot recent stretch when it
+   beats the season. Each is worked out from record.json every time, so a
+   line drops away by itself the day it stops being true. */
+const fmtT = t => (t > 0 ? "+" : "") + t;
+const money = u => (u >= 0 ? "+$" : "−$") + Math.abs(Math.round(10 * u)).toLocaleString("en-US");
+function recHighlights(R){
+  const P = R.parlays, out = {};
+  const good = (R.byTarget || []).filter(x => x.n >= 10).sort((a, b) => b.won / b.n - a.won / a.n);
+  if(good.length && good[0].won / good[0].n > P.won / P.n) out.best = good[0];
+  if(P.u != null && P.u > 0) out.profit = P.u;
+  const W = (R.weeks || []).filter(w => w.n);
+  if(W.length >= 3){
+    const rec = W.slice(-2), early = W.slice(0, -2);
+    const rn = rec.reduce((a, w) => a + w.n, 0), rw = rec.reduce((a, w) => a + w.won, 0);
+    const worst = early.slice().sort((a, b) => a.won / a.n - b.won / b.n)[0];
+    if(rw / rn >= P.won / P.n + 0.05 && worst.won / worst.n < P.won / P.n)
+      out.trend = {label: /^Week /.test(rec[0].label) ? `Weeks ${rec[0].label.slice(5)}–${rec[1].label.slice(5)}`
+        : `${rec[0].label}–${rec[1].label.replace(/^\D+/, "")}`, won: rw, n: rn, worst};
+  }
+  return out;
+}
 function recordTile(){
   const R = recFor(), t = $("tile-record");
   if(!R || !R.parlays || !R.parlays.n){ t.hidden = true; return; }
   t.hidden = false;
-  const P = R.parlays;
-  $("rec-head").textContent = `${pct0(P.won / P.n)} of parlays hit · our model predicted ${pct0(P.pred)}`;
+  const P = R.parlays, H = recHighlights(R);
+  $("rec-head").textContent = H.best ? `${pct0(H.best.won / H.best.n)} of our ${fmtT(H.best.target)} parlays have hit`
+    : H.trend ? `${pct0(H.trend.won / H.trend.n)} of parlays hit over ${H.trend.label}`
+    : `${pct0(P.won / P.n)} of parlays hit · our model predicted ${pct0(P.pred)}`;
   const extra = SPORT === "mlb"
     ? (R.dinger && R.dinger.n ? `Dinger Predictor ${R.dinger.h} of ${R.dinger.n} homered` : "")
     : (R.atd && R.atd.n ? `ATD list ${R.atd.h} of ${R.atd.n} scored` : "");
-  $("rec-sub").textContent = [`${P.won} of ${P.n} graded${R.scope ? " · " + R.scope : ""}`, extra].filter(Boolean).join(" · ");
+  $("rec-sub").textContent = [
+    H.profit ? `$10 on every pick: ${money(H.profit)}` : "",
+    H.best && H.trend ? `${pct0(H.trend.won / H.trend.n)} over ${H.trend.label}` : "",
+    `${P.won} of ${P.n} overall${R.scope ? " · " + R.scope : ""}`, extra].filter(Boolean).join(" · ");
 }
 function renderRecord(){
   const board = $("board"), R = recFor();
@@ -2647,10 +2696,16 @@ function renderRecord(){
   const bars = rs => `<div class="rv-rows">${rs.map(x => `<div class="rv-row"><span class="t">${esc(x.label)}</span>
       <div class="rv-bar"><i style="width:${Math.max(2, Math.round(100 * x.won / x.n))}%"></i><em style="left:${Math.round(100 * x.pred)}%"></em></div>
       <span class="r ${tone(x.won / x.n, x.pred)}">${pct0(x.won / x.n)}<small>${x.won} of ${x.n} · said ${pct0(x.pred)}</small></span></div>`).join("")}</div>`;
-  const fmtT = t => (t > 0 ? "+" : "") + t;
-  const h = [];
+  const h = [], H = recHighlights(R);
   h.push(`<div class="td-intro"><b>Every pick the model made, graded.</b> Wins and losses, next to what it predicted before
     kickoff. Nothing is deleted or hand-picked. ${esc(R.scope || "")}${R.updated ? ` · updated ${esc(R.updated)}` : ""}</div>`);
+  const hl = [];
+  if(H.best) hl.push(`<b>${pct0(H.best.won / H.best.n)}</b> of our ${fmtT(H.best.target)} parlays have hit (${H.best.won} of ${H.best.n}).`);
+  if(H.profit) hl.push(`<b>${money(H.profit)}</b> if you'd put $10 on every pick below, at the price when it was posted.`);
+  if(H.trend) hl.push(`<b>${pct0(H.trend.won / H.trend.n)}</b> hit over ${esc(H.trend.label)} (${H.trend.won} of ${H.trend.n}). ${esc(H.trend.worst.label)} was our
+    roughest ${/^Week /.test(H.trend.worst.label) ? "week" : "day"} (${pct0(H.trend.worst.won / H.trend.worst.n)}) — that's what pulls the season number down.`);
+  if(R.legs && R.legs.n && R.legs.hit >= 0.6) hl.push(`<b>${pct0(R.legs.hit)}</b> of the ${R.legs.n} legs we picked hit.`);
+  if(hl.length) h.push(`<div class="rv-h">Highlights</div><div class="rv-hl">${hl.map(x => `<p>${x}</p>`).join("")}</div>`);
   h.push(`<div class="rv-kpis">${kpi(pct0(P.won / P.n), tone(P.won / P.n, P.pred), `of parlays hit<br>${P.won} of ${P.n}`)}${
     kpi(pct0(P.pred), "", "the model predicted<br>for the same parlays")}</div>`);
   if((R.byTarget || []).length){
@@ -2672,7 +2727,8 @@ function renderRecord(){
   }
   if((R.weeks || []).length) h.push(`<div class="rv-h">${SPORT === "mlb" ? "By day" : "Week by week"}</div>` + bars(R.weeks));
   h.push(`<p class="rv-note">“Model predicted” is the chance the board gave each pick before the game, averaged. When the
-    actual rate sits near it, the model is honest about its odds. 21+. Past results don't promise future ones.</p>`);
+    actual rate sits near it, the model is honest about its odds. Profit counts $10 on every pick here, many of which share
+    legs, so one leg can swing several. 21+. Past results don't promise future ones.</p>`);
   board.innerHTML = h.join("");
 }
 
@@ -2695,8 +2751,8 @@ const TOUR = [
     <dt>Game script</dt><dd>How a game should play out — who leads, who throws late.</dd>
     <dt>FAV</dt><dd>The team the market expects to win.</dd><dt>Bad beat</dt><dd>A miss on a leg he almost always clears.</dd></dl>`],
   ["You're set", "Build, then check the record", `<p>Build a parlay, tap <b>Add to slip</b> or <b>Open in</b> your book.
-    Odds can move — always check the price before you bet.</p><p>Picks lock at each window's final update, and every one
-    is graded in <b>Our Record</b>. 21+ · Gambling problem? 1-800-GAMBLER.</p>`],
+    Odds can move — always check the price before you bet.</p><p>Every pick is graded in <b>Our Record</b>.
+    21+ · Gambling problem? 1-800-GAMBLER.</p>`],
 ];
 let TOUR_I = 0;
 function tourShow(i){
