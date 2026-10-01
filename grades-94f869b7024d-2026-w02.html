@@ -1720,10 +1720,14 @@ const TOP_TIERS = [
   {k: "long", name: "Long shot", lo: 400, hi: Infinity, minP: 0.12},
 ];
 function topBets(F){
-  if(!F || !(F.windows || []).length) return [];
   const now = Date.now(), live = l => l.kick && new Date(l.kick).getTime() <= now;
   const dec = o => o > 0 ? 1 + o / 100 : 1 + 100 / -o;
   const careful = legs => legs.reduce((a, l) => a * (l.p + 1 / dec(l.price) / 1.045) / 2, 1);
+  // The board's held list, exactly as the Top 5 page shows it.
+  if(F && F.top5 && Array.isArray(F.top5.bets))
+    return F.top5.bets.filter(b => !b.legs.some(live)).map(b => ({win: b.win, legs: b.legs, odds: b.odds, prob: b.prob,
+      tier: TOP_TIERS.find(t => t.k === b.tier) || TOP_TIERS[0], edge: careful(b.legs) * dec(b.odds) - 1}));
+  if(!F || !(F.windows || []).length) return [];
   const c = [];
   for(const w of F.windows){
     for(const p of w.parlays || []) c.push({win: w.name || w.label, legs: p.legs, odds: p.odds, prob: p.prob});
@@ -1752,8 +1756,8 @@ function drawTop(){
   const sn = st => (typeof STATN === "object" && STATN[st]) || String(st).replace(/_/g, " ");
   const am = o => (o > 0 ? "+" : "") + o;
   const legTxt = l => `${l.player} ${Math.floor(l.threshold) + 1}+ ${sn(l.stat)} (${am(l.price)})`;
-  box.innerHTML = `<h3>Model's Current Top 5 Bets</h3><div class="ld-hint" style="margin:0 0 6px">The best pick at each price, safest first, from
-    games not started yet. "Edge" is a careful one: each leg's chance is set halfway between the model and the book's price.
+  box.innerHTML = `<h3>Model's Current Top 5 Bets</h3><div class="ld-hint" style="margin:0 0 6px">The same list the board shows: the best pick
+    at each price, safest first, held until its game kicks off. "Edge" is a careful one: each leg's chance is set halfway between the model and the book's price.
     </div>` +
     (T.length ? T.map((x, i) => `<div class="bb"><span class="rk ${x.tier.k}">${esc(x.tier.name)}</span>
       <div><div class="hd">${x.legs.length === 1 ? "Single" : x.legs.length + "-leg parlay"} · ${esc(am(x.odds))}<small>${esc(x.win || "")}</small></div>
