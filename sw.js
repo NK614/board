@@ -2,9 +2,9 @@
    The board and its record: newest from the network first, the last copy when
    offline (so the app opens on a plane). Icons: from the cache. Everything
    else on the site -- including any private page -- is never touched. */
-const CACHE = "alp-v1";
+const CACHE = "alp-v2";
 const SHELL = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
-const FRESH = /\/(index\.html|record\.json)?$/;            // the board itself and its record
+const FRESH = /\/(index\.html|record\.json|top5\.json)?$/;            // the board itself and its record
 const STATIC = /\/(manifest\.webmanifest|icon-[\w-]+\.png|apple-touch-icon\.png|og\.png)$/;
 
 self.addEventListener("install", e => {
