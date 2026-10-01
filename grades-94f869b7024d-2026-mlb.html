@@ -113,6 +113,10 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
 .hint b{color:var(--sec)}
 .kpis.three{grid-template-columns:repeat(3,1fr);margin-top:0}
 .kpis.three .kpi b{font-size:22px}
+.kpis.four{grid-template-columns:repeat(4,1fr);margin:0}
+.kpis.four .kpi{padding:12px 10px}
+.kpis.four .kpi b{font-size:21px}
+@media (max-width:520px){.kpis.four{grid-template-columns:1fr 1fr}}
 .lrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)}
 .lrow:first-child{border-top:0}
 .lrow .beat{grid-column:1/-1;font-size:13px;line-height:1.4;color:var(--sec);background:var(--card2);border-radius:10px;padding:9px 11px;cursor:pointer}
@@ -222,6 +226,8 @@ body.igfull{overflow:hidden}
 
 <div id="lossec" hidden><h2>Why parlays lost</h2><div class="hint" id="loss-hint"></div>
 <div class="kpis three" id="loss-kpis"></div>
+<div id="beatsum" hidden><div class="hint" style="margin:14px 0 8px">What kind of misses sank them: each leg that missed, counted once.</div>
+<div class="kpis four" id="beat-kpis"></div><div class="hint" id="beat-hint" style="margin:6px 0 14px"></div></div>
 <div class="rows" id="loss-legs"></div>
 <div class="hint" style="margin-top:10px">The test grid builds every leg count and target from the same best legs, so one
 bad leg shows up in many of these parlays.</div></div>
@@ -431,6 +437,25 @@ function drawLosses(){
       legs.set(k, e);
     }
   }
+  // The kinds of misses: each missed leg once per board, not once per parlay it sank.
+  const BT = [["Bad beat", "mid", "rare off-game on a leg he almost always clears"], ["Just short", "", "missed by a hair"],
+              ["Off night", "", "solid history, ordinary miss"], ["Shaky leg", "lo", "history never backed it — on the model"]];
+  const uniq = new Map();
+  for(const p of lost) for(const m of p.miss || []) uniq.set([p.board, ...m.slice(0, 4)].join("|"), m[5]);
+  const notes = [...uniq.values()], tagged = notes.filter(Boolean);
+  $("beatsum").hidden = !tagged.length;
+  if(tagged.length){
+    $("beat-kpis").innerHTML = BT.map(([t, cls, what]) => {
+      const n = tagged.filter(b => b.tag === t).length;
+      return `<div class="kpi"><b class="${cls}">${Math.round(100 * n / tagged.length)}%</b><span>${t}<br>${n} of ${tagged.length}</span></div>`;
+    }).join("");
+    // Parlays whose every miss was bad luck rather than a bad leg.
+    const luck = done.filter(p => (p.miss || []).length && (p.miss || []).every(m => m[5] && (m[5].tag === "Bad beat" || m[5].tag === "Just short"))).length;
+    const none = notes.length - tagged.length;
+    $("beat-hint").innerHTML = BT.map(([t, , what]) => `<b>${t}</b>: ${what}.`).join(" ")
+      + `<br>${luck} of ${done.length} lost parlays missed only on bad beats or near misses.`
+      + (none ? ` ${none} missed leg${none === 1 ? "" : "s"} had too little history to label (or college).` : "");
+  }
   const top = [...legs.values()].sort((a, b) => b.n - a.n || b.alone - a.alone).slice(0, 6);
   $("loss-legs").innerHTML = top.map(e => {
     const need = Math.floor(e.thr) + 1, short = e.actual == null ? null : need - e.actual;
@@ -479,7 +504,33 @@ function drawTD(){
   $("tdsec").hidden = !T.length;
   if(!T.length) return;
   // Always the week's lists, whatever window is picked above.
-  const pick = T.filter(t => t.scope === "Week" || t.scope === "All games");
+  const pick = T.filter(t => t.scope === "Week" || t.scope === "All games" || t.scope === "Day");
+  // Baseball: the Dinger Predictor, one top 10 per day of games.
+  const HR = pick.some(t => t.grp === "HR");
+  $("tdsec").querySelector("h2").textContent = HR ? "Dinger Predictor" : "Touchdown picks";
+  $("tdsec").querySelector(".hint").textContent = HR ? "The board's top 10 each day by chance to hit a home run. Didn't play = no action."
+    : "The board's top 10 for the whole week by chance to score. Didn't play = no action.";
+  if(HR){
+    const d = pick.filter(t => t.grp === "HR"), done = d.filter(t => t.result === "hit" || t.result === "miss");
+    const h = done.filter(t => t.result === "hit").length, said = done.reduce((a, t) => a + t.p, 0);
+    const cls = !done.length ? "none" : h / done.length >= said / done.length - 0.03 ? "hi" : h / done.length >= said / done.length - 0.08 ? "mid" : "lo";
+    $("tdkpis").innerHTML = `<div class="kpi"><b class="${cls}">${done.length ? Math.round(100 * h / done.length) + "%" : "—"}</b>
+      <span>${done.length ? `${h} of ${done.length} homered` : "not settled yet"}<br>${done.length ? `board predicted ${Math.round(100 * said / done.length)}%` : ""}</span></div>
+      <div class="kpi"><b>${done.length ? (h - said).toFixed(1).replace(/^(?!-)/, "+") : "—"}</b><span>home runs vs expected<br>${done.length ? `${said.toFixed(1)} expected` : ""}</span></div>`;
+    const RSH = {hit: ["HR ✓", "hit"], miss: ["No HR", "miss"], void: ["DNP", "pend"], injury: ["Left game", "inj"],
+                 pending: ["Pending", "pend"], norecord: ["Pending", "pend"]};
+    const days = [...new Set(d.map(t => t.day || t.board))];
+    $("tdgrid").innerHTML = days.map(day => {
+      const rs = d.filter(t => (t.day || t.board) === day).sort((a, b) => a.rank - b.rank);
+      const dn = rs.filter(t => t.result === "hit" || t.result === "miss"), hh = dn.filter(t => t.result === "hit").length;
+      return `<div class="tdcard"><div class="tdhead"><div><b>${esc(day)}</b>${dn.length ? "" : "<small>not settled yet</small>"}</div>
+          <span class="${dn.length ? "" : "none"}">${dn.length ? `${hh} of ${dn.length}` : "—"}</span></div>
+        ${rs.map(t => { const [txt, c] = RSH[t.result] || [t.result, "pend"];
+          return `<div class="tdrow"><span class="rk">${t.rank}</span><span class="nm">${esc(t.player)}<em>${esc(t.team)}</em></span>
+            <span class="pp">${Math.round(t.p * 100)}%</span><span class="rs ${c}">${txt}</span></div>`; }).join("")}</div>`;
+    }).join("");
+    return;
+  }
   // Settled picks only (scored / didn't); DNP and injury exits are no action.
   const stat = rs => { const d = rs.filter(t => t.result === "hit" || t.result === "miss");
     const h = d.filter(t => t.result === "hit").length, e = d.reduce((a, t) => a + t.p, 0);
@@ -898,7 +949,7 @@ const PSW = () => { const w = pickedWins(); return w && w.length ? PS.filter(p =
 const winNote = () => { const w = pickedWins(); return w && w.length && w.length < WINS.length ? w.join(" + ") : ""; };
 const settledAll = ps => ps.filter(p => (p.status === "won" || p.status === "lost")
   && p.results.every(r => ["hit", "miss", "void", "injury"].includes(r)));
-const tdPicks = () => (D.td || []).filter(t => t.scope === "Week" || t.scope === "All games");
+const tdPicks = () => (D.td || []).filter(t => t.scope === "Week" || t.scope === "All games" || t.scope === "Day");
 function tdStat(rs){
   const d = rs.filter(t => t.result === "hit" || t.result === "miss");
   const h = d.filter(t => t.result === "hit").length;
@@ -1028,6 +1079,8 @@ const DAYS_MLB = [
   {k: "fri", name: "Heaters", what: "Streaks"},
   {k: "tue", name: "Results", what: "Graded picks"},
   {k: "wed", name: "Near miss", what: "Why it lost"},
+  {k: "sunam", name: "Dingers", what: "Dinger Predictor"},
+  {k: "sunpm", name: "Dinger tracker", what: "Home run update"},
 ];
 let DAYS = DAYS_NFL;
 // The grades on this page belong to one sport: the MLB playoffs page, or a football one.
@@ -1333,18 +1386,19 @@ B.fri = () => {
 
 function atdList(){
   if(!FEED || !(FEED.td || []).length) return null;
-  const g = opt("sunam", "grp", "mix");
+  const g = MLB() ? "mix" : opt("sunam", "grp", "mix");          // baseball: one home run list
   const rs = FEED.td.filter(t => g === "mix" || t.grp === g).slice().sort((a, b) => b.p - a.p);
   return rs;
 }
 B.sunam = () => {
   const rs = atdList();
-  if(!rs) return {slides: [], head: "", sub: "", caption: "", note: FEED_ERR || "No ATD list yet — it appears after Thursday's first ATD run."};
+  if(!rs) return {slides: [], head: "", sub: "", caption: "", note: FEED_ERR || (MLB() ? "No Dinger Predictor list yet — it appears after the next MLB Build." : "No ATD list yet — it appears after Thursday's first ATD run.")};
   const n = Math.max(1, Math.min(5, +opt("sunam", "n", 3)));
   const top = rs.slice(0, n);
-  const head = `Anytime TD · top ${n}`, sub = FEED.tdFinal ? "Our model's likeliest scorers this Sunday." : "Early look — the final list posts Sunday morning.";
+  const head = MLB() ? "Dinger Predictor" : `Anytime TD · top ${n}`;
+  const sub = MLB() ? `Our model's top ${n} to go yard today.` : FEED.tdFinal ? "Our model's likeliest scorers this Sunday." : "Early look — the final list posts Sunday morning.";
   const H = 1350, s = canvas(H);
-  let y = frame(s, H, "ATD", words("head", head), words("sub", sub));
+  let y = frame(s, H, MLB() ? "Dingers" : "ATD", words("head", head), words("sub", sub));
   const rowH = Math.min(150, (H - 470 - y) / top.length);
   top.forEach((t, k) => {
     const yy = y + k * rowH + 50;
@@ -1352,38 +1406,45 @@ B.sunam = () => {
     T(s, 110, yy + 14, String(k + 1), {"font-size": 56, "font-weight": 900, fill: "#3fd6ff"});
     T(s, 190, yy - 2, t.player, {"font-size": 38, "font-weight": 800});
     T(s, 190, yy + 34, `${t.pos} · ${t.team} · ${shortGame(t.game)}`, {"font-size": 22, fill: "#b7c0dc", "font-weight": 600});
-    T(s, 980, yy + 18, pct(t.p), {"text-anchor": "end", "font-size": 56, "font-weight": 900, fill: tone(t.p)});
+    T(s, 980, yy + 18, pct(t.p), {"text-anchor": "end", "font-size": 56, "font-weight": 900, fill: MLB() ? "#3fd6ff" : tone(t.p)});
   });
   const showRec = opt("sunam", "rec", true);
   if(showRec){
     const td = tdPicks(), a = tdStat(td);
-    if(a.n) T(s, 70, H - 300, `Our record${D.season ? " this season" : ` · ${weekLabel}`}: ${a.h} of ${a.n} scored (${pct(a.h / a.n)})`,
+    if(a.n && !pageMismatch()) T(s, 70, H - 300, `Our record${D.season ? " this season" : ` · ${weekLabel}`}: ${a.h} of ${a.n} ${MLB() ? "homered" : "scored"} (${pct(a.h / a.n)})`,
       {"font-size": 24, fill: "#8e98b8", "font-weight": 600});
   }
   el("rect", {x: 70, y: H - 260, width: 940, height: 130, rx: 26, fill: "rgba(63,214,255,.08)", stroke: "#3fd6ff", "stroke-opacity": .6, "stroke-width": 3}, s);
-  T(s, 540, H - 182, words("cta", "Full top 20 in the tool · link in bio"), {"text-anchor": "middle", "font-size": 36, "font-weight": 900, fill: "#3fd6ff"});
-  const hook = pickOf([
+  T(s, 540, H - 182, words("cta", MLB() ? "Full top 10 in the tool · link in bio" : "Full top 20 in the tool · link in bio"), {"text-anchor": "middle", "font-size": 36, "font-weight": 900, fill: "#3fd6ff"});
+  const hook = pickOf(MLB() ? [
+      `💣 DINGER PREDICTOR 💣`,
+      `Who's going yard today? ⚾💥`,
+      `Our model's top ${n} to leave the yard today 👀`,
+      `Playoff baseball. Somebody's hitting one out 💣⚾`,
+    ] : [
       `🏈 GAME DAY. Who's finding the end zone? 🏈`,
       `🚨 SUNDAY TD LIST IS HERE 🚨`,
       `Our model's top ${n} to score today 👀🔥`,
       `Six points incoming? Here's who the model likes 🙌`,
     ]);
   const cap = caption(hook,
-    `${top.map((t, k) => `${["🥇", "🥈", "🥉"][k] || `${k + 1}.`} ${t.player} (${t.team}) · ${pct(t.p)}`).join("\n")}\n\nFull top 20 in the tool. We'll post how they did tonight, win or lose 📊`,
-    "#nfl #anytimetd #nflparlays #playerprops #sportsbetting #nflsunday");
+    `${top.map((t, k) => `${["🥇", "🥈", "🥉"][k] || `${k + 1}.`} ${t.player} (${t.team}) · ${pct(t.p)}`).join("\n")}\n\nFull top ${MLB() ? 10 : 20} in the tool. We'll post how they did tonight, win or lose 📊`,
+    TAGS("#nfl #anytimetd #nflparlays #playerprops #sportsbetting #nflsunday", "#MLB #MLBPlayoffs #homerun #dingers #playerprops #sportsbetting"));
   return {slides: [s], head, sub, caption: cap};
 };
 
 B.sunpm = () => {
-  if(!FEED || !(FEED.td || []).length) return {slides: [], head: "", sub: "", caption: "", note: FEED_ERR || "No ATD list yet."};
-  const n = Math.max(3, Math.min(10, +opt("sunpm", "n", 5)));
-  const graded = new Map(tdPicks().map(t => [t.player + "|" + t.team, t.result]));
+  if(!FEED || !(FEED.td || []).length) return {slides: [], head: "", sub: "", caption: "", note: FEED_ERR || (MLB() ? "No Dinger Predictor list yet." : "No ATD list yet.")};
+  const n = Math.max(3, Math.min(10, +opt("sunpm", "n", MLB() ? 10 : 5)));
+  // Baseball plays every day: a pick is that player in that game.
+  const tkey = t => t.player + "|" + t.team + (MLB() ? "|" + t.game : "");
+  const graded = new Map(tdPicks().map(t => [tkey(t), t.result]));
   const pick = g => FEED.td.filter(t => t.grp === g).slice().sort((a, b) => b.p - a.p).slice(0, n);
-  const lists = [["RB", "RUNNING BACKS", pick("RB")], ["REC", "WR / TE", pick("REC")]];
-  const st = t => S.marks[t.player + "|" + t.team] || graded.get(t.player + "|" + t.team) || "p";
+  const lists = MLB() ? [["HR", "DINGER PREDICTOR", pick("HR")]] : [["RB", "RUNNING BACKS", pick("RB")], ["REC", "WR / TE", pick("REC")]];
+  const st = t => S.marks[tkey(t)] || graded.get(tkey(t)) || "p";
   OPTS_EXTRA.sunpm = lists;
   const all = lists.flatMap(x => x[2]), hit = all.filter(t => st(t) === "hit").length, doneN = all.filter(t => ["hit", "miss"].includes(st(t))).length;
-  const head = "ATD scoring update", sub = `${hit} of ${all.length} have scored`;
+  const head = MLB() ? "Dinger tracker" : "ATD scoring update", sub = `${hit} of ${all.length} have ${MLB() ? "gone yard" : "scored"}`;
   const H = 1920, s = canvas(H);
   let y = frame(s, H, "Live", words("head", head), words("sub", sub));
   const rowH = Math.min(110, (H - 460 - y) / (all.length + 2.5));
@@ -1395,19 +1456,24 @@ B.sunpm = () => {
       const mr = Math.min(24, rowH * .36), fs = Math.min(36, rowH * .6);      // smaller rows when the list is long
       mark(s, 70 + mr * 1.2, yy - fs * .22, ["hit", "miss", "void"].includes(m) ? m : "p", mr);
       T(s, 70 + mr * 2.4 + 22, yy + fs * .12, t.player, {"font-size": fs, "font-weight": 800, fill: m === "miss" || m === "void" ? "#8e98b8" : "#fff"});
-      T(s, 1010, yy + fs * .1, m === "hit" ? "SCORED" : m === "miss" ? "NO TD" : m === "void" ? "DID NOT PLAY" : pct(t.p), {"text-anchor": "end", "font-size": Math.min(28, fs * .8), "font-weight": 900,
+      T(s, 1010, yy + fs * .1, m === "hit" ? (MLB() ? "HOMERED" : "SCORED") : m === "miss" ? (MLB() ? "NO HR" : "NO TD") : m === "void" ? "DID NOT PLAY" : pct(t.p), {"text-anchor": "end", "font-size": Math.min(28, fs * .8), "font-weight": 900,
         fill: m === "hit" ? "#5cf2bb" : m === "miss" ? "#ff8a8a" : "#8e98b8", "letter-spacing": m === "p" ? 0 : 2});
       y += rowH;
     });
     y += 30;
   });
   const live = doneN < all.length;
-  const hook = hit ? pickOf([
+  const hook = MLB() ? (hit ? pickOf([
+      `💣 DINGER ALERT 💣 ${hit} of ${all.length} have gone yard${live ? " so far" : ""}`,
+      `See ya! 👋⚾ ${hit} of ${all.length} on the list have homered${live ? " so far" : ""}`,
+      `Dinger tracker 💥 ${hit} of ${all.length}${live ? " and counting" : ""}`,
+    ]) : live ? `Still waiting on the first dinger 👀 ${all.length} bats on the list` : `No dingers from the list today 😤 Back at it tomorrow 💪`)
+    : hit ? pickOf([
       `🚨 TD ALERT 🚨 ${hit} of ${all.length} have found the end zone${live ? " so far" : ""}`,
       `They're SCORING 🙌 ${hit} of ${all.length}${live ? " and counting" : ""}`,
       `Touchdown tracker 🏈 ${hit} of ${all.length} have cashed${live ? " so far" : ""} ✅`,
     ]) : live ? `Still waiting on the first one 👀 ${all.length} scorers on the list` : `Rough day for the TD list 😤 0 of ${all.length}. Back at it next week 💪`;
-  const cap = caption(hook, "", "#nfl #anytimetd #nflsunday");
+  const cap = caption(hook, "", TAGS("#nfl #anytimetd #nflsunday", "#MLB #MLBPlayoffs #homerun #dingers"));
   return {slides: [s], head, sub, caption: cap, story: true};
 };
 
@@ -1462,16 +1528,18 @@ function optsHtml(day, R){
         sel("fri", "n", 10, "Players", [5, 8, 10].map(n => [n, "Top " + n]))}</div>`,
       `<p class="ld-hint" style="margin-top:6px">Each player's number is the most he's reached in every one of those games (yards rounded down to the nearest 5). Only players on this week's board.</p>`);
   } else if(day === "sunam"){
-    h.push(`<div class="ld-g2">${sel("sunam", "grp", "mix", "Who", [["mix", "Everyone"], ["RB", "Running backs"], ["REC", "WR / TE"]])}${
+    h.push(MLB() ? sel("sunam", "n", 3, "How many", [1, 2, 3, 4, 5].map(n => [n, "Top " + n]))
+      : `<div class="ld-g2">${sel("sunam", "grp", "mix", "Who", [["mix", "Everyone"], ["RB", "Running backs"], ["REC", "WR / TE"]])}${
       sel("sunam", "n", 3, "How many", [1, 2, 3, 4, 5].map(n => [n, "Top " + n]))}</div>`,
-      chk("sunam", "rec", true, "Show our ATD record from this page"),
-      `<div class="ig-field"><label for="igcta">Bottom button text</label><input id="igcta" type="text" data-w="cta" value="${esc(S.words.sunam && S.words.sunam.cta || "")}" placeholder="Full top 20 in the tool · link in bio"></div>`);
+      chk("sunam", "rec", true, MLB() ? "Show our Dinger Predictor record (MLB playoffs page)" : "Show our ATD record from this page"),
+      `<div class="ig-field"><label for="igcta">Bottom button text</label><input id="igcta" type="text" data-w="cta" value="${esc(S.words[wk("sunam")] && S.words[wk("sunam")].cta || "")}" placeholder="${MLB() ? "Full top 10 in the tool · link in bio" : "Full top 20 in the tool · link in bio"}"></div>`);
   } else if(day === "sunpm"){
-    h.push(sel("sunpm", "n", 5, "Players per position", [3, 4, 5, 6, 8, 10].map(n => [n, "Top " + n])));
-    h.push(`<p class="ld-hint" style="margin-top:6px">Tap as they score. After Monday's grading the results fill in on their own. It's an Instagram Story (tall).</p>`);
+    h.push(sel("sunpm", "n", MLB() ? 10 : 5, MLB() ? "Players" : "Players per position", [3, 4, 5, 6, 8, 10].map(n => [n, "Top " + n])));
+    h.push(`<p class="ld-hint" style="margin-top:6px">${MLB() ? "Tap as they homer. After grading (on the MLB playoffs page) the results fill in on their own."
+      : "Tap as they score. After Monday's grading the results fill in on their own."} It's an Instagram Story (tall).</p>`);
     (OPTS_EXTRA.sunpm || []).forEach(([g, label, rs]) => {
       h.push(`<div class="ig-field"><label>${esc(label)}</label><div class="ig-picks">${rs.map(t => {
-        const k = t.player + "|" + t.team, m = S.marks[k] || "";
+        const k = t.player + "|" + t.team + (MLB() ? "|" + t.game : ""), m = S.marks[k] || "";
         return `<div class="ig-pick"><span>${esc(t.player)} <small>${esc(t.team)} · ${pct(t.p)}</small></span>
           <div class="ld-seg"><button class="p" aria-pressed="${!m}" data-mk="${esc(k)}" data-s="">·</button>
           <button class="h" aria-pressed="${m === "hit"}" data-mk="${esc(k)}" data-s="hit">✓</button>
