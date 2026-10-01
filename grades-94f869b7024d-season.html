@@ -89,6 +89,16 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
 .jump a:active{background:var(--card2)}
 #recview h2,#recview [id$="sec"]{scroll-margin-top:12px}
 .sport-sw button[data-rsport="mlb"][aria-pressed="true"]{background:#f3f5fa;color:#0b1124}
+.ig-top{padding:12px 14px}
+.ig-top h3{margin:0 0 4px}
+.ig-top .bb{display:grid;grid-template-columns:62px 1fr auto;gap:10px;padding:11px 0;border-top:1px solid var(--line);align-items:start}
+.ig-top .bb:first-of-type{border-top:0}
+.ig-top .rk{font:800 10.5px/1.25 var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--acc);padding-top:3px}
+.ig-top .rk.safe{color:var(--goodt)}.ig-top .rk.long{color:var(--warn)}
+.ig-top .hd{font-weight:700;font-size:14.5px}.ig-top .hd small{color:var(--mut);font-weight:600;margin-left:4px}
+.ig-top .lg{font-size:13px;color:var(--sec);margin-top:4px;line-height:1.45}
+.ig-top .nums{text-align:right;font:700 15px/1.2 var(--num)}.ig-top .nums small{display:block;font:600 11.5px/1.3 var(--ui);color:var(--goodt);margin-top:3px}
+.ig-top .cp{margin-top:6px;appearance:none;border:1px solid var(--line);background:var(--card2);color:var(--sec);border-radius:8px;font:600 12px/1 var(--ui);padding:6px 9px;cursor:pointer}
 .ig-plan{padding:12px 14px}
 .ig-plan h3{margin:0 0 4px}
 .ig-plan .pl{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
@@ -307,13 +317,13 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
   <p class="ld-hint">Planned odds fill in any bet you haven't priced yet, so you can see how many bets the climb takes. Put each bet's real odds in the list above as you place it.</p>
   <div class="ig-field" style="margin-top:12px"><label for="ldlabel">Bet type (shown after the odds)</label><input id="ldlabel" type="text" placeholder="parlay"></div>
   <div class="ig-field" style="margin-top:12px"><label for="ldhandle">Handle</label><input id="ldhandle" type="text"></div>
-  <label class="ld-check"><input type="checkbox" id="ldreal"> Show the real odds of finishing</label>
   <p class="ld-hint">Saved on this phone only.</p>
 </div>
 <div class="ld-toast" id="ldtoast">Take your screenshot · tap the title to exit</div>
 </div>
 <div id="igview" hidden>
 <div class="sport-sw" role="group" aria-label="Sport"><button data-sport="nfl" aria-pressed="true">NFL</button><button data-sport="mlb" aria-pressed="false">MLB <small>white</small></button></div>
+<div class="ld-panel ig-top" id="igtop"></div>
 <div class="ld-panel ig-plan" id="igplan"></div>
 <div class="ig-days" id="igdays"></div>
 <div class="ld-panel" id="igopts"></div>
@@ -889,8 +899,7 @@ function draw(){
   if(hits) el("rect", {x: 300, y: 1270, width: 685 * hits / n, height: 10, rx: 5, fill: busted >= 0 ? "#ff6b6b" : "url(#ldbar)"}, P);
 
   const last = n ? R[n - 1].amt : S.goal;
-  const foot = [S.handle, S.real ? `Real odds of finishing: about 1 in ${Math.max(2, Math.round(last / S.start))}` : "",
-                "21+ · Bet responsibly"].filter(Boolean).join("   ·   ");
+  const foot = [S.handle, "21+ · Bet responsibly"].filter(Boolean).join("   ·   ");
   el("text", {x: 540, y: 1330, "text-anchor": "middle", "font-weight": 600, "font-size": 20, fill: "#6f7898", "letter-spacing": 1}, svg, foot);
 
   svg.querySelectorAll(".rung").forEach(g => g.onclick = () => {
@@ -917,7 +926,7 @@ function rows(){
 }
 function form(){
   $("ldstart").value = S.start; $("ldgoal").value = S.goal; $("ldplan").value = odd(S.plan); $("ldlabel").value = S.label || "";
-  $("ldhandle").value = S.handle || ""; $("ldreal").checked = !!S.real;
+  $("ldhandle").value = S.handle || "";
 }
 // Typing odds updates the payouts as you go; the list redraws when you leave the box
 // (a new bet may appear or drop off the end).
@@ -940,7 +949,6 @@ const reset = () => {
 ["ldstart", "ldgoal", "ldplan"].forEach(id => $(id).addEventListener("change", reset));
 $("ldlabel").oninput = e => { S.label = e.target.value; save(); draw(); };
 $("ldhandle").oninput = e => { S.handle = e.target.value; save(); draw(); };
-$("ldreal").onchange = e => { S.real = e.target.checked; save(); draw(); };
 $("ldnew").onclick = () => {
   S.st = []; S.odds = [];
   S.tag = (S.tag || "").replace(/#(\d+)/, (_, k) => "#" + (+k + 1));
@@ -1638,8 +1646,75 @@ function render(regenCaption){
   $("igsave").textContent = R.slides.length > 1 ? `Save ${R.slides.length} images` : "Save image";
   $("igsave").disabled = !R.slides.length;
   $("igdays").innerHTML = DAYS.map(d => `<button class="ig-day" aria-pressed="${d.k === DAY}" data-day="${d.k}">${d.name}<small>${d.what}</small></button>`).join("");
-  drawPlan();
+  drawPlan(); drawTop();
   prepFiles();
+}
+// ---------- the model's top 5 bets, any leg count, any odds ----------
+// From the live board's test grid (every window, 2-6 legs, -150 to +1000)
+// plus single legs. Ranked by a CAREFUL edge: each leg's chance is taken
+// halfway between the model and the book's own price before multiplying,
+// so a long parlay can't win the list just by compounding small leg edges
+// -- the graded record shows the model's long shots hit less often than it
+// said. Picks it gives under a 30% chance are skipped, games already
+// started too, and no two picks share most of their legs.
+// One pick per price range, so the list isn't all long shots: a careful
+// edge grows with the payout, so ranking everything together always floats
+// the +400s to the top. Each range keeps its own best; the fifth spot goes
+// to the next-best pick at -150 to +400. Legs the player has cleared in
+// under 60% of his recorded games are left out (week 3 replay: parlays
+// without them hit 42% vs 37%, at no cost in the model's own estimate).
+const TOP_TIERS = [
+  {k: "safe", name: "Safest", lo: -Infinity, hi: -120, minP: 0.30},
+  {k: "even", name: "Near even", lo: -119, hi: 149, minP: 0.30},
+  {k: "plus", name: "Plus money", lo: 150, hi: 399, minP: 0.25},
+  {k: "long", name: "Long shot", lo: 400, hi: Infinity, minP: 0.12},
+];
+function topBets(F){
+  if(!F || !(F.windows || []).length) return [];
+  const now = Date.now(), live = l => l.kick && new Date(l.kick).getTime() <= now;
+  const shaky = l => l.n >= 6 && l.hits / l.n < 0.6;
+  const dec = o => o > 0 ? 1 + o / 100 : 1 + 100 / -o;
+  const careful = legs => legs.reduce((a, l) => a * (l.p + 1 / dec(l.price) / 1.045) / 2, 1);
+  const c = [];
+  for(const w of F.windows){
+    for(const p of w.parlays || []) c.push({win: w.name || w.label, legs: p.legs, odds: p.odds, prob: p.prob});
+    for(const l of (w.top || []).slice(0, 40)) c.push({win: w.name || w.label, legs: [l], odds: l.price, prob: l.p});
+  }
+  const id = l => [l.player, l.stat, l.threshold].join("|");
+  const tierOf = o => TOP_TIERS.find(t => o >= t.lo && o <= t.hi);
+  const pool = c.filter(x => !x.legs.some(live) && !x.legs.some(shaky))
+    .map(x => Object.assign(x, {tier: tierOf(x.odds), safe: careful(x.legs)}))
+    .filter(x => x.tier && x.prob >= x.tier.minP)
+    .map(x => Object.assign(x, {edge: x.safe * dec(x.odds) - 1}))
+    .filter(x => x.edge > 0)
+    .sort((a, b) => b.edge - a.edge);
+  const out = [];
+  const clash = x => { const ids = x.legs.map(id);
+    return out.some(o => { const s2 = new Set(o.legs.map(id)); return ids.filter(i => s2.has(i)).length * 2 >= Math.min(ids.length, s2.size); }); };
+  for(const t of TOP_TIERS){ const x = pool.find(y => y.tier === t && !clash(y)); if(x) out.push(x); }
+  for(const x of pool){ if(out.length >= 5) break; if(x.tier.k !== "long" && !out.includes(x) && !clash(x)) out.push(x); }
+  return out.sort((a, b) => a.odds - b.odds);
+}
+function drawTop(){
+  const box = $("igtop");
+  if(!FEED){ box.hidden = true; return; }
+  const T = topBets(FEED);
+  box.hidden = false;
+  const sn = st => (typeof STATN === "object" && STATN[st]) || String(st).replace(/_/g, " ");
+  const am = o => (o > 0 ? "+" : "") + o;
+  const legTxt = l => `${l.player} ${Math.floor(l.threshold) + 1}+ ${sn(l.stat)} (${am(l.price)})`;
+  box.innerHTML = `<h3>Model's top 5 bets</h3><div class="ld-hint" style="margin:0 0 6px">The best pick at each price, safest first, from
+    games not started yet. "Edge" is a careful one: each leg's chance is set halfway between the model and the book's price.
+    No legs he's cleared in under 60% of his games.</div>` +
+    (T.length ? T.map((x, i) => `<div class="bb"><span class="rk ${x.tier.k}">${esc(x.tier.name)}</span>
+      <div><div class="hd">${x.legs.length === 1 ? "Single" : x.legs.length + "-leg parlay"} · ${esc(am(x.odds))}<small>${esc(x.win || "")}</small></div>
+        <div class="lg">${x.legs.map(l => esc(legTxt(l))).join("<br>")}</div>
+        <button class="cp" data-top="${i}">Copy picks</button></div>
+      <div class="nums">${Math.round(100 * x.prob)}%<small>+${Math.round(100 * x.edge)}% edge</small></div></div>`).join("")
+     : `<div class="ld-hint">Nothing on the board clears the bar right now — check back after the next build.</div>`);
+  box.onclick = e => { const b = e.target.closest("[data-top]"); if(!b) return;
+    const x = T[+b.dataset.top], t = `${x.legs.length === 1 ? "" : x.legs.length + "-leg parlay "}${am(x.odds)}\n` + x.legs.map(legTxt).join("\n");
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Picks copied"), () => toast("Couldn't copy")); };
 }
 // ---------- this week's posting plan (NFL): when each post is ready ----------
 // Ready times follow the scheduled builds (Eastern): a post's picks are final
