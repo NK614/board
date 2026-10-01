@@ -1480,6 +1480,13 @@ function renderSlip(){
    recorded games).
    ========================================================================= */
 const PG_K = 16, PG_TILT_CAP = 0.35, PG_MISS = 0.5;
+// MLB (Oct 1): the first playoff night the board said 35% and 1 of 48 hit.
+// Baseball prices are sharp and 30 games of hits are noisy, and the search
+// picks exactly the legs where that noise looks best. So for baseball the
+// book's price carries about two thirds of each leg (history one third),
+// the football nudges (steady / boom-or-bust) are off, and no leg is rated
+// more than MLB_EDGE above the price.
+const MLB_K = 60, MLB_EDGE = 0.08;
 // Leg-picking rules added after grading week 3 -- steadiness, and no matchup
 // nudge until defenses have 4 games this season (see rateLeg). A switch so
 // the old and new rules can be compared on the same board.
@@ -1506,7 +1513,8 @@ function rateLeg(sportKey, r){
     if(r.short || prof.short) return null;
     const meta = (SHARED.marketMeta || {})[r.market] || {}, stat = meta.stat;
     const q = impliedFrom(r.price) / 1.045;          // strip a typical ~4.5% hold
-    const k = prof.short ? 2 * PG_K : PG_K;
+    const mlb = sportKey === "mlb";
+    const k = (prof.short ? 2 : 1) * (mlb ? MLB_K : PG_K);
     let tilt = 0; const why = [];
 
     // UNRECORDED GAMES. The stats feeds list a player only in games where he
@@ -1546,7 +1554,7 @@ function rateLeg(sportKey, r){
     // STEADINESS. How much his game-to-game numbers swing. A boom-or-bust
     // player's hit rate rests on a few big games; a steady one clears his
     // number the same way most weeks.
-    if(ALGO_V2 && vals.length >= 6){
+    if(ALGO_V2 && !mlb && vals.length >= 6){
       const mean = vals.reduce((a, v) => a + v, 0) / vals.length;
       const sd = Math.sqrt(vals.reduce((a, v) => a + (v - mean) ** 2, 0) / vals.length);
       const cv = mean > 0 ? sd / mean : 9;
@@ -1650,6 +1658,7 @@ function rateLeg(sportKey, r){
     // because the search goes looking for legs the board likes most. A small
     // edge is allowed (those did hit a bit more often than the book said).
     if(ALGO_V2 && r.price > 0) p = Math.min(p, q + PG_LONGSHOT_EDGE);
+    if(mlb) p = Math.min(p, q + MLB_EDGE);
     return {p, q, why};
   });
 }
