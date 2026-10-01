@@ -241,6 +241,28 @@ select option{background:#0c111c;color:var(--ink)}
 
 /* ---- anytime TD list ---------------------------------------------------- */
 .field[hidden]{display:none}
+.gs-card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius);padding:14px 15px;margin:0 0 14px}
+.gs-top{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted)}
+.gs-game{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gs-score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin:12px 0 6px}
+.gs-team{background:var(--surface-2);border-radius:12px;padding:10px 12px;text-align:center}
+.gs-team .gs-nm{display:block;font-size:13px;color:var(--muted);font-weight:600}
+.gs-team b{display:block;font:800 28px/1.1 var(--display);color:var(--ink);margin-top:2px}
+.gs-team small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.gs-team.fav b{color:var(--accent,var(--ink))}
+.gs-at{color:var(--muted);font-weight:700}
+.gs-line{text-align:center;font-size:12.5px;color:var(--muted);margin-bottom:10px}
+.gs-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.gs-tag{font:700 11px/1 var(--ui,inherit);letter-spacing:.06em;text-transform:uppercase;padding:6px 9px;border-radius:999px;border:1px solid var(--hairline);color:var(--muted)}
+.gs-tag.up{border-color:#27e89c;color:#27e89c}.gs-tag.down{border-color:#ffc86b;color:#ffc86b}
+.gs-why{margin:6px 0 10px;padding-left:18px;font-size:13.5px;line-height:1.45;color:var(--ink)}
+.gs-why li{margin:3px 0}
+.gs-h{font:700 11px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}
+.gs-props{border:1px solid var(--hairline);border-radius:12px;overflow:hidden}
+.gs-prop{display:flex;justify-content:space-between;gap:10px;padding:9px 11px;border-top:1px solid var(--hairline);font-size:13px}
+.gs-prop:first-child{border-top:0}
+.gs-p{text-align:right;font-weight:800;white-space:nowrap}.gs-p small{display:block;font-weight:500;font-size:11px;color:var(--muted)}
+.gs-all{margin-top:12px;width:100%;padding:11px;border-radius:12px;border:1px solid var(--hairline);background:var(--surface-2);color:var(--ink);font-weight:650;cursor:pointer}
 .td-intro{margin:0 0 18px;padding:13px 15px;border-radius:14px;background:var(--glass);border:1px solid var(--hairline);
   color:var(--secondary);font-size:13px;line-height:1.5}
 .td-intro b{color:var(--ink);font-weight:650}
@@ -609,6 +631,11 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
         <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4.5 2 7 5.3 7 9s-2.5 7-7 9c-4.5-2-7-5.3-7-9s2.5-7 7-9z"/><path d="M9.5 12h5M10 9.5l4 5M14 9.5l-4 5"/></svg></span>
         <span class="tile-tx"><b>ATD Predictor</b>
           <span id="tile-td-t">This week's 10 running backs and 10 receivers most likely to score a touchdown.</span></span>
+        <span class="tile-go" aria-hidden="true">&rsaquo;</span></a>
+      <a class="tile" href="#scripts" id="tile-scripts">
+        <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/></svg></span>
+        <span class="tile-tx"><b>Game Scripts</b>
+          <span>How each game is expected to play out, and which props that helps.</span></span>
         <span class="tile-go" aria-hidden="true">&rsaquo;</span></a>
       <a class="tile" href="#props" id="tile-props">
         <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
@@ -1026,6 +1053,93 @@ function buildFilters(){
 // No odds -- it ranks who is most likely to score, nothing else.
 // Always the whole week: every game left when the board was built, whatever
 // the Game menu says (it is hidden while Anytime TD is picked).
+/* GAME SCRIPTS. How each game is expected to go, read straight from the
+   market: the spread and total give each team's expected points, the
+   moneyline (or the spread) its chance to win. No picks against the line --
+   a five-season test of our own spread/total model lost to the closing
+   numbers -- just the script, and which of this board's props it helps. */
+function renderScripts(){
+  const s = S(), board = $("board"), L = s.lines || {};
+  if(!Object.keys(L).length){
+    const other = Object.entries(SPORTS).find(([k, sp]) => k !== SPORT && Object.keys(sp.lines || {}).length);
+    board.innerHTML = `<div class="empty">${SPORT === "mlb" ? "Game Scripts covers football — there's no free source for MLB game lines."
+      : "No game lines on this board yet — they come with the next build."}${other ? ` Switch to ${({nfl: "NFL", cfb: "College", mlb: "MLB"})[other[0]] || other[0].toUpperCase()} at the top.` : ""}</div>`;
+    return;
+  }
+  const sd = SPORT === "cfb" ? 16 : 13.5;                      // how much final margins swing around the spread
+  const big = SPORT === "cfb" ? 17 : 10, clear = SPORT === "cfb" ? 10 : 6.5, close = 3;
+  const ncdf = z => { const t = 1 / (1 + 0.2316419 * Math.abs(z)), d = 0.3989423 * Math.exp(-z * z / 2);
+    const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+  const imp = ml => ml > 0 ? 100 / (ml + 100) : -ml / (-ml + 100);
+  const games = (s.games || []).filter(g => L[g]).sort((a, b) => ((kickOf(a) || 0) - (kickOf(b) || 0)) || a.localeCompare(b));
+  const totals = games.map(g => L[g].total).sort((a, b) => b - a);
+  const hiT = totals[Math.min(2, totals.length - 1)], loT = totals[Math.max(0, totals.length - 3)];
+  const book = (s.books || [])[0];
+  const nick = full => String(full || "").trim().split(/\s+/).pop();
+  const card = g => {
+    const ln = L[g], [awayN, homeN] = g.split(" @ "), ac = abbrOf(awayN), hc = abbrOf(homeN);
+    const name = c => c === ac ? nick(awayN) : c === hc ? nick(homeN) : c;
+    const pts = c => (ln.implied || {})[c];
+    // Win chance: the moneyline with the book's cut taken out, else the spread.
+    let pf = null;
+    if(ln.fav && ln.ml && ln.ml[ln.fav] != null && ln.ml[ln.dog] != null){
+      const a = imp(ln.ml[ln.fav]), b = imp(ln.ml[ln.dog]); pf = a / (a + b);
+    } else if(ln.fav) pf = ncdf(ln.spread / sd);
+    const tags = [];
+    if(ln.total >= hiT && ln.total >= (SPORT === "cfb" ? 58 : 47.5)) tags.push(["Shootout", "up"]);
+    if(ln.total <= loT && ln.total <= (SPORT === "cfb" ? 45 : 41.5)) tags.push(["Slugfest", "down"]);
+    if(ln.fav && ln.spread >= big) tags.push(["Blowout risk", "down"]);
+    else if(ln.fav && ln.spread >= clear) tags.push(["Clear favorite", ""]);
+    else if(!ln.fav || ln.spread <= close) tags.push(["Coin flip", ""]);
+    const lines = [];
+    if(ln.fav && ln.spread >= clear){
+      lines.push(`${name(ln.fav)} expected to lead most of the way. ${name(ln.dog)} likely throwing to catch up — more pass attempts and targets late.`);
+      lines.push(`${name(ln.fav)} can lean on the run with a lead, which helps its running backs and hurts its passing numbers.`);
+      if(ln.spread >= big) lines.push(`Big spreads bring blowout risk: starters on the leading side can sit late, which cuts into their overs.`);
+    } else if(!ln.fav || ln.spread <= close){
+      lines.push(`Expected to stay close, so both offenses should keep their normal game plans the whole way.`);
+    } else {
+      lines.push(`${name(ln.fav)} a modest favorite. Neither team should be forced away from its usual mix.`);
+    }
+    if(tags.some(t => t[0] === "Shootout")) lines.push(`One of the week's highest totals: more plays and more scoring, good for passing and receiving overs on both sides.`);
+    if(tags.some(t => t[0] === "Slugfest")) lines.push(`One of the week's lowest totals: fewer scoring chances, a tougher spot for yardage overs.`);
+    // Props on this board the script helps: legs our model nudged up for the script,
+    // then (in a shootout) the likeliest passing/receiving legs.
+    const helped = new Map();
+    for(const r of s.rows || []){
+      if(r.game !== g || (book && r.book !== book)) continue;
+      const x = rateLeg(SPORT, r); if(!x) continue;
+      let why = x.why.find(w => w[1] === "up" && /script/i.test(w[0]));
+      if(why && r.pos === "QB" && /run-heavy/i.test(why[0])) why = null;     // a lead means handoffs, not QB scrambles
+      const stat = ((SHARED.marketMeta || {})[r.market] || {}).stat || "";
+      const shoot = tags.some(t => t[0] === "Shootout") && /passing|receiv|reception/.test(stat);
+      if(!why && !shoot) continue;
+      const k = r.player + "|" + r.market, prev = helped.get(k);
+      if(!prev || x.p > prev.p) helped.set(k, {r, p: x.p, why: why ? why[0] : "Shootout"});
+    }
+    const top = [...helped.values()].sort((a, b) => b.p - a.p).filter((h, i, a) => a.findIndex(o => o.r.player === h.r.player) === i).slice(0, 4);
+    const d = kickOf(g), when = d && !isNaN(d) ? `${etParts(d).wd} ${etParts(d).time}` : "";
+    const team = c => `<div class="gs-team${c === ln.fav ? " fav" : ""}"><span class="gs-nm">${esc(name(c))}</span>
+      <b>${pts(c) != null ? fmtNum(pts(c)) : "—"}</b>${pf != null && ln.fav ? `<small>${Math.round(100 * (c === ln.fav ? pf : 1 - pf))}% to win</small>` : ""}</div>`;
+    return `<section class="gs-card">
+      <div class="gs-top"><div class="gs-game">${esc(g)}</div><div class="gs-when">${esc(when)}</div></div>
+      <div class="gs-score">${team(ac)}<span class="gs-at">@</span>${team(hc)}</div>
+      <div class="gs-line">${ln.fav ? `${esc(name(ln.fav))} −${fmtNum(ln.spread)}` : "Pick'em"} · Total ${fmtNum(ln.total)}</div>
+      <div class="gs-tags">${tags.map(([t, c]) => `<span class="gs-tag ${c}">${t}</span>`).join("")}</div>
+      <ul class="gs-why">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul>
+      ${top.length ? `<div class="gs-h">Props this script helps</div><div class="gs-props">${top.map(h =>
+        `<div class="gs-prop"><span><b>${esc(h.r.player)}</b> ${propText(h.r)}</span><span class="gs-p">${Math.round(100 * h.p)}%<small>${esc(h.why)}</small></span></div>`).join("")}</div>` : ""}
+      <button class="gs-all" data-game="${esc(g)}">All props for this game &rsaquo;</button>
+    </section>`;
+  };
+  board.innerHTML = `<div class="td-intro"><b>How each game is expected to play out</b>, read from the betting market:
+    the spread and total give each team's expected points, the moneyline its chance to win. Not picks against the line —
+    these are the market's own numbers, used to show which props the game script helps.</div>` + games.map(card).join("");
+  board.querySelectorAll(".gs-all").forEach(b => b.onclick = () => {
+    const sel = $("f-game"); if([...sel.options].some(o => o.value === b.dataset.game)) sel.value = b.dataset.game;
+    location.hash = "#props";
+  });
+}
 function renderTD(){
   const s = S(), board = $("board");
   const all = s.td || [];
@@ -1084,6 +1198,7 @@ function render(){
   const games = selectedGames(), market = $("f-market").value, book = $("f-book").value;
   const board = $("board");
   if(VIEW === "td"){ renderTD(); return; }
+  if(VIEW === "scripts"){ renderScripts(); return; }
   if(VIEW !== "props") return;
   const unit = (SHARED.units || {})[market] || "";
 
@@ -2148,7 +2263,7 @@ $("pg-out").addEventListener("click", ev => {
 // The address carries the screen, so the phone's back button returns home
 // and a link can open straight to one screen.
 let VIEW = "home", FROM_HOME = false, ROUTED = false;
-const VIEWS = {props: "Player Prop Assist", td: "ATD Predictor", parlay: "Parlay Generator"};
+const VIEWS = {props: "Player Prop Assist", td: "ATD Predictor", parlay: "Parlay Generator", scripts: "Game Scripts"};
 function goHome(){
   // Back if we came from the home screen (so the phone's back stack stays
   // tidy); otherwise -- a link straight to a screen -- just drop the hash.
@@ -2161,6 +2276,7 @@ function homeInfo(){
     .filter(Boolean).join(" · ");
   const nfl = SPORTS.nfl || {}, td = nfl.td;
   $("tile-td").classList.toggle("off", !td);
+  $("tile-scripts").classList.toggle("off", !Object.values(SPORTS).some(sp => Object.keys(sp.lines || {}).length));
   const tm = nfl.tdMeta || {};
   $("tile-td-t").textContent = tm.final === false
     ? "Early-game players who made this week's top 10 — the full list posts before noon ET on Sundays."
@@ -2179,7 +2295,7 @@ function route(){
   if(VIEW === "parlay") pgOpenPanel(); else pgClosePanel();
   if(!home){
     $("view-h").textContent = VIEWS[VIEW];
-    $("filters").hidden = VIEW === "td";
+    $("filters").hidden = VIEW === "td" || VIEW === "scripts";
     if(VIEW === "td" && !(S().td || []).length && (SPORTS.nfl || {}).td && SPORT !== "nfl"){
       SPORT = "nfl"; buildSportSeg(); buildFilters();
     }
