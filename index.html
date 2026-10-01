@@ -655,13 +655,15 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .rv-kpi span{display:block;margin-top:8px;font-size:13px;color:var(--secondary);line-height:1.4}
 .rv-h{margin:22px 0 10px;font:700 12px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .rv-rows{background:var(--surface);border:1px solid var(--hairline);border-radius:16px;overflow:hidden}
-.rv-row{display:grid;grid-template-columns:76px 1fr 92px;gap:12px;align-items:center;padding:12px 14px;border-top:1px solid var(--hairline);font-size:14px}
+.rv-row{display:grid;grid-template-columns:62px minmax(0,1fr) 104px;gap:12px;align-items:center;padding:12px 14px;border-top:1px solid var(--hairline);font-size:14px}
 .rv-row:first-child{border-top:0}
 .rv-row .t{font:700 15px/1 var(--num)}
 .rv-row .r{text-align:right;font:700 15px/1.1 var(--num)}.rv-row .r small{display:block;font:500 11.5px/1.3 var(--ui);color:var(--muted)}
 .rv-bar{position:relative;height:10px;border-radius:5px;background:var(--surface-3)}
 .rv-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--grad)}
 .rv-bar em{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fff;border-radius:1px}
+.rv-bet{grid-column:2/4;margin-top:-4px;font-size:12.5px;color:var(--secondary)}
+.rv-bet b{font:700 13px/1 var(--num)}
 .rv-sub{margin-top:6px;font-size:11.5px;line-height:1.35;color:var(--muted)}
 .rv-note{margin:12px 0 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
 .rv-legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:8px 2px 0}
@@ -672,6 +674,18 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .pg-why{margin:12px 0 0;padding:11px 13px;border-radius:12px;background:var(--accent-soft);border:1px solid rgba(45,226,255,.22);
   font-size:13.5px;line-height:1.45;color:var(--ink)}
 .pg-why b{color:var(--accent)}
+.tb-card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius);padding:14px 15px;margin:0 0 14px}
+.tb-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tb-tier{font:800 11px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.tb-tier.safe{color:var(--good-text)}.tb-tier.long{color:var(--warn-text)}
+.tb-win{font-size:12px;color:var(--muted)}
+.tb-head{display:flex;justify-content:space-between;align-items:center;margin:8px 0 6px}
+.tb-head b{font:750 18px/1.2 var(--display)}
+.tb-chance{text-align:right;font:800 22px/1 var(--num);color:var(--accent)}.tb-chance small{display:block;font:600 10.5px/1.3 var(--ui);color:var(--muted);margin-top:3px}
+.tb-leg{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--hairline);font-size:14px}
+.tb-leg small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.tb-p{font:700 15px/1.2 var(--num);color:var(--secondary)}
+.tb-acts{display:flex;gap:10px;margin-top:10px}.tb-acts .btn{flex:1;text-align:center}
 .rv-hl{background:linear-gradient(135deg,rgba(45,226,255,.10),rgba(165,123,255,.08));border:1px solid rgba(45,226,255,.25);
   border-radius:16px;padding:6px 16px;margin-bottom:6px}
 .rv-hl p{margin:10px 0;font-size:14.5px;line-height:1.45;color:var(--secondary)}
@@ -751,6 +765,16 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
         <span class="tile-tx"><b>Parlay Generator</b>
           <span>Pick legs and target odds — it builds the parlay most likely to hit.</span></span>
         <span class="tile-go" aria-hidden="true">&rsaquo;</span></a>
+      <a class="tile" href="#top" id="tile-top">
+        <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg></span>
+        <span class="tile-tx"><b>Model's Current Top 5 Bets</b>
+          <span>The model's best bet at each price, safest first — singles and parlays.</span></span>
+        <span class="tile-go" aria-hidden="true">&rsaquo;</span></a>
+      <a class="tile" href="#props" id="tile-props">
+        <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+        <span class="tile-tx"><b>Player Prop Assist</b>
+          <span id="tile-props-t">Every line with hit rates, matchups and injury flags.</span></span>
+        <span class="tile-go" aria-hidden="true">&rsaquo;</span></a>
       <a class="tile" href="#td" id="tile-td">
         <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4.5 2 7 5.3 7 9s-2.5 7-7 9c-4.5-2-7-5.3-7-9s2.5-7 7-9z"/><path d="M9.5 12h5M10 9.5l4 5M14 9.5l-4 5"/></svg></span>
         <span class="tile-tx"><b id="tile-td-h">ATD Predictor</b>
@@ -760,11 +784,6 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
         <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/></svg></span>
         <span class="tile-tx"><b>Game Scripts</b>
           <span>How each game is expected to play out, and which props that helps.</span></span>
-        <span class="tile-go" aria-hidden="true">&rsaquo;</span></a>
-      <a class="tile" href="#props" id="tile-props">
-        <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
-        <span class="tile-tx"><b>Player Prop Assist</b>
-          <span id="tile-props-t">Every line with hit rates, matchups and injury flags.</span></span>
         <span class="tile-go" aria-hidden="true">&rsaquo;</span></a>
     </div>
   </section>
@@ -1311,6 +1330,139 @@ function renderScripts(){
 /* DINGER PREDICTOR. Each hitter's chance to homer (1+ home run) from the
    same leg model as everything else -- mostly the book's price, a third his
    last 30 starts -- best first. One list per day of games. */
+/* MODEL'S TOP 5 BETS. The model's best bet at each price, so the list isn't
+   all long shots: ranking everything together on edge always floats the
+   +400s to the top, because edge grows with the payout. Candidates are the
+   generator's own green-flag parlays (2-6 legs, -150 to +1000) for every
+   window that hasn't started, plus green single legs. Each is scored on a
+   CAREFUL edge -- every leg's chance set halfway between the model and the
+   book's price before multiplying -- and each price range keeps its best;
+   the fifth spot is the next best below +400. No two share most legs. */
+const TOP_TIERS = [
+  {k: "safe", name: "Safest", lo: -Infinity, hi: -120, minP: 0.30},
+  {k: "even", name: "Near even", lo: -119, hi: 149, minP: 0.30},
+  {k: "plus", name: "Plus money", lo: 150, hi: 399, minP: 0.25},
+  {k: "long", name: "Long shot", lo: 400, hi: Infinity, minP: 0.12},
+];
+const TOP_CACHE = {};
+// Worked out at build time (top5.json next to the board) so phones don't
+// spend seconds on it; worked out here only when that copy is missing,
+// stale, for another book, or mostly kicked off already.
+let TOP_PRE = null;
+if(/^https?:$/.test(location.protocol))
+  fetch("top5.json", {cache: "no-store"}).then(r => r.ok ? r.json() : null)
+    .then(j => { TOP_PRE = j; if(VIEW === "top") render(); }).catch(() => {});
+function topFromPre(book){
+  const P = TOP_PRE && TOP_PRE[SPORT];
+  if(!P || P.stamp !== (S().stamp || "") || P.book !== book) return null;
+  const byId = new Map((S().rows || []).filter(r => r.book === book && legId(r)).map(r => [legId(r), r]));
+  const now = Date.now(), bets = [];
+  for(const b of P.bets){
+    const legs = b.legs.map(l => ({r: byId.get(l.id), p: l.p, sport: SPORT}));
+    if(legs.some(o => !o.r)) return null;
+    if(legs.some(o => { const k = kickOf(o.r.game); return k && k.getTime() <= now; })) continue;
+    bets.push({tier: TOP_TIERS.find(t => t.k === b.tier), win: b.win, odds: b.odds, prob: b.prob, legs,
+               res: {legs, d: decOf(b.odds), prob: b.prob, book}});
+  }
+  return bets.length >= Math.min(3, P.bets.length) ? {book, bets} : null;
+}
+function topExport(){
+  const keep = SPORT, out = {};
+  try {
+    for(const k of Object.keys(SPORTS)){
+      SPORT = k;
+      const T = topFive(true);
+      out[k] = {stamp: S().stamp || "", book: T.book, bets: T.bets.map(x => ({tier: x.tier.k, win: x.win, odds: x.odds,
+        prob: +x.prob.toFixed(4), legs: x.legs.map(o => ({id: legId(o.r), p: +o.p.toFixed(4)}))}))};
+    }
+  } finally { SPORT = keep; }
+  return out;
+}
+function topBook(){
+  const has = b => (S().rows || []).some(r => r.book === b && legId(r));
+  const want = $("f-book") && $("f-book").value;
+  return has(want) ? want : has("fanduel") ? "fanduel" : has("draftkings") ? "draftkings" : null;
+}
+function topFive(fresh){
+  const key = SPORT, book = topBook(), ck = key + "|" + book + "|" + (S().stamp || "");
+  if(TOP_CACHE[ck]) return TOP_CACHE[ck];
+  if(!book) return (TOP_CACHE[ck] = {book, bets: []});
+  const pre = !fresh && topFromPre(book);
+  if(pre) return (TOP_CACHE[ck] = pre);
+  const now = Date.now(), started = g => { const k = kickOf(g); return k && k.getTime() <= now; };
+  const careful = legs => legs.reduce((a, o) => a * (o.p + 1 / decOf(o.r.price) / 1.045) / 2, 1);
+  const c = [], keepReuse = PG_REUSE;
+  PG_REUSE = null;                       // the same list for everyone: ignore parlays this visitor took
+  try {
+  for(const sl of slotsFor(key).filter(x => x.key !== "tbd" && !x.games.some(started))){
+    const scope = new Set(sl.games.map(g => key + "|" + g)), win = sl.name || sl.label;
+    for(const n of [2, 3, 4, 5, 6]) for(const t of [-150, 100, 200, 300, 500, 1000]){
+      const res = buildBest(n, t, book, scope, null, true);
+      if(!res.error) c.push({win, res, legs: res.legs, odds: amerOf(res.d), prob: res.prob});
+    }
+    const singles = [];
+    for(const r of S().rows || []){
+      if(r.book !== book || !legId(r) || !scope.has(key + "|" + r.game)) continue;
+      let x = RATE_CACHE.get(r); if(x === undefined){ x = rateLeg(key, r); RATE_CACHE.set(r, x); }
+      if(!x || x.why.some(w => w[1] === "down")) continue;
+      singles.push({r, sport: key, p: x.p, q: x.q, why: x.why});
+    }
+    singles.sort((a, b) => b.p - a.p).slice(0, 40).forEach(o =>
+      c.push({win, legs: [o], odds: o.r.price, prob: o.p, res: {legs: [o], d: decOf(o.r.price), prob: o.p, book}}));
+  }
+  } finally { PG_REUSE = keepReuse; }
+  const tierOf = o => TOP_TIERS.find(t => o >= t.lo && o <= t.hi);
+  const pool = c.map(x => Object.assign(x, {tier: tierOf(x.odds)}))
+    .filter(x => x.tier && x.prob >= x.tier.minP)
+    .map(x => Object.assign(x, {edge: careful(x.legs) * decOf(x.odds) - 1}))
+    .filter(x => x.edge > 0).sort((a, b) => b.edge - a.edge);
+  const id = o => legId(o.r), out = [];
+  const clash = x => { const ids = x.legs.map(id);
+    return out.some(o => { const s2 = new Set(o.legs.map(id)); return ids.filter(i => s2.has(i)).length * 2 >= Math.min(ids.length, s2.size); }); };
+  for(const t of TOP_TIERS){ const x = pool.find(y => y.tier === t && !clash(y)); if(x) out.push(x); }
+  for(const x of pool){ if(out.length >= 5) break; if(x.tier.k !== "long" && !out.includes(x) && !clash(x)) out.push(x); }
+  out.sort((a, b) => a.odds - b.odds);
+  return (TOP_CACHE[ck] = {book, bets: out, open: c.length});
+}
+let TOP_SHOWN = [];
+function renderTop(){
+  const board = $("board"), ck = SPORT + "|" + topBook() + "|" + (S().stamp || "");
+  if(!TOP_CACHE[ck] && topFromPre(topBook())) topFive();
+  if(!TOP_CACHE[ck]){
+    board.innerHTML = `<div class="empty">Finding the model's best bets…</div>`;
+    setTimeout(() => { topFive(); if(VIEW === "top") renderTop(); }, 30);
+    return;
+  }
+  const T = topFive(), name = bookName(T.book);
+  TOP_SHOWN = T.bets;
+  if(!T.bets.length){
+    board.innerHTML = `<div class="empty">${T.open === 0 ? "Every game on this board has started. The next update brings the next games."
+      : "No bet clears the model's bar against the book's prices right now — when the prices are fair, the model passes. Check back after the next update."}</div>`;
+    return;
+  }
+  board.innerHTML = `<div class="td-intro"><b>The model's best bet at each price, safest first.</b> From games that haven't started,
+      green-flag legs only. Ranked on a careful edge over ${esc(name)}'s price — each leg's chance is set halfway between the model
+      and the book, so long shots can't win the list just by paying more. Odds can move; check the price before you bet.</div>` +
+    T.bets.map((x, i) => {
+      const legs = x.legs.map(o => `<div class="tb-leg"><span><b>${esc(o.r.player)}</b> ${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span>
+          <small>${esc(o.r.game)}${kickOf(o.r.game) ? " · " + kickText(o.r.game) : ""}</small></span><span class="tb-p">${Math.round(100 * o.p)}%</span></div>`).join("");
+      return `<div class="tb-card"><div class="tb-top"><span class="tb-tier ${x.tier.k}">${esc(x.tier.name)}</span><span class="tb-win">${esc(x.win)}</span></div>
+        <div class="tb-head"><b>${x.legs.length === 1 ? "Single" : x.legs.length + "-leg parlay"} · ${fmtAmer(x.odds)}</b>
+          <span class="tb-chance">${Math.round(100 * x.prob)}%<small>model chance</small></span></div>
+        ${legs}
+        <div class="tb-acts"><button class="btn" data-tadd="${i}">Add to slip</button>
+          <a class="btn ghost" target="_blank" rel="noopener" href="${esc(pgSlipUrl(x.res))}">Open in ${esc(name)}</a></div>
+        ${x.legs.length > 1 && sameGame(x.legs.map(o => o.r)) ? `<p class="pg-fine" style="margin-top:8px">Some legs share a game; the book prices same-game legs together, so its price will differ.</p>` : ""}</div>`;
+    }).join("") + `<div class="td-intro" style="margin-top:4px"><b>Why "current"?</b> This list is redone every time the board updates,
+      using only games that haven't started. After Thursday's game kicks off, the next update picks from the weekend's games;
+      after Sunday's early games start, it picks from the later ones. So the five bets change through the week, and a week
+      can have more than five. Every bet shown at a game's last update before kickoff gets graded.</div>
+      <p class="pg-fine">21+. A model's estimate from past games and today's prices, not a guarantee — a parlay only pays if every leg hits.</p>`;
+  board.querySelectorAll("[data-tadd]").forEach(b => b.onclick = () => {
+    const x = TOP_SHOWN[+b.dataset.tadd]; x.legs.forEach(o => SLIP.set(legId(o.r), o.r));
+    saveSlip(); renderSlip(); b.textContent = "Added ✓"; });
+}
+
 function hrList(book){
   const sp = SPORTS.mlb || {}, seen = new Map();
   for(const r of sp.rows || []){
@@ -1422,6 +1574,7 @@ function render(){
   if(VIEW === "td"){ renderTD(); return; }
   if(VIEW === "scripts"){ renderScripts(); return; }
   if(VIEW === "record"){ renderRecord(); return; }
+  if(VIEW === "top"){ renderTop(); return; }
   if(VIEW !== "props") return;
   const unit = (SHARED.units || {})[market] || "";
 
@@ -2592,7 +2745,7 @@ $("pg-out").addEventListener("click", ev => {
 // The address carries the screen, so the phone's back button returns home
 // and a link can open straight to one screen.
 let VIEW = "home", FROM_HOME = false, ROUTED = false;
-const VIEWS = {props: "Player Prop Assist", td: "ATD Predictor", parlay: "Parlay Generator", scripts: "Game Scripts", record: "Our Record"};
+const VIEWS = {props: "Player Prop Assist", td: "ATD Predictor", parlay: "Parlay Generator", scripts: "Game Scripts", record: "Our Record", top: "Model's Current Top 5 Bets"};
 function goHome(){
   // Back if we came from the home screen (so the phone's back stack stays
   // tidy); otherwise -- a link straight to a screen -- just drop the hash.
@@ -2692,7 +2845,7 @@ function recordTile(){
   t.hidden = false;
   const P = R.parlays, H = recHighlights(R);
   $("rec-head").textContent = H.trend ? `${pct0(H.trend.won / H.trend.n)} of our parlays hit over ${H.trend.label}`
-    : H.best ? `Our ${fmtT(H.best.target)} parlays hit ${pct0(H.best.won / H.best.n)} — they need ${pct0(needFor(H.best.target))} to profit`
+    : H.best ? `Our ${fmtT(H.best.target)} parlays hit ${pct0(H.best.won / H.best.n)} — above the ${pct0(needFor(H.best.target))} break-even`
     : `${pct0(P.won / P.n)} of parlays hit · our model predicted ${pct0(P.pred)}`;
   const extra = SPORT === "mlb"
     ? (R.dinger && R.dinger.n ? `Dinger Predictor ${R.dinger.h} of ${R.dinger.n} homered` : "")
@@ -2722,8 +2875,8 @@ function renderRecord(){
     (${H.trend.worst.n}), so it weighs on the season number.`);
   if(H.hot) hl.push(`<b>${pct0(H.hot.won / H.hot.n)}</b> of our ${fmtT(H.hot.target)} parlays hit over ${esc(H.trend.label)} (${H.hot.won} of ${H.hot.n}).`);
   if(H.profit) hl.push(`<b>${money(H.profit)}</b> for the season if you'd put $10 on every pick, at the price when it was posted.`);
-  if(H.beat.length) hl.push(`<b>${H.beat.length} of ${H.nT}</b> odds levels beat their price: ${listAnd(H.beat.map(x => fmtT(x.target)))}
-    made money at the prices posted.`);
+  if(H.beat.length) hl.push(`<b>${H.beat.length} of ${H.nT}</b> odds levels came out ahead: betting every ${listAnd(H.beat.map(x => fmtT(x.target)))}
+    pick at $10 made money.`);
   if(H.list) hl.push(`<b>${pct0(H.list.h / H.list.n)}</b> of our ${SPORT === "mlb" ? "Dinger Predictor picks homered" : "ATD picks scored"}
     (${H.list.h} of ${H.list.n}) — the model said ${pct0(H.list.pred)}.`);
   if(R.legs && R.legs.n && R.legs.hit >= 0.6) hl.push(`<b>${pct0(R.legs.hit)}</b> of the ${R.legs.n} legs we picked hit.`);
@@ -2733,13 +2886,14 @@ function renderRecord(){
   if((R.byTarget || []).length){
     h.push(`<div class="rv-h">By target odds</div><div class="rv-rows">${R.byTarget.map(x => {
       const r = x.won / x.n, need = needFor(x.target), rec = rr && rr.byT[x.target];
-      const sub = [`model said ${pct0(x.pred)}`, rec && rec.n ? `${esc(rr.label)}: ${pct0(rec.won / rec.n)} (${rec.won} of ${rec.n})` : "",
-        x.u != null ? money(x.u) : ""].filter(Boolean).join(" · ");
+      const nw = t => `<span style="white-space:nowrap">${t}</span>`;
+      const sub = [nw(`model said ${pct0(x.pred)}`), rec && rec.n ? nw(`${esc(rr.label)}: ${pct0(rec.won / rec.n)}`) : ""].filter(Boolean).join(" · ");
+      const bet = x.u != null ? `<div class="rv-bet">Bet all ${x.n} at $10: <b class="${x.u >= 0 ? "hi" : "lo"}">${money(x.u)}</b></div>` : "";
       return `<div class="rv-row"><span class="t">${fmtT(x.target)}</span>
         <div><div class="rv-bar"><i style="width:${Math.max(2, Math.round(100 * r))}%"></i><em style="left:${Math.round(100 * need)}%"></em></div>
           <div class="rv-sub">${sub}</div></div>
-        <span class="r ${vsNeed(r, need, x.u)}">${pct0(r)}<small>${x.won} of ${x.n} · needs ${pct0(need)}</small></span></div>`; }).join("")}</div>`);
-    h.push(`<div class="rv-legend"><span><i></i>hit rate</span><span><em></em>needed to profit at that price</span></div>`);
+        <span class="r ${vsNeed(r, need, x.u)}">${pct0(r)}<small>${x.won} of ${x.n}<br><span style="white-space:nowrap">break-even ${pct0(need)}</span></small></span>${bet}</div>`; }).join("")}</div>`);
+    h.push(`<div class="rv-legend"><span style="white-space:nowrap"><i></i>hit rate</span><span><em></em>break-even: the hit rate needed to come out ahead betting every pick at that price</span></div>`);
   }
   const L = SPORT === "mlb" ? R.dinger : R.atd;
   if(L && L.n) h.push(`<div class="rv-h">${SPORT === "mlb" ? "Dinger Predictor" : "Anytime TD list"}</div>
@@ -2760,9 +2914,9 @@ function renderRecord(){
         <div><div class="rv-bar"><i style="width:${Math.max(2, Math.round(100 * r))}%"></i></div>
           <div class="rv-sub">model said ${pct0(w.pred)}${w.n ? ` · ${w.n} picks` : ""}</div></div>
         <span class="r ${w.u == null ? "" : w.u >= 0 ? "hi" : "lo"}">${pct0(r)}<small>${w.won} of ${w.n}${w.u != null ? " · " + money(w.u) : ""}</small></span></div>`; }).join("")}</div>`);
-  h.push(`<p class="rv-note">“Needs” is the hit rate that price has to beat to make money. “Model said” is the chance the board
-    gave each pick before the game, averaged. A parlay's real price lands near its target, not on it, so a row can
-    clear “needs” and still be slightly down. Profit counts $10 on every pick at the price when it was posted; many picks share
+  h.push(`<p class="rv-note">“Break-even” is the hit rate you'd need to come out ahead if you bet every pick at that price —
+    any single winning bet still pays. “Model said” is the chance the board gave each pick before the game, averaged. A
+    parlay's real price lands near its target, not on it, so a row can clear break-even and still be slightly down. Profit counts $10 on every pick at the price when it was posted; many picks share
     legs, so one leg can swing several. A week with more game windows has more picks. 21+. Past results don't promise future ones.</p>`);
   board.innerHTML = h.join("");
 }
