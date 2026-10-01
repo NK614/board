@@ -674,6 +674,12 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .pg-why{margin:12px 0 0;padding:11px 13px;border-radius:12px;background:var(--accent-soft);border:1px solid rgba(45,226,255,.22);
   font-size:13.5px;line-height:1.45;color:var(--ink)}
 .pg-why b{color:var(--accent)}
+.td-pick{margin:0 0 16px}
+.td-pick label{display:block;font:700 10.5px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.td-pick select{width:100%;padding:12px 36px 12px 14px;border-radius:14px;border:1px solid var(--hairline-2);background:var(--surface);
+  color:var(--ink);font:600 15px/1.2 var(--ui);-webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--accent) 50%),linear-gradient(135deg,var(--accent) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 52%,calc(100% - 13px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
 .tb-card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius);padding:14px 15px;margin:0 0 14px}
 .tb-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .tb-tier{font:800 11px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
@@ -1330,14 +1336,21 @@ function renderScripts(){
 /* DINGER PREDICTOR. Each hitter's chance to homer (1+ home run) from the
    same leg model as everything else -- mostly the book's price, a third his
    last 30 starts -- best first. One list per day of games. */
-/* MODEL'S TOP 5 BETS. The model's best bet at each price, so the list isn't
-   all long shots: ranking everything together on edge always floats the
-   +400s to the top, because edge grows with the payout. Candidates are the
-   generator's own green-flag parlays (2-6 legs, -150 to +1000) for every
-   window that hasn't started, plus green single legs. Each is scored on a
-   CAREFUL edge -- every leg's chance set halfway between the model and the
-   book's price before multiplying -- and each price range keeps its best;
-   the fifth spot is the next best below +400. No two share most legs. */
+/* MODEL'S CURRENT TOP 5 BETS. The model's best bet at each price, so the
+   list isn't all long shots: ranking everything together on edge always
+   floats the +400s to the top, because edge grows with the payout.
+   Candidates are the generator's own green-flag parlays (2-6 legs, -150 to
+   +1000) for every window that hasn't started, plus green single legs. Each
+   is scored on a CAREFUL edge -- every leg's chance set halfway between the
+   model and the book's price before multiplying -- and each price range
+   keeps its best; the fifth spot is the next best below +400. No two share
+   most legs.
+
+   THE LIST HOLDS. Once a bet is on it, it stays -- same legs, same posted
+   price -- through every later update, until one of its games kicks off
+   (or a leg's line is pulled, which means the player is out). Only then is
+   its spot refilled, at the next update, from the games still to come. The
+   list lives in top5.json next to the board; each update merges into it. */
 const TOP_TIERS = [
   {k: "safe", name: "Safest", lo: -Infinity, hi: -120, minP: 0.30},
   {k: "even", name: "Near even", lo: -119, hi: 149, minP: 0.30},
@@ -1345,107 +1358,141 @@ const TOP_TIERS = [
   {k: "long", name: "Long shot", lo: 400, hi: Infinity, minP: 0.12},
 ];
 const TOP_CACHE = {};
-// Worked out at build time (top5.json next to the board) so phones don't
-// spend seconds on it; worked out here only when that copy is missing,
-// stale, for another book, or mostly kicked off already.
-let TOP_PRE = null;
+let TOP_PRE = null;                       // the held list (top5.json), when the board is opened from its address
 if(/^https?:$/.test(location.protocol))
   fetch("top5.json", {cache: "no-store"}).then(r => r.ok ? r.json() : null)
-    .then(j => { TOP_PRE = j; if(VIEW === "top") render(); }).catch(() => {});
-function topFromPre(book){
-  const P = TOP_PRE && TOP_PRE[SPORT];
-  if(!P || P.stamp !== (S().stamp || "") || P.book !== book) return null;
-  const byId = new Map((S().rows || []).filter(r => r.book === book && legId(r)).map(r => [legId(r), r]));
-  const now = Date.now(), bets = [];
-  for(const b of P.bets){
-    const legs = b.legs.map(l => ({r: byId.get(l.id), p: l.p, sport: SPORT}));
-    if(legs.some(o => !o.r)) return null;
-    if(legs.some(o => { const k = kickOf(o.r.game); return k && k.getTime() <= now; })) continue;
-    bets.push({tier: TOP_TIERS.find(t => t.k === b.tier), win: b.win, odds: b.odds, prob: b.prob, legs,
-               res: {legs, d: decOf(b.odds), prob: b.prob, book}});
-  }
-  return bets.length >= Math.min(3, P.bets.length) ? {book, bets} : null;
-}
-function topExport(){
-  const keep = SPORT, out = {};
-  try {
-    for(const k of Object.keys(SPORTS)){
-      SPORT = k;
-      const T = topFive(true);
-      out[k] = {stamp: S().stamp || "", book: T.book, bets: T.bets.map(x => ({tier: x.tier.k, win: x.win, odds: x.odds,
-        prob: +x.prob.toFixed(4), legs: x.legs.map(o => ({id: legId(o.r), p: +o.p.toFixed(4)}))}))};
-    }
-  } finally { SPORT = keep; }
-  return out;
-}
+    .then(j => { TOP_PRE = j; for(const k in TOP_CACHE) delete TOP_CACHE[k]; if(VIEW === "top") render(); }).catch(() => {});
 function topBook(){
   const has = b => (S().rows || []).some(r => r.book === b && legId(r));
   const want = $("f-book") && $("f-book").value;
   return has(want) ? want : has("fanduel") ? "fanduel" : has("draftkings") ? "draftkings" : null;
 }
-function topFive(fresh){
-  const key = SPORT, book = topBook(), ck = key + "|" + book + "|" + (S().stamp || "");
-  if(TOP_CACHE[ck]) return TOP_CACHE[ck];
-  if(!book) return (TOP_CACHE[ck] = {book, bets: []});
-  const pre = !fresh && topFromPre(book);
-  if(pre) return (TOP_CACHE[ck] = pre);
+const topStat = m => ((SHARED.marketMeta || {})[m] || {}).stat || m;
+const topLegOut = o => { const k = kickOf(o.r.game);
+  return {id: legId(o.r), player: o.r.player, team: o.r.team, pos: o.r.pos, game: o.r.game, market: o.r.market,
+          stat: topStat(o.r.market), threshold: o.r.threshold, price: o.r.price, book: o.r.book, fd: o.r.fd || null,
+          dk: o.r.dk || null, p: +o.p.toFixed(4), kick: k ? k.toISOString() : null}; };
+const topBetOut = x => ({tier: x.tier.k, win: x.win, odds: x.odds, prob: +x.prob.toFixed(4),
+                         made: x.made || new Date().toISOString(), legs: x.legs.map(topLegOut)});
+function topBetIn(b, sport){
+  const legs = b.legs.map(l => ({r: {player: l.player, team: l.team, pos: l.pos, game: l.game, market: l.market,
+    threshold: l.threshold, price: l.price, book: l.book, fd: l.fd, dk: l.dk}, p: l.p, q: 0, why: [], sport, kick: l.kick}));
+  return {tier: TOP_TIERS.find(t => t.k === b.tier), win: b.win, odds: b.odds, prob: b.prob, made: b.made, legs,
+          res: {legs, d: decOf(b.odds), prob: b.prob, book: legs.length ? legs[0].r.book : null}};
+}
+const topStarted = (o, now) => { const k = o.kick ? new Date(o.kick) : kickOf(o.r.game); return !!k && k.getTime() <= now; };
+// Every candidate for one sport, best careful edge first.
+function topPool(key, book){
   const now = Date.now(), started = g => { const k = kickOf(g); return k && k.getTime() <= now; };
   const careful = legs => legs.reduce((a, o) => a * (o.p + 1 / decOf(o.r.price) / 1.045) / 2, 1);
   const c = [], keepReuse = PG_REUSE;
   PG_REUSE = null;                       // the same list for everyone: ignore parlays this visitor took
   try {
-  for(const sl of slotsFor(key).filter(x => x.key !== "tbd" && !x.games.some(started))){
-    const scope = new Set(sl.games.map(g => key + "|" + g)), win = sl.name || sl.label;
-    for(const n of [2, 3, 4, 5, 6]) for(const t of [-150, 100, 200, 300, 500, 1000]){
-      const res = buildBest(n, t, book, scope, null, true);
-      if(!res.error) c.push({win, res, legs: res.legs, odds: amerOf(res.d), prob: res.prob});
+    for(const sl of slotsFor(key).filter(x => x.key !== "tbd" && !x.games.some(started))){
+      const scope = new Set(sl.games.map(g => key + "|" + g)), win = sl.name || sl.label;
+      for(const n of [2, 3, 4, 5, 6]) for(const t of [-150, 100, 200, 300, 500, 1000]){
+        const res = buildBest(n, t, book, scope, null, true);
+        if(!res.error) c.push({win, res, legs: res.legs, odds: amerOf(res.d), prob: res.prob});
+      }
+      const singles = [];
+      for(const r of S().rows || []){
+        if(r.book !== book || !legId(r) || !scope.has(key + "|" + r.game)) continue;
+        let x = RATE_CACHE.get(r); if(x === undefined){ x = rateLeg(key, r); RATE_CACHE.set(r, x); }
+        if(!x || x.why.some(w => w[1] === "down")) continue;
+        singles.push({r, sport: key, p: x.p, q: x.q, why: x.why});
+      }
+      singles.sort((a, b) => b.p - a.p).slice(0, 40).forEach(o =>
+        c.push({win, legs: [o], odds: o.r.price, prob: o.p, res: {legs: [o], d: decOf(o.r.price), prob: o.p, book}}));
     }
-    const singles = [];
-    for(const r of S().rows || []){
-      if(r.book !== book || !legId(r) || !scope.has(key + "|" + r.game)) continue;
-      let x = RATE_CACHE.get(r); if(x === undefined){ x = rateLeg(key, r); RATE_CACHE.set(r, x); }
-      if(!x || x.why.some(w => w[1] === "down")) continue;
-      singles.push({r, sport: key, p: x.p, q: x.q, why: x.why});
-    }
-    singles.sort((a, b) => b.p - a.p).slice(0, 40).forEach(o =>
-      c.push({win, legs: [o], odds: o.r.price, prob: o.p, res: {legs: [o], d: decOf(o.r.price), prob: o.p, book}}));
-  }
   } finally { PG_REUSE = keepReuse; }
   const tierOf = o => TOP_TIERS.find(t => o >= t.lo && o <= t.hi);
   const pool = c.map(x => Object.assign(x, {tier: tierOf(x.odds)}))
     .filter(x => x.tier && x.prob >= x.tier.minP)
     .map(x => Object.assign(x, {edge: careful(x.legs) * decOf(x.odds) - 1}))
     .filter(x => x.edge > 0).sort((a, b) => b.edge - a.edge);
-  const id = o => legId(o.r), out = [];
+  pool.open = c.length;
+  return pool;
+}
+// Five from the pool around the bets already held: empty price ranges first.
+function topPick(pool, kept){
+  const out = kept.slice(), id = o => legId(o.r);
   const clash = x => { const ids = x.legs.map(id);
     return out.some(o => { const s2 = new Set(o.legs.map(id)); return ids.filter(i => s2.has(i)).length * 2 >= Math.min(ids.length, s2.size); }); };
-  for(const t of TOP_TIERS){ const x = pool.find(y => y.tier === t && !clash(y)); if(x) out.push(x); }
+  for(const t of TOP_TIERS){ if(out.length >= 5 || out.some(o => o.tier === t)) continue;
+    const x = pool.find(y => y.tier === t && !clash(y)); if(x) out.push(x); }
   for(const x of pool){ if(out.length >= 5) break; if(x.tier.k !== "long" && !out.includes(x) && !clash(x)) out.push(x); }
-  out.sort((a, b) => a.odds - b.odds);
-  return (TOP_CACHE[ck] = {book, bets: out, open: c.length});
+  return out.sort((a, b) => a.odds - b.odds);
+}
+// The update's merge: keep every held bet whose games haven't started and
+// whose lines are still up, then refill the empty spots. Run by the cloud
+// build with the last list; its result is the new top5.json.
+function topMerge(prev){
+  const keepSport = SPORT, out = {}, now = Date.now();
+  const wk = st => (String(st || "").match(/^\d{4} (?:wk \d+|MLB)/) || [""])[0];
+  try {
+    for(const k of Object.keys(SPORTS)){
+      SPORT = k;
+      const book = topBook(), P = prev && prev[k];
+      let kept = [];
+      if(P && P.book === book && wk(P.stamp) === wk(S().stamp)){
+        const priced = new Set((S().rows || []).map(r => r.game + "|" + normName(r.player))), games = new Set(S().games || []);
+        kept = (P.bets || []).map(b => topBetIn(b, k)).filter(x => x.tier && !x.legs.some(o => topStarted(o, now))
+          && !x.legs.some(o => games.has(o.r.game) && !priced.has(o.r.game + "|" + normName(o.r.player))));
+      }
+      const pool = book ? topPool(k, book) : [];
+      out[k] = {stamp: S().stamp || "", book, made: new Date().toISOString(), open: pool.open || 0,
+                bets: (book ? topPick(pool, kept) : kept).map(topBetOut)};
+    }
+  } finally { SPORT = keepSport; }
+  return out;
+}
+const topExport = prev => topMerge(prev);
+// What the page shows: the held list minus anything that has kicked off.
+// Worked out here only when there's no held list (a board opened as a file).
+function topFive(fresh){
+  const key = SPORT, ck = key + "|" + (fresh ? "fresh" : "held");
+  if(TOP_CACHE[ck]) return TOP_CACHE[ck];
+  const P = !fresh && TOP_PRE && TOP_PRE[key];
+  if(P){
+    const now = Date.now(), all = (P.bets || []).map(b => topBetIn(b, key)).filter(x => x.tier);
+    return (TOP_CACHE[ck] = {book: P.book, bets: all.filter(x => !x.legs.some(o => topStarted(o, now))),
+                             held: true, gone: all.filter(x => x.legs.some(o => topStarted(o, now))).length, open: P.open});
+  }
+  const book = topBook();
+  if(!book) return (TOP_CACHE[ck] = {book, bets: [], open: 0});
+  const pool = topPool(key, book);
+  return (TOP_CACHE[ck] = {book, bets: topPick(pool, []), open: pool.open});
 }
 let TOP_SHOWN = [];
 function renderTop(){
-  const board = $("board"), ck = SPORT + "|" + topBook() + "|" + (S().stamp || "");
-  if(!TOP_CACHE[ck] && topFromPre(topBook())) topFive();
-  if(!TOP_CACHE[ck]){
+  const board = $("board"), ck = SPORT + "|held";
+  if(!TOP_CACHE[ck] && !(TOP_PRE && TOP_PRE[SPORT])){
     board.innerHTML = `<div class="empty">Finding the model's best bets…</div>`;
     setTimeout(() => { topFive(); if(VIEW === "top") renderTop(); }, 30);
     return;
   }
   const T = topFive(), name = bookName(T.book);
   TOP_SHOWN = T.bets;
+  const now = new Map((S().rows || []).filter(r => legId(r)).map(r => [legId(r), r]));
+  const why = `<div class="td-intro" style="margin-top:4px"><b>Why "current"?</b> Once a bet makes this list it stays — same legs, same
+      price it was posted at — until one of its games kicks off. Then the next board update fills its spot from the games still to
+      come: after Thursday's game starts, the open spot goes to a weekend game; after Sunday's early games, to a later one. So the
+      list changes through the week, and a week can have more than five bets. Each one is graded at the price it was posted.</div>`;
   if(!T.bets.length){
-    board.innerHTML = `<div class="empty">${T.open === 0 ? "Every game on this board has started. The next update brings the next games."
-      : "No bet clears the model's bar against the book's prices right now — when the prices are fair, the model passes. Check back after the next update."}</div>`;
+    board.innerHTML = `<div class="empty">${T.gone ? "These bets have all kicked off. The next board update fills the list from the games still to come."
+      : T.open === 0 ? "Every game on this board has started. The next update brings the next games."
+      : "No bet clears the model's bar against the book's prices right now — when the prices are fair, the model passes. Check back after the next update."}</div>` + why;
     return;
   }
-  board.innerHTML = `<div class="td-intro"><b>The model's best bet at each price, safest first.</b> From games that haven't started,
-      green-flag legs only. Ranked on a careful edge over ${esc(name)}'s price — each leg's chance is set halfway between the model
-      and the book, so long shots can't win the list just by paying more. Odds can move; check the price before you bet.</div>` +
+  board.innerHTML = `<div class="td-intro"><b>The model's best bet at each price, safest first.</b> Green-flag legs only. Ranked on a
+      careful edge over ${esc(name)}'s price — each leg's chance is set halfway between the model and the book, so long shots can't
+      win the list just by paying more. Prices shown are from when each bet was posted; check the book before you bet.</div>` +
+    (T.gone ? `<p class="pg-fine" style="margin:0 0 12px">${T.gone} bet${T.gone > 1 ? "s" : ""} kicked off since the last update — the next update fills ${T.gone > 1 ? "those spots" : "that spot"}.</p>` : "") +
     T.bets.map((x, i) => {
-      const legs = x.legs.map(o => `<div class="tb-leg"><span><b>${esc(o.r.player)}</b> ${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span>
-          <small>${esc(o.r.game)}${kickOf(o.r.game) ? " · " + kickText(o.r.game) : ""}</small></span><span class="tb-p">${Math.round(100 * o.p)}%</span></div>`).join("");
+      const legs = x.legs.map(o => { const cur = now.get(legId(o.r)), moved = cur && cur.price !== o.r.price;
+        return `<div class="tb-leg"><span><b>${esc(o.r.player)}</b> ${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span>${
+          moved ? ` <small style="display:inline">now ${american(cur.price)}</small>` : ""}
+          <small>${esc(o.r.game)}${kickOf(o.r.game) ? " · " + kickText(o.r.game) : ""}</small></span><span class="tb-p">${Math.round(100 * o.p)}%</span></div>`; }).join("");
       return `<div class="tb-card"><div class="tb-top"><span class="tb-tier ${x.tier.k}">${esc(x.tier.name)}</span><span class="tb-win">${esc(x.win)}</span></div>
         <div class="tb-head"><b>${x.legs.length === 1 ? "Single" : x.legs.length + "-leg parlay"} · ${fmtAmer(x.odds)}</b>
           <span class="tb-chance">${Math.round(100 * x.prob)}%<small>model chance</small></span></div>
@@ -1453,11 +1500,7 @@ function renderTop(){
         <div class="tb-acts"><button class="btn" data-tadd="${i}">Add to slip</button>
           <a class="btn ghost" target="_blank" rel="noopener" href="${esc(pgSlipUrl(x.res))}">Open in ${esc(name)}</a></div>
         ${x.legs.length > 1 && sameGame(x.legs.map(o => o.r)) ? `<p class="pg-fine" style="margin-top:8px">Some legs share a game; the book prices same-game legs together, so its price will differ.</p>` : ""}</div>`;
-    }).join("") + `<div class="td-intro" style="margin-top:4px"><b>Why "current"?</b> This list is redone every time the board updates,
-      using only games that haven't started. After Thursday's game kicks off, the next update picks from the weekend's games;
-      after Sunday's early games start, it picks from the later ones. So the five bets change through the week, and a week
-      can have more than five. Every bet shown at a game's last update before kickoff gets graded.</div>
-      <p class="pg-fine">21+. A model's estimate from past games and today's prices, not a guarantee — a parlay only pays if every leg hits.</p>`;
+    }).join("") + why + `<p class="pg-fine">21+. A model's estimate from past games and the posted prices, not a guarantee — a parlay only pays if every leg hits.</p>`;
   board.querySelectorAll("[data-tadd]").forEach(b => b.onclick = () => {
     const x = TOP_SHOWN[+b.dataset.tadd]; x.legs.forEach(o => SLIP.set(legId(o.r), o.r));
     saveSlip(); renderSlip(); b.textContent = "Added ✓"; });
@@ -1513,6 +1556,7 @@ function renderHR(){
     + [...days].map(([day, rs]) => `<section class="td-sec"><div class="td-h"><h3>${esc(day || "Dinger Predictor")}</h3><span>chance to homer</span></div>
       <div class="td-list">${rs.slice(0, 10).map(row).join("")}</div></section>`).join("");
 }
+let TD_GAME = "all";
 function renderTD(){
   $("view-h").textContent = SPORT === "mlb" ? "Dinger Predictor" : "ATD Predictor";
   if(SPORT === "mlb"){ renderHR(); return; }
@@ -1526,6 +1570,18 @@ function renderTD(){
     return;
   }
   const pct = v => Math.round(v * 100) + "%";
+  // GAME FILTER. "All games" is the week's locked top 10s; one game shows that
+  // game's own leaders (latest numbers -- a view, not a pick list).
+  const byGame = meta.byGame || {};
+  const kickT = g => { const r = all.find(x => x.game === g && x.kick) || (byGame[g] || [])[0]; const d = r && r.kick ? new Date(r.kick) : kickOf(g); return d && !isNaN(d) ? d.getTime() : Infinity; };
+  const gameList = [...new Set([...Object.keys(byGame), ...all.map(r => r.game)])].filter(Boolean).sort((a, b) => kickT(a) - kickT(b));
+  if(TD_GAME !== "all" && !gameList.includes(TD_GAME)) TD_GAME = "all";
+  const mine = TD_GAME !== "all";
+  const onWeek = r => all.some(x => x.player === r.player && x.team === r.team);
+  const pick = `<div class="td-pick"><label for="td-game">Game</label><select id="td-game">
+      <option value="all">All games — this week's top 10s</option>${gameList.map(g => { const t = kickT(g), d = t < Infinity ? new Date(t) : null;
+        const ab = (s.teamAbbr || {}), sh = g.split(" @ ").map(t => ab[String(t).trim().split(" ").pop().toLowerCase()] || t).join(" @ ");
+        return `<option value="${esc(g)}"${g === TD_GAME ? " selected" : ""}>${esc(sh)}${d ? ` · ${etParts(d).wd} ${etParts(d).time}` : ""}</option>`; }).join("")}</select></div>`;
   const row = (r, i) => {
     const why = [`${Math.round(r.share * 100)}% of ${esc(r.team)}'s scoring chances`,
       `${r.rz} red-zone touch${r.rz === 1 ? "" : "es"} a game`,
@@ -1540,7 +1596,7 @@ function renderTD(){
     const d = r.kick ? new Date(r.kick) : kickOf(r.game);
     const when = d && !isNaN(d) ? ` · ${etParts(d).wd} ${etParts(d).time}` : "";
     const rk = String(i + 1);
-    if(r.early) tags.push(`<span class="td-tag q">Early look — can change before Sunday</span>`);
+    if(mine && onWeek(r)) tags.push(`<span class="td-tag up">On this week's top 10</span>`);
     return `<div class="td-row${gone ? " gone" : ""}">
       <div class="td-rk">${rk}</div>
       <div class="td-who">
@@ -1560,11 +1616,24 @@ function renderTD(){
   };
   const intro = final
     ? `<div class="td-intro"><b>Who's most likely to score a touchdown this week</b> (rushing or receiving), from every
-        game this week. Each player's spot was set at the last update before his game, and the list won't change now.</div>`
-    : `<div class="td-intro pending"><b>Early look at this week's top 10s.</b> Players in Thursday's game lock in once it
-        kicks off. Sunday and Monday spots can still move until the final list before noon ET Sunday, after the last
-        injury reports.</div>`;
-  board.innerHTML = intro + (all.length || final ? sec("Receivers · WR / TE", "REC") + sec("Running backs", "RB") : "");
+        game this week. The list is final and won't change now.</div>`
+    : `<div class="td-intro pending"><b>Early look at this week's top 10s.</b> The list is set for the week; until the final
+        list Sunday morning, a player only comes off if the injury report rules him Out or Doubtful, and the next-best player
+        takes his spot.</div>`;
+  if(mine){
+    const live = byGame[TD_GAME];
+    const rs = (live && live.length ? live : all.filter(r => r.game === TD_GAME).sort((a, b) => b.p - a.p)).filter(r => r.p >= 0.05).slice(0, 8);
+    const d = kickT(TD_GAME) < Infinity ? new Date(kickT(TD_GAME)) : null;
+    board.innerHTML = intro + pick + (rs.length ? `<section class="td-sec"><div class="td-h"><h3>${esc(TD_GAME)}</h3><span>chance to score</span></div>
+        <p class="pg-fine" style="margin:0 0 10px">This game's most likely scorers, running backs and receivers together, from the
+        latest update${d && d <= new Date() ? " before kickoff" : ""}. A view only: the week's top 10s don't change when you pick a game.</p>
+        <div class="td-list">${rs.map(row).join("")}</div></section>`
+      : `<div class="empty">No touchdown estimates for this game yet — they come with the next update.</div>`);
+  } else {
+    board.innerHTML = intro + pick + (all.length || final ? sec("Receivers · WR / TE", "REC") + sec("Running backs", "RB") : "");
+  }
+  const sel = $("td-game");
+  if(sel) sel.onchange = () => { TD_GAME = sel.value; renderTD(); };
 }
 
 function render(){
