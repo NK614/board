@@ -82,6 +82,23 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
 .caltab{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .calrow{display:grid;grid-template-columns:1.35fr .7fr .9fr .9fr .9fr;gap:8px;align-items:center;padding:11px 14px;border-top:1px solid var(--line);font:600 14px/1.2 var(--num)}
 .calrow:first-child{border-top:0}
+.calchart{margin:12px 0 4px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 8px 4px}
+.calchart svg{display:block;width:100%;height:auto}
+.jump{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 2px}
+.jump a{font:700 12px/1 var(--ui);color:var(--sec);text-decoration:none;padding:7px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
+.jump a:active{background:var(--card2)}
+#recview h2,#recview [id$="sec"]{scroll-margin-top:12px}
+.sport-sw button[data-rsport="mlb"][aria-pressed="true"]{background:#f3f5fa;color:#0b1124}
+.ig-plan{padding:12px 14px}
+.ig-plan h3{margin:0 0 4px}
+.ig-plan .pl{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
+.ig-plan .pl:first-of-type{border-top:0}
+.ig-plan .pl b{font-size:14px}.ig-plan .pl small{display:block;color:var(--mut);font-size:12px;margin-top:2px}
+.ig-plan .st{font:700 11px/1 var(--ui);letter-spacing:.06em;text-transform:uppercase;padding:6px 9px;border-radius:999px;border:1px solid var(--line);color:var(--mut);white-space:nowrap}
+.ig-plan .st.now{color:#04121a;background:var(--acc);border-color:var(--acc)}
+.ig-plan .st.done{color:var(--goodt);border-color:rgba(39,232,156,.35)}
+.ig-plan .ck{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line);display:grid;place-items:center;font-size:13px;color:var(--goodt);background:transparent;padding:0;cursor:pointer}
+.ig-plan .pl.sel b{color:var(--acc)}
 .calrow.h{font:700 11px/1.2 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
 .calrow.sec{background:var(--card2);font:700 11px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--mut);grid-template-columns:1fr}
 .calrow span:not(:first-child){text-align:right}
@@ -216,11 +233,13 @@ body.igfull{overflow:hidden}
 <h1 id="pagetitle">Track record</h1>
 <div class="tabs" role="tablist"><button id="tab-rec" role="tab" aria-selected="true">Record</button><button id="tab-lad" role="tab" aria-selected="false">Ladder</button><button id="tab-ig" role="tab" aria-selected="false">Instagram</button></div>
 <div id="recview">
+<div class="sport-sw" id="recsw" role="group" aria-label="Sport"><button data-rsport="nfl" aria-pressed="true">NFL</button><button data-rsport="mlb" aria-pressed="false">MLB</button></div>
 <div class="wkwrap" id="wkwrap" hidden><select class="wksel" id="wk" aria-label="Week"></select></div>
 <div class="sub" id="sub"></div>
+<nav class="jump" id="jump" aria-label="Jump to"></nav>
 <div class="kpis" id="kpis"></div>
 
-<h2>Hit rate by target odds</h2><div class="hint">Tap a row to see each game window.</div>
+<h2 id="oddsec">Hit rate by target odds</h2><div class="hint">Tap a row to see each game window.</div>
 <div class="chips" id="win"></div>
 <div class="rows" id="rows"></div>
 
@@ -235,6 +254,7 @@ bad leg shows up in many of these parlays.</div></div>
 <div id="calsec" hidden><h2>Leg check</h2><div class="hint">Each leg's predicted chance next to how often it actually hit.
 When "Predicted" runs well above "Hit", the model is overconfident. Book = the chance the sportsbook's price implies.</div>
 <div class="chips" id="calpick"></div>
+<div class="calchart" id="calchart"></div>
 <div class="caltab" id="caltab"></div>
 <div class="hint" id="calnote" style="margin-top:10px"></div></div>
 
@@ -294,6 +314,7 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
 </div>
 <div id="igview" hidden>
 <div class="sport-sw" role="group" aria-label="Sport"><button data-sport="nfl" aria-pressed="true">NFL</button><button data-sport="mlb" aria-pressed="false">MLB <small>white</small></button></div>
+<div class="ld-panel ig-plan" id="igplan"></div>
 <div class="ig-days" id="igdays"></div>
 <div class="ld-panel" id="igopts"></div>
 <div class="ld-panel">
@@ -348,11 +369,25 @@ $("sub").textContent = DATA.sub;
   const file = decodeURIComponent(location.pathname.split("/").pop() || "report.html");
   const base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|season|other)$/, "");
   const sel = $("wk");
-  sel.innerHTML = nav.map(n => `<option value="${esc(n.suffix)}">${esc(n.label)}</option>`).join("");
-  sel.value = DATA.me || nav[1].suffix;
+  // One sport's pages in the menu: the MLB page under MLB, football weeks (and the season) under NFL.
+  const isMlb = n => /mlb$/.test(n.suffix), mine = /mlb$/.test(DATA.me || "");
+  const list = nav.filter(n => isMlb(n) === mine);
+  sel.innerHTML = list.map(n => `<option value="${esc(n.suffix)}">${esc(n.label)}</option>`).join("");
+  sel.value = DATA.me || (list[1] || list[0] || {}).suffix;
   sel.onchange = () => { location.href = `${base}-${sel.value}.html`; };
-  $("wkwrap").hidden = false;
+  $("wkwrap").hidden = list.length < 2;
+  // The Record tab's NFL / MLB switch: opens that sport's page (the other tabs follow it too).
+  document.querySelectorAll("#recsw [data-rsport]").forEach(b => b.setAttribute("aria-pressed", (b.dataset.rsport === "mlb") === mine));
+  const other = nav.filter(n => isMlb(n) !== mine);
+  const target = mine ? other.find(n => n.suffix === "season") || other[0] : other[0];
+  $("recsw").hidden = !target || (mine ? false : !other.length);
+  $("recsw").onclick = e => {
+    const b = e.target.closest("[data-rsport]"); if(!b || (b.dataset.rsport === "mlb") === mine || !target) return;
+    try { localStorage.setItem("alp-sport", b.dataset.rsport); } catch(err) {}
+    location.href = `${base}-${target.suffix}.html`;
+  };
 })();
+if((DATA.nav || []).length < 2) $("recsw").hidden = true;
 if(DATA.season){ $("picksec").hidden = true; $("seasonnote").hidden = false; }
 (function kpis(){
   // One set for both tiles: parlays whose every leg is settled. (A parlay that
@@ -476,6 +511,31 @@ function drawLosses(){
 }
 // Leg check: predicted vs actual, for the parlay legs or every line on the board.
 let CALV = "legs";
+// Predicted vs actual, one dot per confidence band, sized by how many legs.
+// On the dashed line = the model's odds were honest; below it = overconfident.
+function calChart(V){
+  const B = (V.buckets || []).filter(b => b.n);
+  if(B.length < 2){ $("calchart").hidden = true; return; }
+  $("calchart").hidden = false;
+  const W = 340, H = 250, L = 44, R = 14, T = 14, Bm = 38;
+  const lo = Math.max(0, Math.floor(Math.min(...B.map(b => Math.min(b.p, b.hit))) * 10) / 10 - 0.05);
+  const x = v => L + (v - lo) / (1 - lo) * (W - L - R), y = v => H - Bm - (v - lo) / (1 - lo) * (H - T - Bm);
+  const ticks = []; for(let t = Math.ceil(lo * 10) / 10; t <= 1.0001; t += 0.1) ticks.push(+t.toFixed(1));
+  const maxN = Math.max(...B.map(b => b.n));
+  const col = b => b.hit >= b.p - 0.03 ? "var(--good)" : b.hit >= b.p - 0.10 ? "var(--warn)" : "var(--bad)";
+  const g = [];
+  ticks.forEach(t => { g.push(`<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="rgba(148,163,209,.12)"/>`,
+    `<text x="${L - 6}" y="${y(t) + 4}" text-anchor="end" font-size="10" fill="var(--mut)">${Math.round(t * 100)}%</text>`,
+    `<text x="${x(t)}" y="${H - Bm + 15}" text-anchor="middle" font-size="10" fill="var(--mut)">${Math.round(t * 100)}%</text>`); });
+  g.push(`<line x1="${x(lo)}" y1="${y(lo)}" x2="${x(1)}" y2="${y(1)}" stroke="var(--sec)" stroke-dasharray="4 4" stroke-opacity=".6"/>`);
+  g.push(`<line x1="${L + 8}" x2="${L + 26}" y1="${T + 8}" y2="${T + 8}" stroke="var(--sec)" stroke-dasharray="4 4"/>`,
+    `<text x="${L + 32}" y="${T + 12}" font-size="10" fill="var(--sec)">honest odds · below it = overconfident</text>`);
+  B.forEach(b => { const r = 4 + 8 * Math.sqrt(b.n / maxN);
+    g.push(`<circle cx="${x(b.p)}" cy="${y(b.hit)}" r="${r.toFixed(1)}" fill="${col(b)}" fill-opacity=".85" stroke="var(--bg)" stroke-width="1.5"><title>${Math.round(b.lo * 100)}–${Math.round(b.hi * 100)}%: predicted ${Math.round(b.p * 100)}%, hit ${Math.round(b.hit * 100)}% (${b.n})</title></circle>`); });
+  g.push(`<text x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--sec)">Model predicted</text>`,
+    `<text x="12" y="${(T + H - Bm) / 2}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--sec)" transform="rotate(-90 12 ${(T + H - Bm) / 2})">Actually hit</text>`);
+  $("calchart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Predicted vs actual hit rate by confidence band" font-family="var(--ui)">${g.join("")}</svg>`;
+}
 function drawCal(){
   const C = DATA.cal || {}, has = k => C[k] && C[k].all && C[k].all.n;
   $("calsec").hidden = !has("legs") && !has("lines");
@@ -493,6 +553,7 @@ function drawCal(){
     + V.buckets.map(b => row(`${Math.round(b.lo * 100)}–${Math.round(b.hi * 100)}%`, b)).join("")
     + (V.stats.length > 1 ? `<div class="calrow sec"><span>By stat</span></div>`
        + V.stats.map(st => row(esc(STATN[st.stat] || st.stat), st)).join("") : "");
+  calChart(V);
   const a = V.all, better = a.bp < a.bq;
   $("calnote").textContent = `Accuracy over these ${a.n}: the ${better ? "model" : "sportsbook's prices"} came closer `
     + `(score ${a.bp.toFixed(3)} model vs ${a.bq.toFixed(3)} book; lower is better).`
@@ -611,6 +672,14 @@ function drawPicks(){
   };
 }
 drawRows(); drawTD();
+(function jumpLinks(){
+  const mlb = (DATA.td || []).some(t => t.grp === "HR");
+  const S = [["oddsec", "Odds"], ["lossec", "Losses"], ["calsec", "Leg check"], ["tdsec", mlb ? "Dinger" : "ATD"], ["picksec", "Every pick"]]
+    .filter(([id]) => $(id) && !$(id).hidden);
+  $("jump").innerHTML = S.length > 1 ? `<a href="#" data-j="pagetitle">Summary</a>` + S.map(([id, t]) => `<a href="#" data-j="${id}">${t}</a>`).join("") : "";
+  $("jump").onclick = e => { const a = e.target.closest("[data-j]"); if(!a) return; e.preventDefault();
+    $(a.dataset.j).scrollIntoView({behavior: "smooth", block: "start"}); };
+})();
 </script><script>
 // ---- Tabs: Track record | Ladder (#ladder in the address keeps you on it) ----
 (function(){
@@ -691,7 +760,7 @@ function setSport(sp){
   SPORT = sp === "mlb" ? "mlb" : "nfl";
   try { localStorage.setItem("alp-sport", SPORT); } catch(e) {}
   loadState(); form(); rows(); draw();
-  document.querySelectorAll(".sport-sw button").forEach(b => b.setAttribute("aria-pressed", b.dataset.sport === SPORT));
+  document.querySelectorAll(".sport-sw button[data-sport]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sport === SPORT));
   onSport.forEach(f => { try { f(SPORT); } catch(e) {} });
 }
 window.ALP = {sport: () => SPORT, light: svg => SPORT === "mlb" ? light(svg) : svg, onSport, setSport};
@@ -883,7 +952,7 @@ $("ldshoot").onclick = () => {
 };
 
 form(); rows();
-document.querySelectorAll(".sport-sw button").forEach(b => b.setAttribute("aria-pressed", b.dataset.sport === SPORT));
+document.querySelectorAll(".sport-sw button[data-sport]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sport === SPORT));
 tab(location.hash === "#ladder" ? "ladder" : location.hash === "#instagram" ? "instagram" : "record");
 })();
 </script><script>
@@ -1569,8 +1638,51 @@ function render(regenCaption){
   $("igsave").textContent = R.slides.length > 1 ? `Save ${R.slides.length} images` : "Save image";
   $("igsave").disabled = !R.slides.length;
   $("igdays").innerHTML = DAYS.map(d => `<button class="ig-day" aria-pressed="${d.k === DAY}" data-day="${d.k}">${d.name}<small>${d.what}</small></button>`).join("");
+  drawPlan();
   prepFiles();
 }
+// ---------- this week's posting plan (NFL): when each post is ready ----------
+// Ready times follow the scheduled builds (Eastern): a post's picks are final
+// once that window's last build has run.
+const PLAN = [
+  {k: "tue", wd: 2, h: 9, m: 0, when: "Tue 9 AM", why: "after Monday night is graded"},
+  {k: "wed", wd: 3, h: 9, m: 0, when: "Wed 9 AM", why: "the bad beats from the week"},
+  {k: "thu", wd: 4, h: 19, m: 5, when: "Thu 7:05 PM", why: "after the 6:55 PM final TNF build"},
+  {k: "fri", wd: 5, h: 18, m: 15, when: "Fri 6:15 PM", why: "after the Friday 6 PM refresh"},
+  {k: "sunam", wd: 0, h: 9, m: 45, when: "Sun 9:45 AM", why: "after the Sunday ATD final and 9:30 build"},
+  {k: "sunpm", wd: 0, h: 23, m: 30, when: "Sun 11:30 PM", why: "once Sunday night's game ends"},
+];
+function etNow(){ return new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"})); }
+// The posting week runs Tuesday to Monday; its key is that Tuesday's date.
+function planWeek(){ const d = etNow(); d.setDate(d.getDate() - ((d.getDay() + 5) % 7)); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
+function drawPlan(){
+  const box = $("igplan");
+  if(MLB()){ box.hidden = true; return; }
+  box.hidden = false;
+  S.posted = S.posted || {};
+  const wkKey = planWeek(), done = S.posted[wkKey] || {};
+  const now = etNow(), mins = d => ((d.getDay() + 5) % 7) * 1440 + d.getHours() * 60 + d.getMinutes();   // minutes since Tue 0:00
+  const at = p => ((p.wd + 5) % 7) * 1440 + p.h * 60 + p.m, nowM = mins(now);
+  const rows = PLAN.map((p, i) => {
+    const next = PLAN[i + 1], name = (DAYS.find(d => d.k === p.k) || {}).what || p.k;
+    const ready = nowM >= at(p), stale = next && nowM >= at(next) + 24 * 60;
+    const st = done[p.k] ? ["done", "Posted"] : ready && !stale ? ["now", "Post now"] : ready ? ["", "Missed"] : ["", p.when];
+    return `<div class="pl${p.k === DAY ? " sel" : ""}" data-pday="${p.k}">
+      <button class="ck" data-pdone="${p.k}" aria-label="Mark ${esc(name)} posted">${done[p.k] ? "✓" : ""}</button>
+      <span><b>${esc(name)}</b><small>${esc(p.when)} · ${esc(p.why)}</small></span>
+      <span class="st ${st[0]}">${esc(st[1])}</span></div>`;
+  });
+  const left = PLAN.filter(p => !done[p.k]).length;
+  box.innerHTML = `<h3>This week's posts</h3><div class="ld-hint" style="margin:0 0 6px">${left ? `${left} to go` : "All six posted"} · tap a post to build it, tick it once it's up.</div>${rows.join("")}`;
+}
+$("igplan").addEventListener("click", e => {
+  const ck = e.target.closest("[data-pdone]");
+  if(ck){ const w = planWeek(); S.posted = S.posted || {}; const d = S.posted[w] = S.posted[w] || {};
+    d[ck.dataset.pdone] = !d[ck.dataset.pdone]; Object.keys(S.posted).filter(k => k !== w).forEach(k => delete S.posted[k]);
+    save(); drawPlan(); return; }
+  const row = e.target.closest("[data-pday]"); if(!row) return;
+  DAY = row.dataset.pday; S.day = DAY; save(); $("igcap").value = ""; render(true);
+});
 let prepTimer = 0, GEN = 0;
 const asDataUrl = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); });
 // Draw each slide as a real PNG: it feeds the Save button, and it replaces the
