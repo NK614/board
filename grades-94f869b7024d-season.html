@@ -1308,14 +1308,15 @@ function legRows(s, y0, y1, rows, numbered){
 }
 
 // ---------- the six posts ----------
+// The posting week runs Monday to Sunday.
 const DAYS_NFL = [
+  {k: "mon", name: "Mon", what: "MNF parlay"},
   {k: "tue", name: "Tue", what: "Weekly results"},
   {k: "wed", name: "Wed", what: "Why it lost"},
   {k: "thu", name: "Thu", what: "TNF parlay"},
   {k: "fri", name: "Fri", what: "Heaters"},
   {k: "sunam", name: "Sun AM", what: "ATD top 10"},
-  {k: "sunpm", name: "Sun night", what: "Scoring update"},
-  {k: "mon", name: "Mon", what: "MNF parlay"},
+  {k: "snf", name: "Sun night", what: "SNF parlay"},
 ];
 const DAYS_MLB = [
   {k: "thu", name: "Parlay", what: "Today's games"},
@@ -1343,7 +1344,7 @@ function pageMismatch(){
 function defaultDay(){
   const et = new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"}));
   const wd = et.getDay(), h = et.getHours();
-  return wd === 0 ? (h >= 16 ? "sunpm" : "sunam") : wd === 1 ? "mon" : wd === 2 ? "tue" : wd === 3 ? "wed" : wd === 4 ? "thu" : "fri";
+  return wd === 0 ? (h >= 16 ? "snf" : "sunam") : wd === 1 ? "mon" : wd === 2 ? "tue" : wd === 3 ? "wed" : wd === 4 ? "thu" : "fri";
 }
 let DAY = "tue";
 function applySport(){
@@ -1533,15 +1534,18 @@ B.wed = () => {
 
 // Prime-time parlay posts: Thursday (TNF) and Monday (MNF), the same post for
 // whichever window it opens on.
-const PARLAY_DAY = {thu: "TNF", mon: "MNF"};
+const PARLAY_DAY = {thu: "TNF", snf: "SNF", mon: "MNF"};
 const defWin = day => Math.max(0, ((FEED || {}).windows || []).findIndex(w => w.name === (PARLAY_DAY[day] || "TNF")));
 B.mon = () => parlayPost("mon");
+B.snf = () => parlayPost("snf");
 B.thu = () => parlayPost("thu");
 function parlayPost(dk){
   if(!FEED || !(FEED.windows || []).length) return {slides: [], head: "", sub: "", caption: "", note: FEED_ERR || "No games on the board yet."};
   const wins = FEED.windows;
-  if(dk === "mon" && !wins.some(w => w.name === "MNF") && opt(dk, "win", null) == null)
-    return {slides: [], head: "", sub: "", caption: "", note: "No Monday night game on the board yet — it shows up with the builds after Sunday's games (Mon noon and 6:55 PM)."};
+  if(dk !== "thu" && !wins.some(w => w.name === PARLAY_DAY[dk]) && opt(dk, "win", null) == null)
+    return {slides: [], head: "", sub: "", caption: "", note: dk === "mon"
+      ? "No Monday night game on the board yet — it shows up with the builds after Sunday's games (Mon noon and 6:55 PM)."
+      : "No Sunday night game on the board right now — it's there from Thursday's builds until kickoff."};
   let wi = Math.min(opt(dk, "win", defWin(dk)), wins.length - 1);
   const w = wins[wi];
   const mode = opt(dk, "mode", "best");
@@ -1883,7 +1887,7 @@ function optsHtml(day, R){
     if(lost.length) h.push(sel("wed", "pick", 0, "Which losing parlay", lost.slice(0, 40).map((p, i) => [i,
       `${p.legs_n} legs · ${odds(p.target)} · ${p.win} · missed ${(p.miss || []).map(m => m[0] + (m[5] && m[5].tag === "Bad beat" ? " (bad beat)" : "")).join(", ")}`])));
     h.push(`<div class="ig-field"><label for="igtake">Takeaway (bottom line)</label><input id="igtake" type="text" data-w="take" value="${esc(S.words[wk("wed")] && S.words[wk("wed")].take || "")}" placeholder="${esc(R.take || "")}"></div>`);
-  } else if(day === "thu" || day === "mon"){
+  } else if(PARLAY_DAY[day]){
     if(FEED && (FEED.windows || []).length){
       const wins = FEED.windows;
       h.push(sel(day, "win", defWin(day), "Games", wins.map((w, i) => [i, w.label])));
@@ -2026,25 +2030,31 @@ function drawTop(){
 // Ready times follow the scheduled builds (Eastern): a post's picks are final
 // once that window's last build has run.
 const PLAN = [
+  {k: "mon", wd: 1, h: 19, m: 5, when: "Mon 7:05 PM", why: "after the 6:55 PM final MNF build"},
   {k: "tue", wd: 2, h: 9, m: 0, when: "Tue 9 AM", why: "after Monday night is graded"},
   {k: "wed", wd: 3, h: 9, m: 0, when: "Wed 9 AM", why: "the bad beats from the week"},
   {k: "thu", wd: 4, h: 19, m: 5, when: "Thu 7:05 PM", why: "after the 6:55 PM final TNF build"},
   {k: "fri", wd: 5, h: 18, m: 15, when: "Fri 6:15 PM", why: "after the Friday 6 PM refresh"},
   {k: "sunam", wd: 0, h: 9, m: 45, when: "Sun 9:45 AM", why: "after the Sunday ATD final and 9:30 build"},
-  {k: "sunpm", wd: 0, h: 23, m: 30, when: "Sun 11:30 PM", why: "once Sunday night's game ends"},
-  {k: "mon", wd: 1, h: 19, m: 5, when: "Mon 7:05 PM", why: "after the 6:55 PM final MNF build"},
+  {k: "snf", wd: 0, h: 19, m: 5, when: "Sun 7:05 PM", why: "after the 6:55 PM final SNF build"},
 ];
 function etNow(){ return new Date(new Date().toLocaleString("en-US", {timeZone: "America/New_York"})); }
-// The posting week runs Tuesday to Monday; its key is that Tuesday's date.
-function planWeek(){ const d = etNow(); d.setDate(d.getDate() - ((d.getDay() + 5) % 7)); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
+// The posting week runs Monday to Sunday; its key is that Monday's date.
+function planWeek(){ const d = etNow(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
 function drawPlan(){
   const box = $("igplan");
   if(MLB() || NBA()){ box.hidden = true; return; }
   box.hidden = false;
   S.posted = S.posted || {};
-  const wkKey = planWeek(), done = S.posted[wkKey] || {};
-  const now = etNow(), mins = d => ((d.getDay() + 5) % 7) * 1440 + d.getHours() * 60 + d.getMinutes();   // minutes since Tue 0:00
-  const at = p => ((p.wd + 5) % 7) * 1440 + p.h * 60 + p.m, nowM = mins(now);
+  const wkKey = planWeek();
+  if(!S.posted[wkKey]){                 // weeks used to start Tuesday: carry this week's ticks over
+    const d = etNow(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 1);
+    const old = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    if(S.posted[old]){ S.posted[wkKey] = S.posted[old]; delete S.posted[old]; save(); }
+  }
+  const done = S.posted[wkKey] || {};
+  const now = etNow(), mins = d => ((d.getDay() + 6) % 7) * 1440 + d.getHours() * 60 + d.getMinutes();   // minutes since Mon 0:00
+  const at = p => ((p.wd + 6) % 7) * 1440 + p.h * 60 + p.m, nowM = mins(now);
   const rows = PLAN.map((p, i) => {
     const next = PLAN[i + 1], name = (DAYS.find(d => d.k === p.k) || {}).what || p.k;
     const ready = nowM >= at(p), stale = next && nowM >= at(next) + 24 * 60;
