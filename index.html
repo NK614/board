@@ -131,6 +131,24 @@ button{font-family:inherit}
   color:var(--accent-ink);background:var(--grad);
   box-shadow:0 0 20px -4px rgba(45,226,255,.55);
 }
+/* Each sport keeps its own color, the same one its Instagram posts use:
+   NFL navy, MLB white, NBA slate. */
+.seg button[data-sport]::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;
+  background:var(--sc);box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+.seg button[data-sport=nfl]{--sc:#2a4fc4}.seg button[data-sport=mlb]{--sc:#f3f5fa}.seg button[data-sport=nba]{--sc:#7b8a9e}
+.seg button[data-sport=nfl][aria-selected=true]{background:linear-gradient(180deg,#2a4fc4,#13245e);color:#fff;box-shadow:0 0 20px -4px rgba(42,79,196,.8)}
+.seg button[data-sport=mlb][aria-selected=true]{background:#f3f5fa;color:#0b1124;box-shadow:0 0 20px -6px rgba(243,245,250,.6)}
+.seg button[data-sport=nba][aria-selected=true]{background:linear-gradient(180deg,#8392a6,#4b5869);color:#fff;box-shadow:0 0 20px -4px rgba(123,138,158,.7)}
+.seg button[aria-selected=true]::before{background:currentColor;box-shadow:none;opacity:.85}
+/* NBA: the tools, not open yet */
+.tiles{position:relative}
+.tiles.soon{overflow:hidden;padding:14px 0;margin:-14px 0}
+.tiles.soon .tile{pointer-events:none;filter:saturate(.25);opacity:.55}
+.soon-stamp{display:none}
+.tiles.soon .soon-stamp{display:block;position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) rotate(-16deg);z-index:3;pointer-events:none;
+  padding:12px 20px;border:5px solid #ffc83d;border-radius:14px;outline:2px solid #ffc83d;outline-offset:5px;color:#ffc83d;
+  font:900 clamp(24px,7vw,46px)/1 var(--display);letter-spacing:.1em;white-space:nowrap;text-shadow:0 2px 14px rgba(0,0,0,.6);
+  background:rgba(10,12,18,.6);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 
 .sendbtn{
   margin-left:auto;appearance:none;flex:none;height:36px;padding:0 16px;border-radius:999px;border:0;
@@ -674,6 +692,13 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .pg-why{margin:12px 0 0;padding:11px 13px;border-radius:12px;background:var(--accent-soft);border:1px solid rgba(45,226,255,.22);
   font-size:13.5px;line-height:1.45;color:var(--ink)}
 .pg-why b{color:var(--accent)}
+.heat-row{align-items:center}
+.heat-dots{display:flex;align-items:center;gap:4px;margin:6px 0 4px}
+.heat-dots i{width:9px;height:9px;border-radius:50%;background:var(--good)}
+.heat-dots span{margin-left:6px;font:700 11.5px/1 var(--num);color:var(--good-text)}
+.heat-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:64px}
+.heat-side b{font:800 24px/1 var(--num);color:var(--good-text)}
+.heat-side small{font-size:11px;color:var(--muted)}
 .td-pick{margin:0 0 16px}
 .td-pick label{display:block;font:700 10.5px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
 .td-pick select{width:100%;padding:12px 36px 12px 14px;border-radius:14px;border:1px solid var(--hairline-2);background:var(--surface);
@@ -765,7 +790,8 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
       <span class="rec-s" id="rec-sub"></span>
       <span class="tile-go" aria-hidden="true">&rsaquo;</span></a>
     <h1 class="home-h">What are you looking for?</h1>
-    <div class="tiles">
+    <div class="tiles" id="tiles">
+      <div class="soon-stamp" aria-hidden="true">COMING SOON</div>
       <a class="tile" href="#parlay" id="tile-parlay">
         <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/><path d="M17 15l3 3-3 3"/></svg></span>
         <span class="tile-tx"><b>Parlay Generator</b>
@@ -785,6 +811,11 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
         <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4.5 2 7 5.3 7 9s-2.5 7-7 9c-4.5-2-7-5.3-7-9s2.5-7 7-9z"/><path d="M9.5 12h5M10 9.5l4 5M14 9.5l-4 5"/></svg></span>
         <span class="tile-tx"><b id="tile-td-h">ATD Predictor</b>
           <span id="tile-td-t">This week's 10 running backs and 10 receivers most likely to score a touchdown.</span></span>
+        <span class="tile-go" aria-hidden="true">&rsaquo;</span></a>
+      <a class="tile" href="#heat" id="tile-heat">
+        <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.2 1-3.6 2.2-4.8.2 1.6.9 2.6 1.8 3.1C11 9 11 6 12 3z"/></svg></span>
+        <span class="tile-tx"><b>Heaters</b>
+          <span>Players who've cleared the same line every game lately — one tap to build a heaters parlay.</span></span>
         <span class="tile-go" aria-hidden="true">&rsaquo;</span></a>
       <a class="tile" href="#scripts" id="tile-scripts">
         <span class="tile-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/></svg></span>
@@ -1017,9 +1048,10 @@ function fill(sel, values, labeller){
   if(values.includes(prev)) sel.value = prev;
 }
 
+let NBA_SOON = false;              // NBA tab: shown, not open yet
 function buildSportSeg(){
   const seg = $("sportseg");
-  const keys = Object.keys(SPORTS);
+  const keys = [...Object.keys(SPORTS).filter(k => k !== "nba"), "nba"];
   // Nothing left in the bar (one sport, and no Send on a friend's copy):
   // drop the bar rather than show an empty strip.
   document.querySelector(".topbar").hidden = keys.length < 2 && !$("sendbtn") && !$("helpbtn");
@@ -1027,10 +1059,12 @@ function buildSportSeg(){
   seg.innerHTML = "";
   keys.forEach(k => {
     const b = document.createElement("button");
-    b.textContent = SPORTS[k].label || k.toUpperCase();
+    b.textContent = (SPORTS[k] || {}).label || k.toUpperCase();
+    b.dataset.sport = k;
     b.setAttribute("role","tab");
-    b.setAttribute("aria-selected", String(k === SPORT));
-    b.onclick = () => { SPORT = k; buildSportSeg(); buildFilters(); render(); homeInfo();
+    b.setAttribute("aria-selected", String(k === "nba" ? NBA_SOON : !NBA_SOON && k === SPORT));
+    if(k === "nba"){ b.onclick = () => { NBA_SOON = true; if(VIEW !== "home") goHome(); buildSportSeg(); homeInfo(); }; seg.appendChild(b); return; }
+    b.onclick = () => { NBA_SOON = false; SPORT = k; buildSportSeg(); buildFilters(); render(); homeInfo();
       if(VIEW === "parlay"){ PG_HIST = []; PG_IDX = -1; PG_LAST = null; $("pg-out").innerHTML = ""; pgFillForm(); } };
     seg.appendChild(b);
   });
@@ -1382,13 +1416,15 @@ function topBetIn(b, sport){
 }
 const topStarted = (o, now) => { const k = o.kick ? new Date(o.kick) : kickOf(o.r.game); return !!k && k.getTime() <= now; };
 // Every candidate for one sport, best careful edge first.
-function topPool(key, book){
+function topPool(key, book, onlyGame){
   const now = Date.now(), started = g => { const k = kickOf(g); return k && k.getTime() <= now; };
   const careful = legs => legs.reduce((a, o) => a * (o.p + 1 / decOf(o.r.price) / 1.045) / 2, 1);
   const c = [], keepReuse = PG_REUSE;
   PG_REUSE = null;                       // the same list for everyone: ignore parlays this visitor took
   try {
-    for(const sl of slotsFor(key).filter(x => x.key !== "tbd" && !x.games.some(started))){
+    const slots = onlyGame ? [{games: [onlyGame], name: (slotOf(onlyGame, key) || {}).name || ""}].filter(x => !started(onlyGame))
+      : slotsFor(key).filter(x => x.key !== "tbd" && !x.games.some(started));
+    for(const sl of slots){
       const scope = new Set(sl.games.map(g => key + "|" + g)), win = sl.name || sl.label;
       for(const n of [2, 3, 4, 5, 6]) for(const t of [-150, 100, 200, 300, 500, 1000]){
         const res = buildBest(n, t, book, scope, null, true);
@@ -1463,9 +1499,21 @@ function topFive(fresh){
   const pool = topPool(key, book);
   return (TOP_CACHE[ck] = {book, bets: topPick(pool, []), open: pool.open});
 }
-let TOP_SHOWN = [];
+let TOP_SHOWN = [], TOP_GAME = "all";
+function topGamePicker(T){
+  const now = Date.now(), games = [...new Set([...(T ? T.bets.flatMap(x => x.legs.map(o => o.r.game)) : []),
+    ...(S().games || []).filter(g => { const d = kickOf(g); return !d || d.getTime() > now; })])]
+    .sort((a, b) => ((kickOf(a) || {getTime: () => Infinity}).getTime()) - ((kickOf(b) || {getTime: () => Infinity}).getTime()));
+  if(TOP_GAME !== "all" && !games.includes(TOP_GAME)) TOP_GAME = "all";
+  const ab = S().teamAbbr || {}, short = g => g.split(" @ ").map(t => ab[String(t).trim().split(" ").pop().toLowerCase()] || t).join(" @ ");
+  return `<div class="td-pick"><label for="top-game">Game</label><select id="top-game">
+    <option value="all">All games — the current Top 5</option>${games.map(g => { const d = kickOf(g);
+      return `<option value="${esc(g)}"${g === TOP_GAME ? " selected" : ""}>${esc(short(g))}${d ? ` · ${etParts(d).wd} ${etParts(d).time}` : ""}</option>`; }).join("")}</select></div>`;
+}
+function topWire(){ const sel = $("top-game"); if(sel) sel.onchange = () => { TOP_GAME = sel.value; renderTop(); }; }
 function renderTop(){
   const board = $("board"), ck = SPORT + "|held";
+  if(TOP_GAME !== "all"){ renderTopGame(); return; }
   if(!TOP_CACHE[ck] && !(TOP_PRE && TOP_PRE[SPORT])){
     board.innerHTML = `<div class="empty">Finding the model's best bets…</div>`;
     setTimeout(() => { topFive(); if(VIEW === "top") renderTop(); }, 30);
@@ -1482,6 +1530,7 @@ function renderTop(){
     board.innerHTML = `<div class="empty">${T.gone ? "These bets have all kicked off. The next board update fills the list from the games still to come."
       : T.open === 0 ? "Every game on this board has started. The next update brings the next games."
       : "No bet clears the model's bar against the book's prices right now — when the prices are fair, the model passes. Check back after the next update."}</div>` + why;
+    board.insertAdjacentHTML("afterbegin", topGamePicker(T)); topWire();
     return;
   }
   board.innerHTML = `<div class="td-intro"><b>The model's best bet at each price, safest first.</b> Green-flag legs only. Ranked on a
@@ -1504,6 +1553,115 @@ function renderTop(){
   board.querySelectorAll("[data-tadd]").forEach(b => b.onclick = () => {
     const x = TOP_SHOWN[+b.dataset.tadd]; x.legs.forEach(o => SLIP.set(legId(o.r), o.r));
     saveSlip(); renderSlip(); b.textContent = "Added ✓"; });
+  board.insertAdjacentHTML("afterbegin", topGamePicker(T)); topWire();
+}
+// One game: that game's own best bet at each price, worked out here with the
+// latest prices. A view only -- the Top 5 above doesn't change, nothing is graded.
+const TOP_GAME_CACHE = {};
+function topCard(x, i, name, now){
+  const legs = x.legs.map(o => { const cur = now && now.get(legId(o.r)), moved = cur && cur.price !== o.r.price;
+    return `<div class="tb-leg"><span><b>${esc(o.r.player)}</b> ${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span>${
+      moved ? ` <small style="display:inline">now ${american(cur.price)}</small>` : ""}
+      <small>${esc(o.r.game)}${kickOf(o.r.game) ? " · " + kickText(o.r.game) : ""}</small></span><span class="tb-p">${Math.round(100 * o.p)}%</span></div>`; }).join("");
+  return `<div class="tb-card"><div class="tb-top"><span class="tb-tier ${x.tier.k}">${esc(x.tier.name)}</span><span class="tb-win">${esc(x.win || "")}</span></div>
+    <div class="tb-head"><b>${x.legs.length === 1 ? "Single" : x.legs.length + "-leg parlay"} · ${fmtAmer(x.odds)}</b>
+      <span class="tb-chance">${Math.round(100 * x.prob)}%<small>model chance</small></span></div>
+    ${legs}
+    <div class="tb-acts"><button class="btn" data-tadd="${i}">Add to slip</button>
+      <a class="btn ghost" target="_blank" rel="noopener" href="${esc(pgSlipUrl(x.res))}">Open in ${esc(name)}</a></div>
+    ${x.legs.length > 1 && sameGame(x.legs.map(o => o.r)) ? `<p class="pg-fine" style="margin-top:8px">These legs share a game; the book prices same-game legs together, so its price will differ.</p>` : ""}</div>`;
+}
+function renderTopGame(){
+  const board = $("board"), g = TOP_GAME, book = topBook(), ck = SPORT + "|" + book + "|" + g;
+  if(!TOP_GAME_CACHE[ck]){
+    board.innerHTML = topGamePicker(TOP_CACHE[SPORT + "|held"]) + `<div class="empty">Finding this game's best bets…</div>`; topWire();
+    setTimeout(() => { const pool = book ? topPool(SPORT, book, g) : []; TOP_GAME_CACHE[ck] = topPick(pool, []);
+      if(VIEW === "top" && TOP_GAME === g) renderTopGame(); }, 30);
+    return;
+  }
+  const bets = TOP_GAME_CACHE[ck], name = bookName(book);
+  TOP_SHOWN = bets;
+  board.innerHTML = topGamePicker(TOP_CACHE[SPORT + "|held"]) + `<div class="td-intro"><b>${esc(g)}: the best bet at each price.</b>
+      Worked out now from this game's latest prices. A view only — the Current Top 5 for all games stays as it is, and
+      only the Current Top 5 is graded.</div>` +
+    (bets.length ? bets.map((x, i) => topCard(x, i, name, null)).join("")
+      : `<div class="empty">No bet in this game clears the model's bar right now${(() => { const d = kickOf(g); return d && d.getTime() <= Date.now() ? " — it has started" : ""; })()}.</div>`) +
+    `<p class="pg-fine">21+. A model's estimate from past games and today's prices, not a guarantee — a parlay only pays if every leg hits.</p>`;
+  topWire();
+  board.querySelectorAll("[data-tadd]").forEach(b => b.onclick = () => {
+    const x = TOP_SHOWN[+b.dataset.tadd]; x.legs.forEach(o => SLIP.set(legId(o.r), o.r));
+    saveSlip(); renderSlip(); b.textContent = "Added ✓"; });
+}
+
+/* HEATERS. Players who've cleared the same number in every one of their
+   last N games, with the matching line on this board, so a visitor can drop
+   a few into the slip and open the book. Just for fun: nothing here is a
+   model pick or gets logged -- only the Parlay Generator's picks are graded. */
+const HEAT_STATS = {nfl: [["receptions", "Catches", "catches"], ["receiving_yards", "Receiving yards", "rec yds"],
+                          ["rushing_yards", "Rushing yards", "rush yds"], ["passing_yards", "Passing yards", "pass yds"]],
+                    mlb: [["hits", "Hits", "hits"], ["total_bases", "Total bases", "total bases"], ["hrr", "Hits + runs + RBIs", "H+R+RBI"],
+                          ["pitcher_strikeouts", "Pitcher strikeouts", "strikeouts"]]};
+let HEAT_STAT = null, HEAT_LEN = 8;
+function heatList(stat, len, book){
+  const sp = S(), now = Date.now(), yards = /yards/.test(stat), seen = new Set(), out = [];
+  const mkts = Object.entries(SHARED.marketMeta || {}).filter(([, m]) => m.stat === stat).map(([k]) => k);
+  for(const r of sp.rows || []){
+    const nk = normName(r.player);
+    if(seen.has(nk + "|" + r.game)) continue;
+    const d = kickOf(r.game); if(d && d.getTime() <= now) continue;
+    const prof = (sp.profiles || {})[nk], st = prof && (prof.stats || {})[stat];
+    if(!st || (st.values || []).length < len) continue;
+    seen.add(nk + "|" + r.game);
+    const vals = st.values.slice(-len), low = Math.min(...vals);
+    const floor = yards ? (low >= 10 ? Math.floor(low / 5) * 5 : 0) : Math.floor(low);
+    if(floor <= 0) continue;
+    // The board's best line he's cleared every game: the highest rung at or under his floor.
+    const line = (sp.rows || []).filter(x => normName(x.player) === nk && x.game === r.game && mkts.includes(x.market)
+        && x.book === book && legId(x) && x.threshold < floor)
+      .sort((a, b) => b.threshold - a.threshold)[0] || null;
+    out.push({player: r.player, pos: r.pos, team: r.team, game: r.game, vals, floor, line,
+              mean: vals.reduce((a, v) => a + v, 0) / vals.length});
+  }
+  // Bettable ones first: a streak with a line on this board you can add.
+  return out.sort((a, b) => (!!b.line - !!a.line) || b.floor - a.floor || b.mean - a.mean);
+}
+function renderHeat(){
+  const board = $("board"), key = SPORT === "mlb" ? "mlb" : "nfl", stats = HEAT_STATS[key];
+  if(!HEAT_STAT || !stats.some(x => x[0] === HEAT_STAT)) HEAT_STAT = stats[0][0];
+  const book = topBook(), name = bookName(book);
+  const [stat, label, unit] = stats.find(x => x[0] === HEAT_STAT);
+  const list = book ? heatList(stat, HEAT_LEN, book).slice(0, 15) : [];
+  const withLine = list.filter(x => x.line);
+  const chips = stats.map(([k, t]) => `<button type="button" class="pg-chip ${k === HEAT_STAT ? "up" : ""}" data-hstat="${k}" aria-pressed="${k === HEAT_STAT}">${esc(t)}</button>`).join("");
+  const lens = [5, 6, 7, 8, 9, 10].map(n => `<option value="${n}"${n === HEAT_LEN ? " selected" : ""}>${n} straight games</option>`).join("");
+  const rows = list.map((x, i) => {
+    const dots = x.vals.map(v => `<i title="${v}"></i>`).join("");
+    const r = x.line, id = r && legId(r), on = id && SLIP.has(id);
+    const d = kickOf(x.game), when = d ? ` · ${etParts(d).wd} ${etParts(d).time}` : "";
+    return `<div class="td-row heat-row">
+      <div class="td-rk">${i + 1}</div>
+      <div class="td-who"><div class="td-nm">${esc(x.player)}</div>
+        <div class="td-meta">${esc(x.pos || "")} · ${esc(x.team || "")}${when}</div>
+        <div class="heat-dots">${dots}<span>${x.vals.length}/${x.vals.length}</span></div>
+        <div class="td-why">${r ? `Line: ${propText(r)} <span class="leg-price">${american(r.price)}</span>` : "No line on this board at his streak"}</div></div>
+      <div class="heat-side"><b>${x.floor}+</b><small>${esc(unit)}</small>
+        ${id ? `<button class="addbtn" data-leg="${esc(id)}" aria-pressed="${on}" aria-label="${on ? "Remove" : "Add"} ${esc(x.player)}">${on ? "&#10003;" : "+"}</button>` : ""}</div>
+    </div>`;
+  }).join("");
+  board.innerHTML = `<div class="td-intro"><b>Heaters:</b> players who've cleared the same number in every one of their last
+      ${HEAT_LEN} games. Tap <b>+</b> to add one to your slip, or add them all, then open ${esc(name || "the book")}. Just for fun —
+      these aren't model picks and they aren't part of our graded record.</div>
+    <div class="heat-ctl"><div class="q-try" style="justify-content:flex-start;margin:0">${chips}</div>
+      <div class="td-pick" style="margin:12px 0 0"><label for="heat-len">Streak</label><select id="heat-len">${lens}</select></div></div>
+    ${list.length ? `<section class="td-sec"><div class="td-h"><h3>${esc(label)} · ${HEAT_LEN} straight</h3><span>every game</span></div>
+      <div class="td-list">${rows}</div></section>
+      ${withLine.length > 1 ? `<div class="tb-acts" style="margin:4px 0 14px"><button class="btn" id="heat-all">Add all ${withLine.length} to slip</button></div>` : ""}`
+      : `<div class="empty">Nobody on this board has cleared the same ${esc(unit)} number in ${HEAT_LEN} straight games. Try a shorter streak.</div>`}
+    <p class="pg-fine">21+. A streak is history, not a promise — a parlay only pays if every leg hits. Odds can move; check the price before you bet.</p>`;
+  board.querySelectorAll("[data-hstat]").forEach(b => b.onclick = () => { HEAT_STAT = b.dataset.hstat; renderHeat(); });
+  $("heat-len").onchange = e => { HEAT_LEN = +e.target.value; renderHeat(); };
+  const all = $("heat-all");
+  if(all) all.onclick = () => { withLine.forEach(x => { const id = legId(x.line); if(id && !SLIP.has(id)) toggleLeg(id); }); };
 }
 
 function hrList(book){
@@ -1646,6 +1804,7 @@ function render(){
   if(VIEW === "scripts"){ renderScripts(); return; }
   if(VIEW === "record"){ renderRecord(); return; }
   if(VIEW === "top"){ renderTop(); return; }
+  if(VIEW === "heat"){ renderHeat(); return; }
   if(VIEW !== "props") return;
   const unit = (SHARED.units || {})[market] || "";
 
@@ -2816,7 +2975,7 @@ $("pg-out").addEventListener("click", ev => {
 // The address carries the screen, so the phone's back button returns home
 // and a link can open straight to one screen.
 let VIEW = "home", FROM_HOME = false, ROUTED = false;
-const VIEWS = {props: "Player Prop Assist", td: "ATD Predictor", parlay: "Parlay Generator", scripts: "Game Scripts", record: "Our Record", top: "Model's Current Top 5 Bets"};
+const VIEWS = {props: "Player Prop Assist", td: "ATD Predictor", parlay: "Parlay Generator", scripts: "Game Scripts", record: "Our Record", top: "Model's Current Top 5 Bets", heat: "Heaters"};
 function goHome(){
   // Back if we came from the home screen (so the phone's back stack stays
   // tidy); otherwise -- a link straight to a screen -- just drop the hash.
@@ -2839,7 +2998,16 @@ function nextUpdate(){
   return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][nx[0]]} ${h}:${String(nx[2]).padStart(2, "0")} ${ap}${nx[3] ? ` (${nx[3]})` : ""}`;
 }
 function homeInfo(){
-  const s = S();
+  const s = S(), tiles = $("tiles");
+  tiles.classList.toggle("soon", NBA_SOON);
+  tiles.querySelectorAll(".tile").forEach(t => { if(NBA_SOON){ t.setAttribute("aria-disabled", "true"); t.tabIndex = -1; }
+    else { t.removeAttribute("aria-disabled"); t.removeAttribute("tabindex"); } });
+  if(NBA_SOON){
+    $("home-sub").textContent = "NBA · coming soon — the same tools, built for basketball";
+    ["tile-parlay", "tile-top", "tile-props", "tile-heat", "tile-scripts"].forEach(id => $(id).hidden = false);
+    $("tile-td").hidden = true; $("tile-record").hidden = true;
+    return;
+  }
   const upd = s.stamp ? "Updated " + s.stamp.split(" · ").slice(-1)[0] : "";
   $("home-sub").textContent = [s.label, upd,
     SPORT === "nfl" ? "next update " + nextUpdate() : SPORT === "mlb" ? "MLB updates before first pitch" : ""]
@@ -2848,6 +3016,7 @@ function homeInfo(){
   // Only the tools this sport has: no empty pages.
   const hasLines = Object.keys(s.lines || {}).length > 0;
   $("tile-scripts").hidden = !hasLines;
+  $("tile-heat").hidden = !(s.rows || []).length;
   if(SPORT === "mlb"){                       // baseball's version of the ATD list
     $("tile-td-h").textContent = "Dinger Predictor";
     $("tile-td").hidden = !hrList((s.books || [])[0]).length;
@@ -3048,6 +3217,7 @@ function route(){
   const v = (location.hash || "").replace("#", "");
   const was = VIEW;
   VIEW = VIEWS[v] ? v : "home";
+  if(VIEW !== "home" && NBA_SOON){ NBA_SOON = false; buildSportSeg(); }
   if(VIEW !== "home") FROM_HOME = FROM_HOME || (was === "home" && ROUTED);
   else FROM_HOME = false;
   ROUTED = true;
