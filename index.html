@@ -692,6 +692,11 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .pg-why{margin:12px 0 0;padding:11px 13px;border-radius:12px;background:var(--accent-soft);border:1px solid rgba(45,226,255,.22);
   font-size:13.5px;line-height:1.45;color:var(--ink)}
 .pg-why b{color:var(--accent)}
+.sub.better{color:var(--good-text);font-weight:700;white-space:nowrap}
+.better-in{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;background:var(--good-soft);border:1px solid rgba(39,232,156,.35);
+  color:var(--good-text);font:700 11px/1.3 var(--ui);white-space:nowrap;vertical-align:1px}
+.better-note{border:1px solid rgba(39,232,156,.35);background:var(--good-soft);border-radius:12px;padding:10px 12px}
+.better-note b{color:var(--good-text)}
 .heat-row{align-items:center}
 .heat-dots{display:flex;align-items:center;gap:4px;margin:6px 0 4px}
 .heat-dots i{width:9px;height:9px;border-radius:50%;background:var(--good)}
@@ -1539,13 +1544,14 @@ function renderTop(){
     (T.gone ? `<p class="pg-fine" style="margin:0 0 12px">${T.gone} bet${T.gone > 1 ? "s" : ""} kicked off since the last update — the next update fills ${T.gone > 1 ? "those spots" : "that spot"}.</p>` : "") +
     T.bets.map((x, i) => {
       const legs = x.legs.map(o => { const cur = now.get(legId(o.r)), moved = cur && cur.price !== o.r.price;
-        return `<div class="tb-leg"><span><b>${esc(o.r.player)}</b> ${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span>${
+        return `<div class="tb-leg"><span><b>${esc(o.r.player)}</b> ${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span>${betterTag(o.r, true)}${
           moved ? ` <small style="display:inline">now ${american(cur.price)}</small>` : ""}
           <small>${esc(o.r.game)}${kickOf(o.r.game) ? " · " + kickText(o.r.game) : ""}</small></span><span class="tb-p">${Math.round(100 * o.p)}%</span></div>`; }).join("");
       return `<div class="tb-card"><div class="tb-top"><span class="tb-tier ${x.tier.k}">${esc(x.tier.name)}</span><span class="tb-win">${esc(x.win)}</span></div>
         <div class="tb-head"><b>${x.legs.length === 1 ? "Single" : x.legs.length + "-leg parlay"} · ${fmtAmer(x.odds)}</b>
           <span class="tb-chance">${Math.round(100 * x.prob)}%<small>model chance</small></span></div>
         ${legs}
+        ${parlayBetterNote(x.legs.map(o => o.r), decOf(x.odds), name)}
         <div class="tb-acts"><button class="btn" data-tadd="${i}">Add to slip</button>
           <a class="btn ghost" target="_blank" rel="noopener" href="${esc(pgSlipUrl(x.res))}">Open in ${esc(name)}</a></div>
         ${x.legs.length > 1 && sameGame(x.legs.map(o => o.r)) ? `<p class="pg-fine" style="margin-top:8px">Some legs share a game; the book prices same-game legs together, so its price will differ.</p>` : ""}</div>`;
@@ -1560,13 +1566,14 @@ function renderTop(){
 const TOP_GAME_CACHE = {};
 function topCard(x, i, name, now){
   const legs = x.legs.map(o => { const cur = now && now.get(legId(o.r)), moved = cur && cur.price !== o.r.price;
-    return `<div class="tb-leg"><span><b>${esc(o.r.player)}</b> ${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span>${
+    return `<div class="tb-leg"><span><b>${esc(o.r.player)}</b> ${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span>${betterTag(o.r, true)}${
       moved ? ` <small style="display:inline">now ${american(cur.price)}</small>` : ""}
       <small>${esc(o.r.game)}${kickOf(o.r.game) ? " · " + kickText(o.r.game) : ""}</small></span><span class="tb-p">${Math.round(100 * o.p)}%</span></div>`; }).join("");
   return `<div class="tb-card"><div class="tb-top"><span class="tb-tier ${x.tier.k}">${esc(x.tier.name)}</span><span class="tb-win">${esc(x.win || "")}</span></div>
     <div class="tb-head"><b>${x.legs.length === 1 ? "Single" : x.legs.length + "-leg parlay"} · ${fmtAmer(x.odds)}</b>
       <span class="tb-chance">${Math.round(100 * x.prob)}%<small>model chance</small></span></div>
     ${legs}
+    ${parlayBetterNote(x.legs.map(o => o.r), decOf(x.odds), name)}
     <div class="tb-acts"><button class="btn" data-tadd="${i}">Add to slip</button>
       <a class="btn ghost" target="_blank" rel="noopener" href="${esc(pgSlipUrl(x.res))}">Open in ${esc(name)}</a></div>
     ${x.legs.length > 1 && sameGame(x.legs.map(o => o.r)) ? `<p class="pg-fine" style="margin-top:8px">These legs share a game; the book prices same-game legs together, so its price will differ.</p>` : ""}</div>`;
@@ -1643,7 +1650,7 @@ function renderHeat(){
       <div class="td-who"><div class="td-nm">${esc(x.player)}</div>
         <div class="td-meta">${esc(x.pos || "")} · ${esc(x.team || "")}${when}</div>
         <div class="heat-dots">${dots}<span>${x.vals.length}/${x.vals.length}</span></div>
-        <div class="td-why">${r ? `Line: ${propText(r)} <span class="leg-price">${american(r.price)}</span>` : "No line on this board at his streak"}</div></div>
+        <div class="td-why">${r ? `Line: ${propText(r)} <span class="leg-price">${american(r.price)}</span>${betterTag(r, true)}` : "No line on this board at his streak"}</div></div>
       <div class="heat-side"><b>${x.floor}+</b><small>${esc(unit)}</small>
         ${id ? `<button class="addbtn" data-leg="${esc(id)}" aria-pressed="${on}" aria-label="${on ? "Remove" : "Add"} ${esc(x.player)}">${on ? "&#10003;" : "+"}</button>` : ""}</div>
     </div>`;
@@ -2012,7 +2019,7 @@ function render(){
       return `<tr${on ? ' class="picked"' : ""}>
         <td class="target">${Math.ceil(r.threshold)}+${(() => { const x = rateOver(last10, r.threshold);
           return x.n >= 10 && x.k === x.n ? '<span class="hot" title="Hit in each of his last 10 games">Hot</span>' : ""; })()}</td>
-        <td class="mono">${american(r.price)}</td>
+        <td class="mono">${american(r.price)}${betterTag(r)}</td>
         <td class="mono hit${p.short ? " few" : ""}">${pct(r.hit)}<span class="sub">${r.hits}/${r.n}</span><span class="meter"><i style="--w:${Math.round(r.hit * 100)}%"></i></span></td>
         ${rateCell(rateOver(last10, r.threshold), "Hit rate in his last 10 games")}
         ${add}
@@ -2072,6 +2079,49 @@ function legId(r){
     return "fd:" + r.fd[0] + ":" + r.fd[1];
   if(r.book === "draftkings" && r.dk) return "dk:" + r.dk;
   return null;
+}
+
+/* LINE SHOPPING. Each FanDuel/DraftKings line carries the other books' price
+   for the same line (r.alt, by book code). "Better" means it pays more for the
+   very same bet. The other books are for comparing only: picks, slips and the
+   graded record stay on FanDuel / DraftKings. */
+const SHOP_NAME = {fd: "FanDuel", dk: "DraftKings", mgm: "BetMGM", czr: "Caesars", fan: "Fanatics", tsb: "theScore Bet"};
+const OWN_CODE = {fanduel: "fd", draftkings: "dk"};
+const SHOP_SHORT = {fd: "FD", dk: "DK", mgm: "MGM", czr: "CZR", fan: "FAN", tsb: "TSB"};
+let ROW_BY_ID = null;
+function altOf(r){
+  if(r.alt) return r.alt;
+  if(!ROW_BY_ID){ ROW_BY_ID = new Map(); Object.values(SPORTS).forEach(sp => (sp.rows || []).forEach(x => { const id = legId(x); if(id) ROW_BY_ID.set(id, x); })); }
+  const cur = ROW_BY_ID.get(legId(r));
+  return (cur && cur.alt) || {};
+}
+function priceAt(r, code){ return OWN_CODE[r.book] === code ? r.price : altOf(r)[code]; }
+function betterOf(r){
+  let best = null;
+  for(const [c, v] of Object.entries(altOf(r)))
+    if(decOf(v) > decOf(r.price) + 1e-9 && (!best || decOf(v) > decOf(best[1]))) best = [c, v];
+  return best;                                   // [book code, price] or null
+}
+function betterTag(r, inline){
+  const b = betterOf(r); if(!b) return "";
+  return inline ? `<span class="better-in" title="Same line pays more at ${SHOP_NAME[b[0]]}">Better: ${SHOP_NAME[b[0]]} ${american(b[1])}</span>`
+    : `<span class="sub better" title="Same line pays more at ${SHOP_NAME[b[0]]}">${SHOP_SHORT[b[0]]} ${american(b[1])}</span>`;
+}
+// The same parlay at one other book: only books that offer every leg.
+function parlayElsewhere(rows, curDec){
+  const codes = new Set(); rows.forEach(r => { Object.keys(altOf(r)).forEach(c => codes.add(c)); codes.add(OWN_CODE[r.book]); });
+  let best = null;
+  for(const c of codes){
+    let d = 1;
+    for(const r of rows){ const v = priceAt(r, c); if(v == null){ d = 0; break; } d *= decOf(v); }
+    if(d > curDec * 1.02 && (!best || d > best[1])) best = [c, d];
+  }
+  return best;
+}
+function parlayBetterNote(rows, curDec, curName){
+  const b = parlayElsewhere(rows, curDec); if(!b) return "";
+  return `<div class="pg-info better-note">Same ${rows.length > 1 ? rows.length + " legs" : "bet"} at <b>${SHOP_NAME[b[0]]}: ${fmtAmer(amerOf(b[1]))}</b>
+    vs ${fmtAmer(amerOf(curDec))} at ${esc(curName)} — every leg is offered there.</div>`;
 }
 
 // Keyed to the build, so a new board never inherits legs from an old one.
@@ -2730,7 +2780,7 @@ function pgRender(res){
     return `<div class="pg-leg">
       <div class="leg-main">
         <div class="leg-what">${esc(o.r.player)} <span class="pg-pos">${esc(o.r.pos)} · ${esc(o.r.team)}</span></div>
-        <div class="leg-prop">${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span></div>
+        <div class="leg-prop">${propText(o.r)} <span class="leg-price">${american(o.r.price)}</span>${betterTag(o.r, true)}</div>
         <div class="leg-where">${esc(o.r.game)}${kickOf(o.r.game) ? ` · ${kickText(o.r.game)}` : ""}</div>
         ${chips ? `<div class="why">${chips}</div><div class="pg-tip" hidden></div>` : ""}
       </div>
@@ -2748,6 +2798,7 @@ function pgRender(res){
       <div class="row"><span>Board estimate it hits: <b>${(res.prob * 100).toFixed(res.prob < 0.01 ? 2 : 1)}%</b></span>
         <span>$10 wins $${(10 * (res.d - 1)).toFixed(2)} · returns $${(10 * res.d).toFixed(2)}</span></div>
     </div>
+    ${parlayBetterNote(res.legs.map(o => o.r), res.d, name)}
     ${res.repeats ? `<div class="pg-warn">Not enough players left who aren't already in your other bets,
       so this one repeats some. Use fewer legs or tick more games.</div>` : ""}
     ${res.mixed ? `<div class="pg-warn">Not enough green-flag legs for ${res.legs.length}
