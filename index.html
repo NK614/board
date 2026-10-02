@@ -699,6 +699,7 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .better-note{border:1px solid rgba(39,232,156,.35);background:var(--good-soft);border-radius:12px;padding:10px 12px}
 .better-note b{color:var(--good-text)}
 .heat-row{align-items:center}
+.tchip{display:inline-block;vertical-align:2px;margin-left:6px;padding:2px 7px;border-radius:6px;border:1.5px solid;font:800 10.5px/1.3 var(--ui);letter-spacing:.08em}
 .heat-dots{display:flex;align-items:center;gap:4px;margin:6px 0 4px}
 .heat-dots i{width:9px;height:9px;border-radius:50%;background:var(--good)}
 .heat-dots span{margin-left:6px;font:700 11.5px/1 var(--num);color:var(--good-text)}
@@ -1677,6 +1678,21 @@ function heatList(stat, len, book){
   // Bettable ones first: a streak with a line on this board you can add.
   return out.sort((a, b) => (!!b.line - !!a.line) || b.floor - a.floor || b.mean - a.mean);
 }
+
+// TEAM CHIP. A player's team in its own colors (no logos: those are the
+// league's trademarks). Chip = main color with the second color as its edge;
+// the stripe uses whichever of the two stands out more on the dark card.
+const teamLum = h => { const n = parseInt(h.slice(1), 16), c = [n >> 16, n >> 8 & 255, n & 255].map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; });
+  return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+function teamCol(t){
+  const c = TEAM_COLORS[String(t || "").toUpperCase()]; if(!c) return null;
+  const [a, b] = c, bright = teamLum(a) >= teamLum(b) ? a : b;
+  return {main: a, edge: b, pop: teamLum(bright) < 0.05 ? "#8e98b8" : bright, ink: teamLum(a) > 0.45 ? "#101820" : "#FFFFFE"};
+}
+function teamChip(t){
+  const c = teamCol(t); if(!c) return esc(t || "");
+  return `<span class="tchip" style="background:${c.main};border-color:${c.edge};color:${c.ink}">${esc(String(t).toUpperCase())}</span>`;
+}
 function renderHeat(){
   const board = $("board"), key = SPORT === "mlb" ? "mlb" : "nfl", stats = HEAT_STATS[key];
   if(!HEAT_STAT || !stats.some(x => x[0] === HEAT_STAT)) HEAT_STAT = stats[0][0];
@@ -1690,10 +1706,11 @@ function renderHeat(){
     const dots = x.vals.map(v => `<i title="${v}"></i>`).join("");
     const r = x.line, id = r && legId(r), on = id && SLIP.has(id);
     const d = kickOf(x.game), when = d ? ` · ${etParts(d).wd} ${etParts(d).time}` : "";
-    return `<div class="td-row heat-row">
+    const tc = SPORT === "nfl" ? teamCol(x.team) : null;
+    return `<div class="td-row heat-row"${tc ? ` style="box-shadow:inset 4px 0 0 ${tc.pop}"` : ""}>
       <div class="td-rk">${i + 1}</div>
-      <div class="td-who"><div class="td-nm">${esc(x.player)}</div>
-        <div class="td-meta">${esc(x.pos || "")} · ${esc(x.team || "")}${when}</div>
+      <div class="td-who"><div class="td-nm">${esc(x.player)} ${tc ? teamChip(x.team) : ""}</div>
+        <div class="td-meta">${esc(x.pos || "")}${tc ? "" : ` · ${esc(x.team || "")}`}${when}</div>
         <div class="heat-dots">${dots}<span>${x.vals.length}/${x.vals.length}</span></div>
         <div class="td-why">${r ? `Line: ${propText(r)} <span class="leg-price">${american(r.price)}</span>${betterTag(r, true)}` : "No line on this board at his streak"}</div></div>
       <div class="heat-side"><b>${x.floor}+</b><small>${esc(unit)}</small>
