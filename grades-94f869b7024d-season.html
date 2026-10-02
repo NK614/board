@@ -1587,6 +1587,27 @@ const HEAT_NFL = [["receptions", "Catches"], ["receiving_yards", "Receiving yard
                     ["rushing_yards", "Rushing yards"], ["passing_yards", "Passing yards"]];
 const HEAT_NBA = [["points", "Points"], ["rebounds", "Rebounds"], ["assists", "Assists"], ["threes", "Threes made"]];
 const HEAT = () => MLB() ? HEAT_MLB : NBA() ? HEAT_NBA : HEAT_NFL;
+const TEAM_COLORS = {
+  ARI: ["#97233F", "#FFB612"], ATL: ["#A71930", "#000000"], BAL: ["#241773", "#9E7C0C"], BUF: ["#00338D", "#C60C30"],
+  CAR: ["#0085CA", "#101820"], CHI: ["#0B162A", "#C83803"], CIN: ["#FB4F14", "#000000"], CLE: ["#311D00", "#FF3C00"],
+  DAL: ["#003594", "#869397"], DEN: ["#FB4F14", "#002244"], DET: ["#0076B6", "#B0B7BC"], GB: ["#203731", "#FFB612"],
+  HOU: ["#03202F", "#A71930"], IND: ["#002C5F", "#A2AAAD"], JAX: ["#006778", "#D7A22A"], KC: ["#E31837", "#FFB81C"],
+  LV: ["#000000", "#A5ACAF"], LAC: ["#0080C6", "#FFC20E"], LA: ["#003594", "#FFA300"], LAR: ["#003594", "#FFA300"],
+  MIA: ["#008E97", "#FC4C02"], MIN: ["#4F2683", "#FFC62F"], NE: ["#002244", "#C60C30"], NO: ["#D3BC8D", "#101820"],
+  NYG: ["#0B2265", "#A71930"], NYJ: ["#125740", "#FFFFFF"], PHI: ["#004C54", "#A5ACAF"], PIT: ["#FFB612", "#101820"],
+  SF: ["#AA0000", "#B3995D"], SEA: ["#002244", "#69BE28"], TB: ["#D50A0A", "#34302B"], TEN: ["#0C2340", "#4B92DB"],
+  WAS: ["#5A1414", "#FFB612"], WSH: ["#5A1414", "#FFB612"],
+};
+// TEAM CHIP. A player's team in its own colors (no logos: those are the
+// league's trademarks). Chip = main color with the second color as its edge;
+// the stripe uses whichever of the two stands out more on the dark card.
+const lum = h => { const n = parseInt(h.slice(1), 16), c = [n >> 16, n >> 8 & 255, n & 255].map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; });
+  return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+function teamCol(t){
+  const c = TEAM_COLORS[String(t || "").toUpperCase()]; if(!c) return null;
+  const [a, b] = c, bright = lum(a) >= lum(b) ? a : b;
+  return {main: a, edge: b, pop: lum(bright) < 0.05 ? "#8e98b8" : bright, ink: lum(a) > 0.45 ? "#101820" : "#FFFFFE"};
+}
 function heaters(stat, len){
   const list = ((FEED || {}).streaks || {})[stat] || [];
   const yards = /yards/.test(stat);
@@ -1618,9 +1639,19 @@ B.fri = () => {
     const mid = y + i * rowH + rowH / 2;
     if(i) el("line", {x1: 70, y1: y + i * rowH, x2: 1010, y2: y + i * rowH, stroke: "#56607f", "stroke-opacity": .3, "stroke-width": 1.5}, s);
     T(s, 70, mid + 12 * k, String(i + 1), {"font-size": 34 * k, "font-weight": 900, fill: "#3fd6ff"});
-    const nm = el("text", {x: 130, y: mid - 4 * k, "font-size": 32 * k, "font-weight": 800, fill: "#fff"}, s);
-    el("tspan", {}, nm, x.player + "  ");
-    el("tspan", {"font-size": 17 * k, fill: "#8e98b8", "letter-spacing": 2}, nm, `${x.pos || ""} · ${x.team || ""}`.toUpperCase());
+    const tc = !MLB() && !NBA() ? teamCol(x.team) : null;
+    if(tc) el("rect", {x: 112, y: mid - 30 * k, width: 5 * k, height: 62 * k, rx: 2.5 * k, fill: tc.pop}, s);   // team stripe
+    T(s, 130, mid - 4 * k, x.player, {"font-size": 32 * k, "font-weight": 800, fill: "#fff"});
+    let cx = 130 + textW(x.player, 32 * k, 800) + 14 * k;
+    if(tc){
+      const ab = String(x.team).toUpperCase(), cw = textW(ab, 19 * k, 900) + 20 * k, ch = 31 * k;
+      el("rect", {x: cx, y: mid - 4 * k - 24 * k, width: cw, height: ch, rx: 8 * k, fill: tc.main, stroke: tc.edge, "stroke-width": 2.5 * k}, s);
+      T(s, cx + cw / 2, mid - 4 * k - 2 * k, ab, {"text-anchor": "middle", "font-size": 19 * k, "font-weight": 900, fill: tc.ink, "letter-spacing": 1});
+      cx += cw + 10 * k;
+      T(s, cx, mid - 6 * k, String(x.pos || "").toUpperCase(), {"font-size": 17 * k, fill: "#8e98b8", "letter-spacing": 2, "font-weight": 700});
+    } else {
+      T(s, cx, mid - 6 * k, `${x.pos || ""} · ${x.team || ""}`.toUpperCase(), {"font-size": 17 * k, fill: "#8e98b8", "letter-spacing": 2, "font-weight": 700});
+    }
     // one dot per game in the streak
     const dr = 7 * k, gap = 22 * k;
     x.vals.forEach((v, j) => el("circle", {cx: 130 + dr + j * gap, cy: mid + 26 * k, r: dr, fill: "#27e89c", opacity: .9}, s));
