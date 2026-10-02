@@ -335,7 +335,10 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
   <p class="ld-hint">Planned odds fill in any bet you haven't priced yet, so you can see how many bets the climb takes. Put each bet's real odds in the list above as you place it.</p>
   <div class="ig-field" style="margin-top:12px"><label for="ldlabel">Bet type (shown after the odds)</label><input id="ldlabel" type="text" placeholder="parlay"></div>
   <div class="ig-field" style="margin-top:12px"><label for="ldhandle">Handle</label><input id="ldhandle" type="text"></div>
-  <p class="ld-hint">Saved on this phone only.</p>
+  <p class="ld-hint"><span id="ldsaved"></span> Saved on this phone, and in this page's address. Safari can clear a site's
+  saved data after 7 days away — keep a backup with <b>Copy ladder link</b> (open it later to bring the ladder back), or add this
+  page to your Home Screen and open it from there.</p>
+  <div class="ld-acts"><button class="ld-btn" id="ldcopy">Copy ladder link</button></div>
 </div>
 <div class="ld-toast" id="ldtoast">Take your screenshot · tap the title to exit</div>
 </div>
@@ -817,7 +820,30 @@ try { const v = localStorage.getItem("alp-sport"); SPORT = v === "mlb" || v === 
 if(PAUSED.includes(SPORT)) SPORT = "nfl";
 const keyOf = sp => sp === "mlb" ? "alp-ladder-mlb-v1" : sp === "nba" ? "alp-ladder-nba-v1" : "alp-ladder-v2";
 let S = null;
-const save = () => { try { localStorage.setItem(keyOf(SPORT), JSON.stringify(S)); } catch(e) {} };
+/* KEEPING THE LADDER. It lives in this browser (localStorage) -- but Safari
+   wipes a site's saved data when the site hasn't been opened for 7 days, and
+   a weekly ladder lands right on that line. So every save also writes the
+   ladder into the page's own address (?ld=...): a Safari tab that's been
+   wiped still brings it back, and "Copy ladder link" makes a backup you can
+   keep anywhere. Whichever copy was saved last wins. */
+const ldEnc = o => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const ldDec = s => { try { return JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/"))))); } catch(e) { return null; } };
+function ldUrl(){
+  const u = new URL(location.href);
+  if(S) u.searchParams.set("ld", ldEnc({sp: SPORT, s: S}));
+  return u;
+}
+const save = () => {
+  if(S) S.saved = Date.now();
+  try { localStorage.setItem(keyOf(SPORT), JSON.stringify(S)); } catch(e) {}
+  try { history.replaceState(null, "", ldUrl()); } catch(e) {}
+  const m = document.getElementById("ldsaved"); if(m) m.textContent = ldSavedText();
+};
+function ldSavedText(){
+  if(!S || !S.saved) return "Not saved yet — it saves as soon as you change anything.";
+  const d = new Date(S.saved);
+  return `Last saved ${d.toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})}, ${d.toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"})}.`;
+}
 const MAXR = 15;
 const money = v => "$" + Math.round(v).toLocaleString("en-US");
 const odd = o => (o > 0 ? "+" : "") + o;
@@ -828,6 +854,13 @@ const parseOdds = v => { const t = String(v).trim(); if(!t) return null; const n
 function loadState(){
   S = null;
   try { S = JSON.parse(localStorage.getItem(keyOf(SPORT)) || "null"); } catch(e) { S = null; }
+  // The copy in the address, if it's this sport's and newer than this browser's.
+  let fromUrl = null;
+  try { const q = new URL(location.href).searchParams.get("ld"); const b = q && ldDec(q); if(b && b.sp === SPORT && b.s) fromUrl = b.s; } catch(e) {}
+  if(fromUrl && (!S || (fromUrl.saved || 0) > (S.saved || 0))){
+    S = fromUrl;
+    try { localStorage.setItem(keyOf(SPORT), JSON.stringify(S)); } catch(e) {}
+  }
   if(S) return;
   // Carry over the first version's ladder (its labels held the odds). Football only.
   let old = null;
@@ -871,6 +904,7 @@ function setSport(sp){
   SPORT = (sp === "mlb" || sp === "nba") && !PAUSED.includes(sp) ? sp : "nfl";
   try { localStorage.setItem("alp-sport", SPORT); } catch(e) {}
   loadState(); form(); rows(); draw();
+  { const m = document.getElementById("ldsaved"); if(m) m.textContent = ldSavedText(); }
   document.querySelectorAll(".sport-sw button[data-sport]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sport === SPORT));
   onSport.forEach(f => { try { f(SPORT); } catch(e) {} });
 }
@@ -1060,6 +1094,13 @@ const reset = () => {
 ["ldstart", "ldgoal", "ldplan"].forEach(id => $(id).addEventListener("change", reset));
 $("ldlabel").oninput = e => { S.label = e.target.value; save(); draw(); };
 $("ldhandle").oninput = e => { S.handle = e.target.value; save(); draw(); };
+$("ldsaved").textContent = ldSavedText();
+$("ldcopy").onclick = async () => {
+  const url = ldUrl().toString(), b = $("ldcopy");
+  try { await navigator.clipboard.writeText(url); b.textContent = "Copied — paste it in Notes"; }
+  catch(e) { prompt("Copy this link:", url); }
+  setTimeout(() => { b.textContent = "Copy ladder link"; }, 2500);
+};
 $("ldnew").onclick = () => {
   S.st = []; S.odds = [];
   S.tag = (S.tag || "").replace(/#(\d+)/, (_, k) => "#" + (+k + 1));
