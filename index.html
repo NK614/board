@@ -2359,7 +2359,14 @@ function rateLeg(sportKey, r){
     // built on noise, so those players are left out of the generator.
     if(r.short || prof.short) return null;
     const meta = (SHARED.marketMeta || {})[r.market] || {}, stat = meta.stat;
-    const q = impliedFrom(r.price) / 1.045;          // strip a typical ~4.5% hold
+    // The market's view of this line, from ONE book for every book: FanDuel's
+    // price when it has the line (else DraftKings', else this book's). A leg's
+    // chance can't depend on where you bet it -- using each book's own price
+    // made a book that pays LESS look likelier to hit.
+    const alt = r.alt || {};
+    const ref = r.book === "fanduel" ? r.price : alt.fd != null ? alt.fd
+      : r.book !== "draftkings" && alt.dk != null ? alt.dk : r.price;
+    const q = impliedFrom(ref) / 1.045;              // strip a typical ~4.5% hold
     const mlb = sportKey === "mlb";
     const k = (prof.short ? 2 : 1) * (mlb ? MLB_K : PG_K);
     let tilt = 0; const why = [];
@@ -2504,7 +2511,7 @@ function rateLeg(sportKey, r){
     // the board said -- and the long-odds parlays were built on exactly those,
     // because the search goes looking for legs the board likes most. A small
     // edge is allowed (those did hit a bit more often than the book said).
-    if(ALGO_V2 && r.price > 0) p = Math.min(p, q + PG_LONGSHOT_EDGE);
+    if(ALGO_V2 && ref > 0) p = Math.min(p, q + PG_LONGSHOT_EDGE);      // the same reference price
     if(mlb) p = Math.min(p, q + MLB_EDGE);
     return {p, q, why};
   });
