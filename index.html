@@ -706,6 +706,12 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .heat-side b{font:800 24px/1 var(--num);color:var(--good-text)}
 .heat-side small{font-size:11px;color:var(--muted)}
 .td-pick{margin:0 0 16px}
+a.better-link{display:block;text-decoration:none;color:inherit;cursor:pointer}
+a.better-link:hover{border-color:rgba(39,232,156,.6)}
+.better-go{display:block;margin-top:6px;font-weight:800;color:var(--good-text,#27e89c)}
+.st-row{margin:8px 0}.slip-state{padding:8px 14px 0}
+.st-pick{font-size:12.5px;color:var(--muted);display:inline-flex;gap:8px;align-items:center}
+.st-pick select{background:var(--surface);color:var(--ink);border:1px solid var(--hairline-2);border-radius:8px;padding:4px 6px}
 .pg-books{margin-top:6px}.pg-books summary{cursor:pointer;font-weight:700}.pg-books div{margin-top:3px}
 .td-price{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
 .td-odds{font:700 12.5px/1 var(--display);color:var(--ink);background:var(--surface);border:1px solid var(--hairline-2);border-radius:8px;padding:5px 8px}
@@ -2171,10 +2177,22 @@ function parlayElsewhere(rows, curDec){
   }
   return best;
 }
+const CODE_BOOK = Object.fromEntries(Object.entries(OWN_CODE).map(([k, v]) => [v, k]));
+// The same line at another book: that book's own row (its price and bet IDs).
+function twinAt(r, book){
+  return allRows().find(x => x.book === book && x.game === r.game && x.player === r.player
+    && x.market === r.market && x.threshold === r.threshold) || null;
+}
 function parlayBetterNote(rows, curDec, curName){
   const b = parlayElsewhere(rows, curDec); if(!b) return "";
-  return `<div class="pg-info better-note">Same ${rows.length > 1 ? rows.length + " legs" : "bet"} at <b>${SHOP_NAME[b[0]]}: ${fmtAmer(amerOf(b[1]))}</b>
-    vs ${fmtAmer(amerOf(curDec))} at ${esc(curName)} — every leg is offered there.</div>`;
+  const book = CODE_BOOK[b[0]], there = rows.map(r => twinAt(r, book));
+  const slip = there.every(Boolean) ? bookSlip(book, there) : {url: BOOK_HOME[book] || "", full: false};
+  const text = `Same ${rows.length > 1 ? rows.length + " legs" : "bet"} at <b>${SHOP_NAME[b[0]]}: ${fmtAmer(amerOf(b[1]))}</b>
+    vs ${fmtAmer(amerOf(curDec))} at ${esc(curName)} — every leg is offered there.`;
+  if(!slip.url) return `<div class="pg-info better-note">${text}</div>`;
+  return `<a class="pg-info better-note better-link" href="${esc(slip.url)}" target="_blank" rel="noopener">${text}
+    <span class="better-go">${slip.full ? `Open this parlay in ${SHOP_NAME[b[0]]}` : `Open ${SHOP_NAME[b[0]]} — add the legs there`} &rarr;</span></a>
+    ${NEEDS_STATE.has(book) ? `<div class="st-row">${statePick()}</div>` : ""}`;
 }
 
 // Keyed to the build, so a new board never inherits legs from an old one.
@@ -2216,9 +2234,48 @@ function toggleLeg(id){
   renderSlip();
 }
 
+/* OTHER BOOKS' SLIPS. Only BetMGM's slip links work: options=fixture-market-
+   option, several joined with "," and type=combo (BetMGM's deep-link guide),
+   on its state site. Tested Oct 2 on a phone: 1 and 2 legs both loaded.
+   Caesars and theScore Bet send bet links too, but tested the same day they
+   only opened the sportsbook -- even the feed's own one-leg link -- so those
+   two (and Fanatics, which sends none) open the site and the legs go in by
+   hand. Their links are still stored on each line (r.lk) if that changes. */
+const STATES = ["az","co","ct","dc","ia","il","in","ks","ky","la","ma","md","me","mi","nc","nh","nj","ny","oh","pa","tn","va","vt","wv","wy"];
+let BOOK_STATE = "oh";
+try { const v = localStorage.getItem("alp-book-state"); if(STATES.includes(v)) BOOK_STATE = v; } catch(e) {}
+const NEEDS_STATE = new Set(["betmgm"]);
+function linkQ(r){ try { return new URL(String(r.lk).replace(/\{state\}/g, BOOK_STATE)).searchParams; } catch(e) { return null; } }
+// {url, full}: full = every leg is in the link (else it opens the sportsbook).
+function bookSlip(book, legs){
+  if(book === "fanduel" || book === "draftkings"){
+    const saved = new Map(SLIP); SLIP.clear(); legs.forEach(r => SLIP.set(legId(r), r));
+    const url = slipUrl(book); SLIP.clear(); saved.forEach((v, k) => SLIP.set(k, v));
+    return {url, full: true};
+  }
+  const home = {url: BOOK_HOME[book] || "#", full: false};
+  if(!legs.length || legs.some(r => !r.lk)) return home;
+  const qs = legs.map(linkQ); if(qs.some(q => !q)) return home;
+  const st = BOOK_STATE;
+  if(book === "betmgm"){
+    const ops = qs.map(q => q.get("options")); if(ops.some(x => !x)) return home;
+    return {url: `https://sports.${st}.betmgm.com/en/sports?options=${ops.join(",")}&type=${legs.length > 1 ? "combo" : "Single"}`, full: true};
+  }
+  return home;
+}
+// "Your state" for BetMGM links (a site per state).
+function statePick(){
+  return `<label class="st-pick">Your state <select data-state-pick>${STATES.map(s =>
+    `<option value="${s}"${s === BOOK_STATE ? " selected" : ""}>${s.toUpperCase()}</option>`).join("")}</select></label>`;
+}
+document.addEventListener("change", e => {
+  const s = e.target.closest && e.target.closest("[data-state-pick]"); if(!s) return;
+  BOOK_STATE = s.value; try { localStorage.setItem("alp-book-state", BOOK_STATE); } catch(err) {}
+  renderSlip(); if(PG_LAST && VIEW === "parlay" && PG_IDX >= 0) pgRender(PG_HIST[PG_IDX]); else if(VIEW === "top") render();
+});
 function slipUrl(book){
   const legs = [...SLIP.values()].filter(r => r.book === book);
-  if(BOOK_HOME[book]) return legs.length === 1 && legs[0].lk ? legs[0].lk : BOOK_HOME[book];
+  if(BOOK_HOME[book]) return bookSlip(book, legs).url;
   if(book === "draftkings"){
     // IDs joined by a literal "+". encodeURIComponent turns the "#" inside
     // prop IDs back into %23 -- left raw, the browser would treat everything
@@ -2267,7 +2324,7 @@ function renderSlip(){
     const bl = [...SLIP.values()].filter(r => r.book === b), k = bl.length;
     const odds = fmtAmer(amerOf(parlayDec(bl)));
     const text = used.length === 1 ? `Open in ${name} ${odds}` : `${name} (${k}) ${odds}`;
-    const hand = BOOK_HOME[b] && !(k === 1 && bl[0].lk);          // no slip link: legs go in by hand
+    const hand = BOOK_HOME[b] && !bookSlip(b, bl).full;            // no slip link: legs go in by hand
     return `<a class="slip-go${b === "draftkings" ? " dk" : BOOK_HOME[b] ? " other" : ""}" data-book="${b}"
       href="${esc(slipUrl(b))}" target="_blank" rel="noopener"${hand ? ` title="Opens ${esc(name)} — add the legs there"` : ""}>${text}</a>`;
   }).join("");
@@ -2292,7 +2349,7 @@ function renderSlip(){
   }).join("");
   }).join("");
   const anySgp = used.some(([b]) => sameGame([...SLIP.values()].filter(r => r.book === b)));
-  $("slip-list").innerHTML = legs + `<div class="slip-foot">
+  $("slip-list").innerHTML = legs + (used.some(([b]) => NEEDS_STATE.has(b)) ? `<div class="slip-state">${statePick()}</div>` : "") + `<div class="slip-foot">
       <span>Parlay odds multiply each leg's price from when this board was built.
       ${anySgp ? "<b>*</b> Includes legs from the same game: the book prices those "
         + "together, so its number will differ. " : ""}The book shows the real
@@ -2905,10 +2962,11 @@ function pgRender(res){
     ${res.legs.some(o => o.why.length) ? `<p class="pg-hint">Tap a flag to see what it means.</p>` : ""}
     <div class="pg-cols"><span>Leg</span><span><b>Model prediction<br>hit rate</b>Historical hit rate</span></div>
     <div>${legsHtml}</div>
+    ${NEEDS_STATE.has(res.book) ? `<div class="st-row">${statePick()}</div>` : ""}
     <div class="pg-actions">
       <button class="btn" id="pg-add">Add to slip</button>
       <a class="btn ghost" id="pg-open-book" target="_blank" rel="noopener"
-         href="${esc(pgSlipUrl(res))}">Open in ${esc(name)}</a>
+         href="${esc(pgSlipUrl(res))}"${bookSlip(res.book, res.legs.map(o => o.r)).full ? "" : ` title="Opens ${esc(name)} — add the legs there"`}>Open in ${esc(name)}</a>
       <button class="btn ghost" id="pg-share">Share as image</button>
     </div>
     <p class="pg-fine">How it picks: each line's hit rate is pulled toward the
