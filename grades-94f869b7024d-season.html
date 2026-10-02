@@ -214,6 +214,7 @@ body.shot #ldshell{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%
 .sport-sw button[data-sport="nfl"][aria-pressed="true"],.sport-sw button[data-rsport="nfl"][aria-pressed="true"]{background:linear-gradient(180deg,#2a4fc4,#13245e);color:#fff}
 .sport-sw button[data-rsport="mlb"][aria-pressed="true"]{background:#f3f5fa;color:#0b1124}
 .sport-sw button[data-sport="nba"],.sport-sw button[data-rsport="nba"]{color:#8392a6}
+.sport-sw button[data-sport="nba"][aria-pressed="true"]{background:linear-gradient(180deg,#8392a6,#4b5869);color:#fff}
 .soon-note{margin:8px 0 0;padding:10px 12px;border-radius:10px;border:1px solid rgba(131,146,166,.5);background:linear-gradient(180deg,rgba(131,146,166,.22),rgba(75,88,105,.18));
   color:#dfe5ee;font:600 13.5px/1.4 var(--ui)}
 #igview{--cyan:#3fd6ff;--violet:#a855f7}
@@ -790,8 +791,8 @@ $("tab-ig").onclick = () => tab("instagram");
 // NFL and MLB each keep their own ladder. MLB images get a white background
 // so followers can tell them from the football ones at a glance.
 let SPORT = "nfl";
-try { SPORT = localStorage.getItem("alp-sport") === "mlb" ? "mlb" : "nfl"; } catch(e) {}
-const keyOf = sp => sp === "mlb" ? "alp-ladder-mlb-v1" : "alp-ladder-v2";
+try { const v = localStorage.getItem("alp-sport"); SPORT = v === "mlb" || v === "nba" ? v : "nfl"; } catch(e) {}
+const keyOf = sp => sp === "mlb" ? "alp-ladder-mlb-v1" : sp === "nba" ? "alp-ladder-nba-v1" : "alp-ladder-v2";
 let S = null;
 const save = () => { try { localStorage.setItem(keyOf(SPORT), JSON.stringify(S)); } catch(e) {} };
 const MAXR = 15;
@@ -827,33 +828,40 @@ const LIGHT = {
   "#3fd6ff": "#0a9fd0", "#a855f7": "#8b3fe0", "#27e89c": "#0f9f6a", "#5cf2bb": "#0c8f5f",
   "#ff6b6b": "#e04848", "#ff8a8a": "#d63c3c", "#ff9d9d": "#c43535", "#ffc86b": "#c98a00",
 };
-function light(svg){
+// The slate look (NBA): the dark design's navy swapped for cool slate gray.
+const SLATE = {
+  "#10204a": "#5b6878", "#070c1d": "#3a4451", "#04060d": "#252c35",
+  "rgba(11,17,36,.85)": "rgba(30,36,45,.82)", "rgba(11,17,36,.88)": "rgba(30,36,45,.85)", "#0b1124": "#252c35",
+};
+function light(svg, map){
+  map = map || LIGHT;
   [svg, ...svg.querySelectorAll("*")].forEach(n => ["fill", "stroke", "stop-color"].forEach(a => {
     const v = n.getAttribute(a); if(!v) return;
     const k = v.replace(/\s+/g, "").toLowerCase();
-    if(LIGHT[k]) n.setAttribute(a, LIGHT[k]);
+    if(map[k]) n.setAttribute(a, map[k]);
   }));
   return svg;
 }
+const theme = svg => SPORT === "mlb" ? light(svg) : SPORT === "nba" ? light(svg, SLATE) : svg;
 const onSport = [];
 function setSport(sp){
-  SPORT = sp === "mlb" ? "mlb" : "nfl";
+  SPORT = sp === "mlb" || sp === "nba" ? sp : "nfl";
   try { localStorage.setItem("alp-sport", SPORT); } catch(e) {}
   loadState(); form(); rows(); draw();
   document.querySelectorAll(".sport-sw button[data-sport]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sport === SPORT));
   onSport.forEach(f => { try { f(SPORT); } catch(e) {} });
 }
-window.ALP = {sport: () => SPORT, light: svg => SPORT === "mlb" ? light(svg) : svg, onSport, setSport};
+window.ALP = {sport: () => SPORT, light: theme, onSport, setSport};
 // NBA: a tab that's there, not open yet.
 function nbaSoon(btn){
   const sw = btn.closest(".sport-sw");
   let n = sw.nextElementSibling;
   if(!n || !n.classList.contains("soon-note")){ n = document.createElement("div"); n.className = "soon-note"; sw.after(n); }
-  n.textContent = "NBA is coming soon — the same tools and posts, in slate gray.";
+  n.textContent = "No NBA picks graded yet — NBA results get their own page once the NBA board is live.";
   clearTimeout(n._t); n._t = setTimeout(() => n.remove(), 3500);
 }
 document.addEventListener("click", e => {
-  const nb = e.target.closest(".sport-sw button[data-sport=nba], .sport-sw button[data-rsport=nba]");
+  const nb = e.target.closest(".sport-sw button[data-rsport=nba]");
   if(nb){ nbaSoon(nb); return; }
   const b = e.target.closest(".sport-sw button[data-sport]");
   if(b && b.dataset.sport !== SPORT) setSport(b.dataset.sport);
@@ -987,7 +995,7 @@ function draw(){
     save(); draw(); rows();
   });
   $("ldtitle").onclick = () => document.body.classList.remove("shot");
-  if(SPORT === "mlb") light(svg);
+  theme(svg);
 }
 
 function rows(){
@@ -1072,7 +1080,8 @@ const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch
 // NFL or MLB, set by the switch at the top of the Ladder and Instagram tabs.
 const SPORT = () => (window.ALP && window.ALP.sport()) || "nfl";
 const MLB = () => SPORT() === "mlb";
-const wk = day => (MLB() ? "mlb:" : "") + day;            // each sport keeps its own choices
+const NBA = () => SPORT() === "nba";
+const wk = day => (MLB() ? "mlb:" : NBA() ? "nba:" : "") + day;            // each sport keeps its own choices
 const opt = (day, k, dflt) => (S.opts[wk(day)] && S.opts[wk(day)][k] != null) ? S.opts[wk(day)][k] : dflt;
 const setOpt = (day, k, v) => { (S.opts[wk(day)] = S.opts[wk(day)] || {})[k] = v; save(); };
 const LIGHT = svg => window.ALP ? window.ALP.light(svg) : svg;
@@ -1087,8 +1096,9 @@ const weekLabel = (() => {
 })();
 let FEED = null, FEED_ALL = null, FEED_ERR = "", FEED_ERR0 = "";
 function pickFeed(){
-  FEED = MLB() ? ((FEED_ALL || {}).mlb || null) : FEED_ALL;
-  FEED_ERR = MLB() && FEED_ALL && !FEED ? "No MLB board data yet — it appears after the next MLB Build." : FEED_ERR0;
+  FEED = MLB() ? ((FEED_ALL || {}).mlb || null) : NBA() ? ((FEED_ALL || {}).nba || null) : FEED_ALL;
+  FEED_ERR = NBA() && !FEED ? "No NBA board yet — NBA posts fill in once the NBA board is built."
+    : MLB() && FEED_ALL && !FEED ? "No MLB board data yet — it appears after the next MLB Build." : FEED_ERR0;
 }
 function loadFeed(){
   const file = decodeURIComponent(location.pathname.split("/").pop() || "");
@@ -1122,12 +1132,19 @@ function el(tag, attrs, parent, text){
   return e;
 }
 const T = (parent, x, y, txt, o) => el("text", Object.assign({x, y, fill: "#fff", "font-weight": 700, "font-size": 32}, o || {}), parent, txt);
-function wrap(text, size, width, maxLines){
-  const per = Math.max(6, Math.floor(width / (size * .56)));
+// Line breaks by the text's real width in the post's font (bold, the
+// widest case), so a long headline wraps instead of running off the image.
+const MEASURE = document.createElement("canvas").getContext("2d");
+function textW(t, size, weight){
+  MEASURE.font = `${weight || 900} ${size}px ${FONT}`;
+  return MEASURE.measureText(t).width + t.length * size * 0.02;     // + letter-spacing
+}
+function wrap(text, size, width, maxLines, weight){
   const words = String(text || "").split(/\s+/).filter(Boolean), lines = [];
   let cur = "";
   for(const w of words){
-    if((cur + " " + w).trim().length > per && cur){ lines.push(cur); cur = w; } else cur = (cur + " " + w).trim();
+    const next = (cur + " " + w).trim();
+    if(cur && textW(next, size, weight) > width){ lines.push(cur); cur = w; } else cur = next;
   }
   if(cur) lines.push(cur);
   if(maxLines && lines.length > maxLines){ lines.length = maxLines; lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, "") + "…"; }
@@ -1165,7 +1182,11 @@ function frame(svg, h, tag, head, sub){
     T(svg, W - 70 - tw / 2, 113 + top, tag.toUpperCase(), {"text-anchor": "middle", "font-size": 22, fill: "#3fd6ff", "letter-spacing": 3, "font-weight": 800});
   }
   let y = 250 + top;
-  wrap((head || "").toUpperCase(), 76, 940, 2).forEach(l => { T(svg, 70, y, l, {"font-size": 76, "font-weight": 900, "letter-spacing": 1}); y += 84; });
+  // A headline too wide even for two lines steps down in size rather than running off.
+  let hs = 76;
+  const HEAD = (head || "").toUpperCase();
+  while(hs > 48 && wrap(HEAD, hs, 940).some(l => textW(l, hs) > 940 || wrap(HEAD, hs, 940).length > 2)) hs -= 4;
+  wrap(HEAD, hs, 940, 2).forEach(l => { T(svg, 70, y, l, {"font-size": hs, "font-weight": 900, "letter-spacing": 1}); y += hs + 8; });
   if(sub){ wrap(sub, 32, 940, 2).forEach(l => { T(svg, 70, y + 4, l, {"font-size": 32, "font-weight": 600, fill: "#b7c0dc"}); y += 42; }); y += 10; }
   el("line", {x1: 70, y1: h - 92 - bot, x2: W - 70, y2: h - 92 - bot, stroke: "#56607f", "stroke-opacity": .5, "stroke-width": 2}, svg);
   T(svg, 70, h - 50 - bot, S.handle || "", {"font-size": 24, fill: "#8e98b8", "font-weight": 700});
@@ -1239,10 +1260,17 @@ const DAYS_MLB = [
   {k: "sunam", name: "Dingers", what: "Dinger Predictor"},
   {k: "sunpm", name: "Dinger tracker", what: "Home run update"},
 ];
+const DAYS_NBA = [
+  {k: "thu", name: "Parlay", what: "Tonight's games"},
+  {k: "fri", name: "Heaters", what: "Streaks"},
+  {k: "tue", name: "Results", what: "Graded picks"},
+  {k: "wed", name: "Near miss", what: "Why it lost"},
+];
 let DAYS = DAYS_NFL;
 // The grades on this page belong to one sport: the MLB playoffs page, or a football one.
 const PAGE_SPORT = /mlb$/.test(D.me || "") ? "mlb" : "nfl";
 function pageMismatch(){
+  if(NBA()) return "No NBA picks graded yet — NBA results get their own page once the NBA board is live.";
   if(SPORT() === PAGE_SPORT) return "";
   return MLB() ? "MLB results live on the MLB playoffs page — pick it from the week menu in the Track record tab."
                : "This is the MLB playoffs page — pick a football week in the Track record tab, or switch to MLB above.";
@@ -1254,9 +1282,9 @@ function defaultDay(){
 }
 let DAY = "tue";
 function applySport(){
-  DAYS = MLB() ? DAYS_MLB : DAYS_NFL;
-  const saved = MLB() ? S.dayMlb : S.day;
-  DAY = saved && DAYS.some(d => d.k === saved) ? saved : MLB() ? "thu" : defaultDay();
+  DAYS = MLB() ? DAYS_MLB : NBA() ? DAYS_NBA : DAYS_NFL;
+  const saved = MLB() ? S.dayMlb : NBA() ? S.dayNba : S.day;
+  DAY = saved && DAYS.some(d => d.k === saved) ? saved : MLB() || NBA() ? "thu" : defaultDay();
   pickFeed();
 }
 applySport();
@@ -1266,7 +1294,7 @@ applySport();
 S.hooks = S.hooks || {};
 const pickOf = (arr, bump) => arr[((S.hooks[wk(DAY)] || 0) + (bump || 0)) % arr.length];
 // Hashtags by sport.
-const TAGS = (nfl, mlb) => MLB() ? mlb : nfl;
+const TAGS = (nfl, mlb) => MLB() ? mlb : NBA() ? "#NBA #nbabetting #playerprops #sportsbetting #parlay" : nfl;
 const handleTag = () => { const h = (S.handle || "").trim(); return h ? (h[0] === "@" ? h : "@" + h) : ""; };
 const CTAS = [
   () => `🔔 Follow ${handleTag() || "us"} so you never miss a post`,
@@ -1493,7 +1521,8 @@ const HEAT_MLB = [["hits", "Hits"], ["total_bases", "Total bases"], ["hrr", "Hit
                   ["pitcher_strikeouts", "Pitcher strikeouts"]];
 const HEAT_NFL = [["receptions", "Catches"], ["receiving_yards", "Receiving yards"],
                     ["rushing_yards", "Rushing yards"], ["passing_yards", "Passing yards"]];
-const HEAT = () => MLB() ? HEAT_MLB : HEAT_NFL;
+const HEAT_NBA = [["points", "Points"], ["rebounds", "Rebounds"], ["assists", "Assists"], ["threes", "Threes made"]];
+const HEAT = () => MLB() ? HEAT_MLB : NBA() ? HEAT_NBA : HEAT_NFL;
 function heaters(stat, len){
   const list = ((FEED || {}).streaks || {})[stat] || [];
   const yards = /yards/.test(stat);
@@ -1670,6 +1699,7 @@ function winsHtml(){
 }
 function optsHtml(day, R){
   const h = [`<h3>${esc(DAYS.find(d => d.k === day).what)} · options</h3>`];
+  if(NBA() && (day === "tue" || day === "wed")){ if(R.note) h.push(`<p class="ig-note">${esc(R.note)}</p>`); return h.join(""); }
   if(day === "tue" || day === "wed") h.push(winsHtml());
   if(day === "tue"){
     h.push(`<p class="ld-hint" style="margin-top:0">A carousel from the grades on this page (${esc(weekLabel)}). Pick another week in the Track record tab to post that one.</p>`,
@@ -1833,7 +1863,7 @@ function etNow(){ return new Date(new Date().toLocaleString("en-US", {timeZone: 
 function planWeek(){ const d = etNow(); d.setDate(d.getDate() - ((d.getDay() + 5) % 7)); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
 function drawPlan(){
   const box = $("igplan");
-  if(MLB()){ box.hidden = true; return; }
+  if(MLB() || NBA()){ box.hidden = true; return; }
   box.hidden = false;
   S.posted = S.posted || {};
   const wkKey = planWeek(), done = S.posted[wkKey] || {};
@@ -1970,7 +2000,7 @@ $("ighook").onclick = () => { S.hooks[wk(DAY)] = (S.hooks[wk(DAY)] || 0) + 1; sa
 $("igreset").onclick = () => { S.words[wk(DAY)] = {}; save(); render(true); };
 $("igdays").addEventListener("click", e => {
   const b = e.target.closest(".ig-day"); if(!b) return;
-  DAY = b.dataset.day; if(MLB()) S.dayMlb = DAY; else S.day = DAY; save(); $("igcap").value = ""; render(true);
+  DAY = b.dataset.day; if(MLB()) S.dayMlb = DAY; else if(NBA()) S.dayNba = DAY; else S.day = DAY; save(); $("igcap").value = ""; render(true);
 });
 const setWord = (k, v) => { (S.words[wk(DAY)] = S.words[wk(DAY)] || {})[k] = v; save(); };
 $("ighead").addEventListener("input", e => { setWord("head", e.target.value); render(false); });
