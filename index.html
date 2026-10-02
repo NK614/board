@@ -709,7 +709,7 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .bk-box{border-color:rgba(39,232,156,.35)}
 .bk-h{font-weight:800;color:var(--good-text);margin-bottom:4px}
 .bk-sub{margin:0 0 8px;font-size:13px;color:var(--muted);line-height:1.45}.bk-sub b{color:var(--ink)}
-.bk-row{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--hairline-2);font-size:13.5px}
+.bk-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--hairline-2);font-size:13.5px}
 .bk-row.off{grid-template-columns:auto 1fr;color:var(--muted)}
 .bk-row.best .bk-o{color:var(--good-text)}
 .bk-n small{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-left:4px}
@@ -717,7 +717,7 @@ button.pg-chip.down:hover,button.pg-chip.down[aria-expanded="true"]{background:r
 .bk-miss{font-size:12.5px}.bk-p{color:var(--muted);font-size:12.5px}
 .st-pick{white-space:nowrap}
 .bk-go{font-weight:700;color:var(--good-text);text-decoration:none;white-space:nowrap}
-@media (max-width:520px){.bk-row{grid-template-columns:1fr auto auto}.bk-w{display:none}}
+@media (max-width:520px){.bk-w{display:none}.bk-row:not(.off){grid-template-columns:1fr auto}}
 a.better-link{display:block;text-decoration:none;color:inherit;cursor:pointer}
 a.better-link:hover{border-color:rgba(39,232,156,.6)}
 .better-go{display:block;margin-top:6px;font-weight:800;color:var(--good-text,#27e89c)}
@@ -2915,35 +2915,58 @@ function pgSameParlay(res){
     const miss = rows.filter((r, i) => !there[i]);
     if(miss.length) return {b, miss};
     const d = there.reduce((a, r) => a * decOf(r.price), 1);
-    return {b, d, slip: bookSlip(b, there)};
+    return {b, d};
   });
   const ok = list.filter(x => !x.miss).sort((a, b) => b.d - a.d), no = list.filter(x => x.miss);
   const top = ok[0], here = ok.find(x => x.b === res.book);
   const line = x => x.miss
     ? `<div class="bk-row off"><span class="bk-n">${esc(bookName(x.b))}</span><span class="bk-miss">Not offered — no ${x.miss.length === rows.length ? "lines for these legs" : x.miss.map(r => esc(legName(r))).join(", ")}</span></div>`
     : `<div class="bk-row${x === top ? " best" : ""}"><span class="bk-n">${esc(bookName(x.b))}${x.b === res.book ? ' <small>this pick</small>' : ""}</span>
-        <span class="bk-o">${fmtAmer(amerOf(x.d))}</span><span class="bk-w">$10 wins $${(10 * (x.d - 1)).toFixed(2)}</span>
-        <a class="bk-go" href="${esc(x.slip.url)}" target="_blank" rel="noopener">${x.slip.full ? "Open slip" : "Open site"} &rarr;</a></div>`;
+        <span class="bk-o">${fmtAmer(amerOf(x.d))}</span><span class="bk-w">$10 wins $${(10 * (x.d - 1)).toFixed(2)}</span></div>`;
   const gain = top && here && top.b !== res.book && top.d > here.d * 1.001
     ? `<b>Best price: ${esc(bookName(top.b))} ${fmtAmer(amerOf(top.d))}</b> vs ${fmtAmer(amerOf(here.d))} here.` : top && here && top.b === res.book ? "<b>This book already has the best price.</b>" : "";
   return `<div class="pg-info bk-box"><div class="bk-h">This exact parlay at every book</div>
     <p class="bk-sub">Same ${rows.length} leg${rows.length === 1 ? "" : "s"}, so the same <b>${pc}</b> chance to hit everywhere — only the payout changes. ${gain}</p>
     ${ok.concat(no).map(line).join("")}
-    ${ok.some(x => NEEDS_STATE.has(x.b)) ? `<div class="st-row">${statePick()}</div>` : ""}
     ${sameGame(rows) ? `<p class="bk-sub">Some legs share a game; each book prices those together, so its real number will differ.</p>` : ""}</div>`;
 }
 // 2) BEST BOOK FOR YOUR SETTINGS (Best book only). Each book's own best parlay
 //    for the legs and odds you picked -- a DIFFERENT parlay at each book.
+// Shown with every build. With "Best book" the rivals come with the build;
+// otherwise every book is checked right after the parlay is on screen.
 function pgBestNote(res){
-  if(res.pick !== "best" || !res.rivals) return "";
+  return `<div id="pg-best">${res.rivals ? pgBestInner(res, res.rivals)
+    : `<div class="pg-info bk-box"><div class="bk-h">Best book for your settings</div><p class="bk-sub">Checking every book…</p></div>`}</div>`;
+}
+function pgBestInner(res, rivals){
   const pc = p => (p * 100).toFixed(p < 0.01 ? 2 : 1) + "%";
-  const rv = res.rivals.slice().sort((a, b) => b.prob - a.prob);
-  return `<div class="pg-info bk-box"><div class="bk-h">Best book for your settings: ${esc(bookName(res.book))}</div>
-    <p class="bk-sub">Not the same bet at each book. For ${res.legs.length} leg${res.legs.length === 1 ? "" : "s"} at about ${fmtAmer(res.target)},
-      the model built its best parlay at each book from that book's own lines and prices, and the parlay above is the winner. This shows
-      which book gives you the best chance at your target.</p>
-    ${rv.map((r, i) => `<div class="bk-row${i === 0 ? " best" : ""}"><span class="bk-n">${esc(bookName(r.book))}</span>
+  const rv = rivals.slice().sort((a, b) => b.prob - a.prob || b.d - a.d);
+  const top = rv[0], mine = rv.find(r => r.book === res.book);
+  const n = res.legs.length, best = res.pick === "best";
+  const vs = best || !mine ? "" : top.book === res.book
+    ? ` <b>${esc(bookName(res.book))}, the book you picked, is already the best.</b>`
+    : ` <b>${esc(bookName(top.book))} beats ${esc(bookName(res.book))} (the book you picked): ${pc(top.prob)} vs ${pc(mine.prob)}.</b>
+       Pick "Best book" in the Sportsbook menu to build it.`;
+  return `<div class="pg-info bk-box"><div class="bk-h">Best book for your settings: ${esc(bookName(top.book))}</div>
+    <p class="bk-sub">Not the same bet at each book. For ${n} leg${n === 1 ? "" : "s"} at about ${fmtAmer(res.target)}, the model built its best
+      parlay at each book from that book's own lines and prices${best ? ", and the parlay above is the winner" : ""}. This shows which book gives
+      you the best chance at your target.${vs}</p>
+    ${rv.map((r, i) => `<div class="bk-row${i === 0 ? " best" : ""}"><span class="bk-n">${esc(bookName(r.book))}${r.book === res.book && !best ? ' <small>you picked</small>' : ""}</span>
       <span class="bk-o">${pc(r.prob)} to hit</span><span class="bk-p">at ${fmtAmer(amerOf(r.d))}${r.inBand ? "" : " (off target)"}</span></div>`).join("")}</div>`;
+}
+function pgFillBest(res){
+  if(res.rivals) return;
+  const base = PG_HIST[0];
+  if(base && base.rivals && base !== res){ res.rivals = base.rivals; const el = $("pg-best"); if(el) el.innerHTML = pgBestInner(res, res.rivals); return; }
+  setTimeout(() => {
+    if(PG_LAST !== res) return;                            // a newer build is on screen
+    const books = pgBooks();
+    const rivals = books.map(b => b === res.book ? res : buildSpread(res.nLegs, res.target, b, res.scope, null, res.green !== false))
+      .filter(r => !r.error).map(r => ({book: r.book, prob: r.prob, d: r.d, inBand: r.inBand}));
+    res.rivals = rivals;
+    if(PG_LAST !== res) return;
+    const el = $("pg-best"); if(el) el.innerHTML = rivals.length > 1 ? pgBestInner(res, rivals) : "";
+  }, 30);
 }
 function pgRender(res){
   const out = $("pg-out");
@@ -3023,6 +3046,7 @@ function pgRender(res){
       the odds you chose. It is an estimate from past games, not a prediction —
       a parlay only pays if every leg hits.</p>`;
   try { pgPrepShare(res); } catch(e){ const b = $("pg-share"); if(b) b.hidden = true; }
+  pgFillBest(res);
 }
 
 /* WHY THIS PARLAY: one plain sentence from the legs themselves. */
