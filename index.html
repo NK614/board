@@ -1601,7 +1601,7 @@ const HEAT_STATS = {nfl: [["receptions", "Catches", "catches"], ["receiving_yard
                           ["rushing_yards", "Rushing yards", "rush yds"], ["passing_yards", "Passing yards", "pass yds"]],
                     mlb: [["hits", "Hits", "hits"], ["total_bases", "Total bases", "total bases"], ["hrr", "Hits + runs + RBIs", "H+R+RBI"],
                           ["pitcher_strikeouts", "Pitcher strikeouts", "strikeouts"]]};
-let HEAT_STAT = null, HEAT_LEN = 8;
+let HEAT_STAT = null, HEAT_LEN = 10;
 function heatList(stat, len, book){
   const sp = S(), now = Date.now(), yards = /yards/.test(stat), seen = new Set(), out = [];
   const mkts = Object.entries(SHARED.marketMeta || {}).filter(([, m]) => m.stat === stat).map(([k]) => k);
