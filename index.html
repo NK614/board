@@ -2814,10 +2814,10 @@ function pgSeen(res){
   const lastName = n => { const w = n.split(" ").filter(x => !/^(jr|sr|ii|iii|iv|v)\.?$/i.test(x)); return w[w.length - 1] || n; };
   const again = res.legs.filter(o => (before.get(o.pk) || 0) >= 1).map(o => lastName(o.r.player));
   if(!again.length || !$("pg-note")) return;
-  $("pg-note").innerHTML = `<div class="pg-info"><b>${again.map(esc).join(", ")}</b> ${again.length === 1 ? "was" : "were"}
-    in your earlier parlays too — ${again.length === 1 ? "he's" : "they're"} among the board's likeliest legs, so every
-    build starts with ${again.length === 1 ? "him" : "them"}. Tap <b>Regenerate</b> for options with different players,
-    or add a parlay to your slip and later builds will skip its players.</div>`;
+  const who = again.length === 1 ? again[0] : again.slice(0, -1).join(", ") + " and " + again[again.length - 1];
+  $("pg-note").innerHTML = `<div class="pg-info"><b>${esc(who)}</b> also showed up in parlays you built a moment ago on this
+    page (built, not bet). ${again.length === 1 ? "He's" : "They're"} among the board's likeliest legs, so the generator keeps
+    starting with ${again.length === 1 ? "him" : "them"}. Tap <b>Regenerate</b> for options with different players.</div>`;
 }
 
 function pgSkip(){
