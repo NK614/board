@@ -99,6 +99,11 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
 .ig-top .lg{font-size:13px;color:var(--sec);margin-top:4px;line-height:1.45}
 .ig-top .nums{text-align:right;font:700 15px/1.2 var(--num)}.ig-top .nums small{display:block;font:600 11.5px/1.3 var(--ui);color:var(--goodt);margin-top:3px}
 .ig-top .cp{margin-top:6px;appearance:none;border:1px solid var(--line);background:var(--card2);color:var(--sec);border-radius:8px;font:600 12px/1 var(--ui);padding:6px 9px;cursor:pointer}
+.ig-cash{padding:12px 14px}
+.ld-btn:disabled{opacity:.4;cursor:default}
+.ig-cash h3{margin:0 0 4px}
+.cash-out{margin-top:12px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#000}
+.cash-out img{display:block;width:100%;height:auto}
 .ig-plan{padding:12px 14px}
 .ig-plan h3{margin:0 0 4px}
 .ig-plan .pl{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
@@ -205,6 +210,12 @@ body.shot #ldshell{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%
 .sport-sw button small{font-weight:600;font-size:11px;opacity:.7;margin-left:4px}
 .sport-sw button[aria-pressed="true"]{background:var(--card2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
 .sport-sw button[data-sport="mlb"][aria-pressed="true"]{background:#f3f5fa;color:#0b1124}
+/* Each sport's color, the same on the board and on every post: NFL navy, MLB white, NBA slate. */
+.sport-sw button[data-sport="nfl"][aria-pressed="true"],.sport-sw button[data-rsport="nfl"][aria-pressed="true"]{background:linear-gradient(180deg,#2a4fc4,#13245e);color:#fff}
+.sport-sw button[data-rsport="mlb"][aria-pressed="true"]{background:#f3f5fa;color:#0b1124}
+.sport-sw button[data-sport="nba"],.sport-sw button[data-rsport="nba"]{color:#8392a6}
+.soon-note{margin:8px 0 0;padding:10px 12px;border-radius:10px;border:1px solid rgba(131,146,166,.5);background:linear-gradient(180deg,rgba(131,146,166,.22),rgba(75,88,105,.18));
+  color:#dfe5ee;font:600 13.5px/1.4 var(--ui)}
 #igview{--cyan:#3fd6ff;--violet:#a855f7}
 #igview .ig-days{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
 #igview .ig-day{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--sec);border-radius:14px;
@@ -243,7 +254,7 @@ body.igfull{overflow:hidden}
 <h1 id="pagetitle">Track record</h1>
 <div class="tabs" role="tablist"><button id="tab-rec" role="tab" aria-selected="true">Record</button><button id="tab-lad" role="tab" aria-selected="false">Ladder</button><button id="tab-ig" role="tab" aria-selected="false">Instagram</button></div>
 <div id="recview">
-<div class="sport-sw" id="recsw" role="group" aria-label="Sport"><button data-rsport="nfl" aria-pressed="true">NFL</button><button data-rsport="mlb" aria-pressed="false">MLB</button></div>
+<div class="sport-sw" id="recsw" role="group" aria-label="Sport"><button data-rsport="nfl" aria-pressed="true">NFL</button><button data-rsport="mlb" aria-pressed="false">MLB</button><button data-rsport="nba" aria-pressed="false">NBA</button></div>
 <div class="wkwrap" id="wkwrap" hidden><select class="wksel" id="wk" aria-label="Week"></select></div>
 <div class="sub" id="sub"></div>
 <nav class="jump" id="jump" aria-label="Jump to"></nav>
@@ -288,7 +299,7 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
 <span class="live">Live</span> marks a leg from a game already under way when the board was built.</p>
 </div>
 <div id="ladview" hidden>
-<div class="sport-sw" role="group" aria-label="Sport"><button data-sport="nfl" aria-pressed="true">NFL</button><button data-sport="mlb" aria-pressed="false">MLB <small>white</small></button></div>
+<div class="sport-sw" role="group" aria-label="Sport"><button data-sport="nfl" aria-pressed="true">NFL <small>navy</small></button><button data-sport="mlb" aria-pressed="false">MLB <small>white</small></button><button data-sport="nba" aria-pressed="false">NBA <small>slate</small></button></div>
 <div class="ld-shell" id="ldshell"><svg id="ldcard" viewBox="0 0 1080 1350" xmlns="http://www.w3.org/2000/svg" aria-label="Ladder challenge graphic"></svg></div>
 <div class="ld-panel">
   <h3>Bets · odds in, payout out</h3>
@@ -328,8 +339,16 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
 <div class="ld-toast" id="ldtoast">Take your screenshot · tap the title to exit</div>
 </div>
 <div id="igview" hidden>
-<div class="sport-sw" role="group" aria-label="Sport"><button data-sport="nfl" aria-pressed="true">NFL</button><button data-sport="mlb" aria-pressed="false">MLB <small>white</small></button></div>
-<div class="ld-panel ig-top" id="igtop"></div>
+<div class="sport-sw" role="group" aria-label="Sport"><button data-sport="nfl" aria-pressed="true">NFL <small>navy</small></button><button data-sport="mlb" aria-pressed="false">MLB <small>white</small></button><button data-sport="nba" aria-pressed="false">NBA <small>slate</small></button></div>
+<div class="ld-panel ig-cash" id="igcash">
+  <h3>Cashed ✓</h3>
+  <p class="ld-hint" style="margin:0 0 10px">Upload a screenshot of a winning slip and stamp it CASHED for your story or feed.</p>
+  <input type="file" id="cashfile" accept="image/*" hidden>
+  <div class="ld-acts"><button class="ld-btn" id="cashpick">Choose photo</button>
+    <button class="ld-btn pri" id="cashgo" disabled>Stamp it</button>
+    <button class="ld-btn" id="cashsave" disabled>Save image</button></div>
+  <div class="cash-out" id="cashout" hidden><img id="cashimg" alt="Your slip stamped CASHED"></div>
+</div>
 <div class="ld-panel ig-plan" id="igplan"></div>
 <div class="ig-days" id="igdays"></div>
 <div class="ld-panel" id="igopts"></div>
@@ -393,12 +412,12 @@ $("sub").textContent = DATA.sub;
   sel.onchange = () => { location.href = `${base}-${sel.value}.html`; };
   $("wkwrap").hidden = list.length < 2;
   // The Record tab's NFL / MLB switch: opens that sport's page (the other tabs follow it too).
-  document.querySelectorAll("#recsw [data-rsport]").forEach(b => b.setAttribute("aria-pressed", (b.dataset.rsport === "mlb") === mine));
+  document.querySelectorAll("#recsw [data-rsport]").forEach(b => b.setAttribute("aria-pressed", b.dataset.rsport !== "nba" && (b.dataset.rsport === "mlb") === mine));
   const other = nav.filter(n => isMlb(n) !== mine);
   const target = mine ? other.find(n => n.suffix === "season") || other[0] : other[0];
   $("recsw").hidden = !target || (mine ? false : !other.length);
   $("recsw").onclick = e => {
-    const b = e.target.closest("[data-rsport]"); if(!b || (b.dataset.rsport === "mlb") === mine || !target) return;
+    const b = e.target.closest("[data-rsport]"); if(!b || b.dataset.rsport === "nba" || (b.dataset.rsport === "mlb") === mine || !target) return;
     try { localStorage.setItem("alp-sport", b.dataset.rsport); } catch(err) {}
     location.href = `${base}-${target.suffix}.html`;
   };
@@ -825,7 +844,17 @@ function setSport(sp){
   onSport.forEach(f => { try { f(SPORT); } catch(e) {} });
 }
 window.ALP = {sport: () => SPORT, light: svg => SPORT === "mlb" ? light(svg) : svg, onSport, setSport};
+// NBA: a tab that's there, not open yet.
+function nbaSoon(btn){
+  const sw = btn.closest(".sport-sw");
+  let n = sw.nextElementSibling;
+  if(!n || !n.classList.contains("soon-note")){ n = document.createElement("div"); n.className = "soon-note"; sw.after(n); }
+  n.textContent = "NBA is coming soon — the same tools and posts, in slate gray.";
+  clearTimeout(n._t); n._t = setTimeout(() => n.remove(), 3500);
+}
 document.addEventListener("click", e => {
+  const nb = e.target.closest(".sport-sw button[data-sport=nba], .sport-sw button[data-rsport=nba]");
+  if(nb){ nbaSoon(nb); return; }
   const b = e.target.closest(".sport-sw button[data-sport]");
   if(b && b.dataset.sport !== SPORT) setSport(b.dataset.sport);
 });
@@ -1241,7 +1270,6 @@ const TAGS = (nfl, mlb) => MLB() ? mlb : nfl;
 const handleTag = () => { const h = (S.handle || "").trim(); return h ? (h[0] === "@" ? h : "@" + h) : ""; };
 const CTAS = [
   () => `🔔 Follow ${handleTag() || "us"} so you never miss a post`,
-  () => `🔗 Full board + parlay builder → link in bio`,
   () => `📌 Save this for game day`,
   () => `🔔 Turn on post notifications. ${handleTag()} drops picks every ${MLB() ? "day" : "week"}`,
 ];
@@ -1281,11 +1309,14 @@ B.tue = () => {
     tg.forEach((t, i) => {
       const ps = done.filter(p => p.target === t), won = ps.filter(p => p.status === "won").length;
       const r = won / ps.length, yy = y + i * rowH + 50;
-      T(s, 70, yy + 12, odds(t), {"font-size": 40, "font-weight": 900});
-      el("rect", {x: 250, y: yy - 12, width: 520, height: 24, rx: 12, fill: "rgba(148,163,209,.14)"}, s);
-      el("rect", {x: 250, y: yy - 12, width: Math.max(10, 520 * r), height: 24, rx: 12, fill: "url(#igbar)"}, s);
-      T(s, W - 70, yy + 2, pct(r), {"text-anchor": "end", "font-size": 40, "font-weight": 900, fill: tone(r)});
-      T(s, W - 70, yy + 34, `${won} of ${ps.length}`, {"text-anchor": "end", "font-size": 20, fill: "#8e98b8", "font-weight": 600});
+      T(s, 70, yy + 22, odds(t), {"font-size": 40, "font-weight": 900});
+      // The record itself, big, right above the bar: "8/8 HIT".
+      const rec = el("text", {x: 250, y: yy - 4, "font-weight": 900}, s);
+      el("tspan", {"font-size": 38, fill: "#fff"}, rec, `${won}/${ps.length}`);
+      el("tspan", {"font-size": 20, fill: "#3fd6ff", "letter-spacing": 3, dx: 10}, rec, "HIT");
+      el("rect", {x: 250, y: yy + 12, width: 520, height: 22, rx: 11, fill: "rgba(148,163,209,.14)"}, s);
+      el("rect", {x: 250, y: yy + 12, width: Math.max(10, 520 * r), height: 22, rx: 11, fill: "url(#igbar)"}, s);
+      T(s, W - 70, yy + 34, pct(r), {"text-anchor": "end", "font-size": 46, "font-weight": 900, fill: tone(r)});
     });
     slides.push(s);
   }
@@ -1475,11 +1506,14 @@ function heaters(stat, len){
 B.fri = () => {
   if(!FEED || !FEED.streaks) return {slides: [], head: "", sub: "", caption: "",
     note: FEED_ERR || "No streak data yet — it appears after the next Build."};
-  const stat = opt("fri", "stat", HEAT()[0][0]), len = +opt("fri", "len", MLB() ? 7 : 10), n = +opt("fri", "n", 10);
+  const len = +opt("fri", "len", MLB() ? 7 : 10), n = +opt("fri", "n", 10);
+  const stats = heatStats(), slides = [], lines = [], head = "Heaters";
+  let sub = "";
+  for(const stat of stats){
   const label = (HEAT().find(x => x[0] === stat) || [stat, stat])[1];
   const unit = (STAT[stat] || [stat, stat])[1];
   const top = heaters(stat, len).slice(0, n);
-  const head = "Heaters", sub = `${label} · ${len} straight games`;
+  sub = `${label} · ${len} straight games`;
   const H = 1350, s = canvas(H);
   let y = frame(s, H, "Streaks", words("head", head), words("sub", sub));
   if(!top.length){
@@ -1500,17 +1534,29 @@ B.fri = () => {
     T(s, 1010, mid + 4 * k, `${x.floor}+`, {"text-anchor": "end", "font-size": 46 * k, "font-weight": 900, fill: "#5cf2bb"});
     T(s, 1010, mid + 34 * k, `${unit} · ${len}/${len}`, {"text-anchor": "end", "font-size": 18 * k, fill: "#8e98b8", "font-weight": 700, "letter-spacing": 1});
   });
+  slides.push(s);
+  if(top.length) lines.push((stats.length > 1 ? `${label.toUpperCase()}\n` : "") + top.map((x, i) =>
+    `${i + 1}. ${x.player} (${x.team}): ${x.floor}+ ${unit} in each of his last ${len} 🔥`).join("\n"));
+  }
+  const one = stats.length === 1 ? (HEAT().find(x => x[0] === stats[0]) || ["", ""])[1].toLowerCase() : "";
   const hook = pickOf([
       `🔥 THESE GUYS ARE COOKING 🔥`,
       `${len} straight games. Every. Single. One. 🔥`,
-      `Heaters only 🥵 ${label.toLowerCase()} edition`,
+      one ? `Heaters only 🥵 ${one} edition` : `Heaters only 🥵 swipe for every stat`,
       `Don't bet against a streak like this 👀🔥`,
     ]);
-  const cap = caption(hook, `${top.map((x, i) =>
-    `${i + 1}. ${x.player} (${x.team}): ${x.floor}+ ${unit} in each of his last ${len} 🔥`).join("\n")}\n\nWho keeps it rolling this week? 👀`,
+  const cap = caption(hook, `${lines.join("\n\n")}\n\nWho keeps it rolling this week? 👀`,
     TAGS("#nfl #playerprops #fantasyfootball #nflbetting #sportsbetting", "#MLB #MLBPlayoffs #playerprops #mlbbetting #sportsbetting"));
-  return {slides: [s], head, sub, caption: cap};
+  return {slides, head, sub: stats.length > 1 ? `${stats.length} stats · ${len} straight games` : sub, caption: cap};
 };
+// The metrics picked for the Heaters post (several at once: one image each).
+function heatStats(){
+  const ok = HEAT().map(x => x[0]);
+  let v = opt("fri", "stats", null);
+  if(!Array.isArray(v)) v = [opt("fri", "stat", ok[0])];       // the old single pick carries over
+  v = v.filter(x => ok.includes(x));
+  return v.length ? v : [ok[0]];
+}
 
 function atdList(){
   if(!FEED || !(FEED.td || []).length) return null;
@@ -1543,7 +1589,7 @@ B.sunam = () => {
       {"font-size": 24, fill: "#8e98b8", "font-weight": 600});
   }
   el("rect", {x: 70, y: H - 260, width: 940, height: 130, rx: 26, fill: "rgba(63,214,255,.08)", stroke: "#3fd6ff", "stroke-opacity": .6, "stroke-width": 3}, s);
-  T(s, 540, H - 182, words("cta", MLB() ? "Full top 10 in the tool · link in bio" : "Full top 20 in the tool · link in bio"), {"text-anchor": "middle", "font-size": 36, "font-weight": 900, fill: "#3fd6ff"});
+  T(s, 540, H - 182, words("cta", "Results posted after the games, win or lose"), {"text-anchor": "middle", "font-size": 36, "font-weight": 900, fill: "#3fd6ff"});
   const hook = pickOf(MLB() ? [
       `💣 DINGER PREDICTOR 💣`,
       `Who's going yard today? ⚾💥`,
@@ -1556,7 +1602,7 @@ B.sunam = () => {
       `Six points incoming? Here's who the model likes 🙌`,
     ]);
   const cap = caption(hook,
-    `${top.map((t, k) => `${["🥇", "🥈", "🥉"][k] || `${k + 1}.`} ${t.player} (${t.team}) · ${pct(t.p)}`).join("\n")}\n\nFull top ${MLB() ? 10 : 20} in the tool. We'll post how they did tonight, win or lose 📊`,
+    `${top.map((t, k) => `${["🥇", "🥈", "🥉"][k] || `${k + 1}.`} ${t.player} (${t.team}) · ${pct(t.p)}`).join("\n")}\n\nWe'll post how they did tonight, win or lose 📊`,
     TAGS("#nfl #anytimetd #nflparlays #playerprops #sportsbetting #nflsunday", "#MLB #MLBPlayoffs #homerun #dingers #playerprops #sportsbetting"));
   return {slides: [s], head, sub, caption: cap};
 };
@@ -1651,7 +1697,9 @@ function optsHtml(day, R){
       }
     }
   } else if(day === "fri"){
-    h.push(sel("fri", "stat", HEAT()[0][0], "Metric", HEAT()),
+    const on = heatStats();
+    h.push(`<div class="ig-field"><label>Metrics (pick one or more — one image each)</label><div class="ig-wins">${
+      HEAT().map(([k, t]) => `<button class="chip" data-heat="${esc(k)}" aria-pressed="${on.includes(k)}">${esc(t)}</button>`).join("")}</div></div>`,
       `<div class="ld-g2">${sel("fri", "len", MLB() ? 7 : 10, "Streak", [5, 6, 7, 8, 9, 10].map(n => [n, n + " straight games"]))}${
         sel("fri", "n", 10, "Players", [5, 8, 10].map(n => [n, "Top " + n]))}</div>`,
       `<p class="ld-hint" style="margin-top:6px">Each player's number is the most he's reached in every one of those games (yards rounded down to the nearest 5). Only players on this week's board.</p>`);
@@ -1660,7 +1708,7 @@ function optsHtml(day, R){
       : `<div class="ld-g2">${sel("sunam", "grp", "mix", "Who", [["mix", "Everyone"], ["RB", "Running backs"], ["REC", "WR / TE"]])}${
       sel("sunam", "n", 3, "How many", [1, 2, 3, 4, 5].map(n => [n, "Top " + n]))}</div>`,
       chk("sunam", "rec", true, MLB() ? "Show our Dinger Predictor record (MLB playoffs page)" : "Show our ATD record from this page"),
-      `<div class="ig-field"><label for="igcta">Bottom button text</label><input id="igcta" type="text" data-w="cta" value="${esc(S.words[wk("sunam")] && S.words[wk("sunam")].cta || "")}" placeholder="${MLB() ? "Full top 10 in the tool · link in bio" : "Full top 20 in the tool · link in bio"}"></div>`);
+      `<div class="ig-field"><label for="igcta">Bottom button text</label><input id="igcta" type="text" data-w="cta" value="${esc(S.words[wk("sunam")] && S.words[wk("sunam")].cta || "")}" placeholder="Results posted after the games, win or lose"></div>`);
   } else if(day === "sunpm"){
     h.push(sel("sunpm", "n", MLB() ? 10 : 5, MLB() ? "Players" : "Players per position", [3, 4, 5, 6, 8, 10].map(n => [n, "Top " + n])));
     h.push(`<p class="ld-hint" style="margin-top:6px">${MLB() ? "Tap as they homer. After grading (on the MLB playoffs page) the results fill in on their own."
@@ -1697,7 +1745,7 @@ function render(regenCaption){
   $("igsave").textContent = R.slides.length > 1 ? `Save ${R.slides.length} images` : "Save image";
   $("igsave").disabled = !R.slides.length;
   $("igdays").innerHTML = DAYS.map(d => `<button class="ig-day" aria-pressed="${d.k === DAY}" data-day="${d.k}">${d.name}<small>${d.what}</small></button>`).join("");
-  drawPlan(); drawTop();
+  drawPlan();
   prepFiles();
 }
 // ---------- the model's top 5 bets, any leg count, any odds ----------
@@ -1852,6 +1900,55 @@ function toPng(svg){
     img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
   });
 }
+// ---------- CASHED: a green rubber stamp across a winning slip ----------
+(function cashed(){
+  let src = null, out = null;
+  const pick = $("cashpick"), go = $("cashgo"), sv = $("cashsave"), file = $("cashfile");
+  pick.onclick = () => file.click();
+  file.onchange = () => {
+    const f = file.files && file.files[0]; if(!f) return;
+    const img = new Image();
+    img.onload = () => { src = img; out = null; go.disabled = false; sv.disabled = true;
+      $("cashimg").src = img.src; $("cashout").hidden = false; };
+    img.src = URL.createObjectURL(f);
+  };
+  function stamp(){
+    if(!src) return;
+    const MAX = 2160, k = Math.min(1, MAX / Math.max(src.naturalWidth, src.naturalHeight));
+    const W = Math.round(src.naturalWidth * k), H = Math.round(src.naturalHeight * k);
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    g.drawImage(src, 0, 0, W, H);
+    // The stamp on its own layer, so ink wear can be knocked out of it.
+    const f = Math.min(W, H) * 0.17, L = document.createElement("canvas"); L.width = W; L.height = H;
+    const s = L.getContext("2d"), ink = "#1fd17a";
+    s.translate(W / 2, H / 2); s.rotate(-Math.PI / 9);
+    s.font = `900 ${f}px -apple-system, "SF Pro Display", Helvetica, Arial, sans-serif`;
+    s.textAlign = "center"; s.textBaseline = "middle";
+    const tw = s.measureText("CASHED").width, bw = tw + f * 0.75, bh = f * 1.75, r = f * 0.18;
+    const box = (w, h, lw) => { s.lineWidth = lw; s.beginPath(); s.roundRect(-w / 2, -h / 2, w, h, r); s.stroke(); };
+    s.strokeStyle = ink; s.fillStyle = ink;
+    box(bw, bh, f * 0.1); box(bw - f * 0.32, bh - f * 0.32, f * 0.035);
+    s.fillText("CASHED", 0, -f * 0.08);
+    s.font = `800 ${f * 0.17}px -apple-system, "SF Pro Display", Helvetica, Arial, sans-serif`;
+    s.fillText("✓  ALT LINE PARLAYS  ✓".split("").join(String.fromCharCode(8202)), 0, f * 0.58);
+    // Worn ink: specks and scuffs where the stamp didn't take.
+    s.setTransform(1, 0, 0, 1, 0, 0); s.globalCompositeOperation = "destination-out";
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for(let i = 0; i < 2600; i++){ s.globalAlpha = 0.3 + 0.7 * rnd(); s.beginPath();
+      s.arc(W / 2 + (rnd() - 0.5) * bw * 1.15, H / 2 + (rnd() - 0.5) * bw * 0.7, f * 0.004 + rnd() * f * 0.022, 0, 7); s.fill(); }
+    g.save(); g.globalAlpha = 0.9; g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = f * 0.12; g.drawImage(L, 0, 0); g.restore();
+    c.toBlob(b => { if(!b) return; out = new File([b], "alp-cashed.png", {type: "image/png"});
+      $("cashimg").src = URL.createObjectURL(b); $("cashout").hidden = false; sv.disabled = false; }, "image/png");
+  }
+  go.onclick = stamp;
+  sv.onclick = () => {
+    if(!out) return;
+    if(navigator.canShare && navigator.canShare({files: [out]})) navigator.share({files: [out]}).catch(() => {});
+    else { const a = document.createElement("a"); a.href = URL.createObjectURL(out); a.download = out.name;
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+  };
+})();
 function toast(msg){ const t = $("igtoast"); t.textContent = msg; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 2600); }
 
 $("igsave").onclick = () => {
@@ -1894,6 +1991,13 @@ $("igopts").addEventListener("input", e => {
   const back = $(id); if(back){ back.focus(); back.setSelectionRange(back.value.length, back.value.length); }
 });
 $("igopts").addEventListener("click", e => {
+  const hb = e.target.closest("button[data-heat]");
+  if(hb){
+    const k = hb.dataset.heat, cur = heatStats();
+    const next = cur.includes(k) ? cur.filter(x => x !== k) : HEAT().map(x => x[0]).filter(x => cur.includes(x) || x === k);
+    if(next.length) { setOpt("fri", "stats", next); render(true); }
+    return;
+  }
   const c = e.target.closest("button[data-win]");
   if(c){
     const x = c.dataset.win; let w = pickedWins() || [];
@@ -2024,7 +2128,7 @@ function betCaption(){
     return `🎯 ${l.player} ${propLong(l)} (${odds(l.price)})${hot}\n     Model ${pct(l.p)}${l.n ? ` · hit in ${l.hits} of ${l.n}` : ""}`;
   }).join("\n");
   const ctas = [`🔔 Follow ${handleTag() || "along"} to watch every rung`, `📌 Save this and check back after the game`,
-                `🔗 Full board + parlay builder → link in bio`, `🔔 Turn on post notifications so you catch the next rung`];
+                `🔔 Turn on post notifications so you catch the next rung`];
   return [hook,
     `Rung ${b.rung} bet: ${b.sTxt} → ${b.rTxt}\n\n${legLines}\n\n💰 Pays ${odds(b.pays)}`,
     `Goal: ${money(b.start)} → ${G}. Every rung posted, win or lose 📊`,
