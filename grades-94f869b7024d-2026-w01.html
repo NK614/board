@@ -249,7 +249,10 @@ body.igfull{overflow:hidden}
 #betpanel textarea{width:100%;min-height:220px;background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:15px;line-height:1.45;resize:vertical;box-sizing:border-box}
 #betpanel .bet-ov{display:grid;grid-template-columns:.7fr 1fr 1fr;gap:10px}
 #betpanel .ig-note{font-size:13px;color:var(--warn);line-height:1.45;margin:10px 0 0}
-#betpanel .ig-picks{max-height:360px;overflow-y:auto}
+#betpanel .ig-picks{max-height:420px;overflow-y:auto}
+.bet-filt{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-bottom:4px}
+.ig-pick-h{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);padding:10px 0 4px}
+#betopts input[type=search],#betopts select{width:100%;min-width:0;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:inherit}
 </style></head><body><div class="wrap">
 <div class="eyebrow">Parlay Generator</div>
 <h1 id="pagetitle">Track record</h1>
@@ -2267,17 +2270,49 @@ function ladderNow(){
   }
   return {bank: amt, rung: hits + 1, busted: (L.st || [])[hits] === "m", start: +L.start || 25, goal: +L.goal || 1000};
 }
+const betKey = l => l.player + "|" + l.stat + "|" + l.threshold;
+// A window's full line list (packed by the board: see sportFeed's w.all), or its top 60.
+const ALL_CACHE = new WeakMap();
+function linesOf(w){
+  const a = w.all;
+  if(!a || !a.r) return w.top || [];
+  if(!ALL_CACHE.has(w)) ALL_CACHE.set(w, a.r.map(x => ({player: x[0], team: x[1], pos: x[2], game: a.g[x[3]], kick: a.k[x[3]],
+    stat: x[4], threshold: x[5], price: x[6], p: x[7], hits: x[8], n: x[9]})));
+  return ALL_CACHE.get(w);
+}
+// The board's TV windows that haven't kicked off: on a Sunday night that's
+// SNF / Monday night only, not the games already played today.
+function betWins(){
+  const now = Date.now();
+  const first = w => Math.min(...linesOf(w).map(l => l.kick ? new Date(l.kick).getTime() : Infinity), Infinity);
+  return (FEED && FEED.windows || []).filter(w => first(w) > now);
+}
+let BET_Q = "", BET_G = "";
+function betPickList(){
+  const pool = OPTS_EXTRA.betpool || [], mine = new Set(opt("bet", "mine", []) || []), q = BET_Q.trim().toLowerCase();
+  const chosen = pool.filter(l => mine.has(betKey(l)));
+  let rows = pool.filter(l => !mine.has(betKey(l)) && (!BET_G || l.game === BET_G) && (!q || l.player.toLowerCase().includes(q)));
+  const total = rows.length, CAP = 150;
+  rows = rows.slice(0, CAP);
+  const row = (l, on) => `<div class="ig-pick"><label><input type="checkbox" data-bet="${esc(betKey(l))}" ${on ? "checked" : ""}>
+    <span>${esc(l.player)} <small>${esc(propLong(l))} · ${odds(l.price)}${l.kick ? " · " + esc(kickTxt(l.kick)) : ""}</small></span></label><small>${pct(l.p)}</small></div>`;
+  return (chosen.length ? `<div class="ig-pick-h">On your slip (${chosen.length}/10)</div>` + chosen.map(l => row(l, true)).join("") : "")
+    + `<div class="ig-pick-h">${total} line${total === 1 ? "" : "s"}${total > CAP ? ` — showing the likeliest ${CAP}; pick a game or type a name to narrow` : ""}</div>`
+    + (rows.length ? rows.map(l => row(l, false)).join("") : `<p class="ig-note">No lines match.</p>`);
+}
 function betLegs(){
   if(!FEED || !(FEED.windows || []).length) return null;
-  const wins = FEED.windows, mode = opt("bet", "mode", "best");
+  const wins = betWins(), mode = opt("bet", "mode", "best");
+  if(!wins.length) return null;
   if(mode === "mine"){
-    const all = [];
-    wins.forEach(w => (w.top || []).forEach(l => all.push(l)));
+    // Every line on the board for games that haven't kicked off yet.
+    const all = [], now = Date.now();
+    wins.forEach(w => linesOf(w).forEach(l => { if(!l.kick || new Date(l.kick).getTime() > now) all.push(l); }));
     all.sort((a, b) => b.p - a.p);
-    const seen = new Set(), pool = all.filter(l => { const k = l.player + "|" + l.stat + "|" + l.threshold; if(seen.has(k)) return false; seen.add(k); return true; }).slice(0, 80);
+    const seen = new Set(), pool = all.filter(l => { const k = betKey(l); if(seen.has(k)) return false; seen.add(k); return true; });
     OPTS_EXTRA.betpool = pool;
     const keys = new Set(opt("bet", "mine", []) || []);
-    return pool.filter(l => keys.has(l.player + "|" + l.stat + "|" + l.threshold));
+    return pool.filter(l => keys.has(betKey(l)));
   }
   const w = wins[Math.min(opt("bet", "win", 0), wins.length - 1)];
   const pl = w.parlays.find(x => x.legs_n === +opt("bet", "legs", 3) && x.target === +opt("bet", "target", 100)) || w.parlays[0];
@@ -2377,7 +2412,8 @@ function betCard(legs){
 }
 function betOptsHtml(legs){
   if(!FEED || !(FEED.windows || []).length) return `<p class="ig-note">${esc(FEED_ERR || "No board data yet — it appears after the next Build.")}</p>`;
-  const wins = FEED.windows, h = [];
+  const wins = betWins(), h = [];
+  if(!wins.length) return `<p class="ig-note">Every game on the board has kicked off. The next Build brings the next games.</p>`;
   h.push(sel("bet", "mode", "best", "Legs", [["best", "The model's best parlay"], ["mine", "Let me pick the legs (the one I'm betting)"]]));
   if(opt("bet", "mode", "best") === "best"){
     const w = wins[Math.min(opt("bet", "win", 0), wins.length - 1)];
@@ -2385,11 +2421,14 @@ function betOptsHtml(legs){
     h.push(sel("bet", "win", 0, "Games", wins.map((x, i) => [i, x.label])),
       `<div class="ld-g2">${sel("bet", "legs", 3, "Legs", ns.map(n => [n, n + " legs"]))}${sel("bet", "target", 100, "Target odds", ts.map(t => [t, odds(t)]))}</div>`);
   } else {
-    const mine = new Set(opt("bet", "mine", []) || []);
-    h.push(`<div class="ig-field"><label>Tick the legs on your slip (up to 10) — the model's likeliest lines on the board</label><div class="ig-picks">${
-      (OPTS_EXTRA.betpool || []).map(l => { const k = l.player + "|" + l.stat + "|" + l.threshold;
-        return `<div class="ig-pick"><label><input type="checkbox" data-bet="${esc(k)}" ${mine.has(k) ? "checked" : ""}>
-          <span>${esc(l.player)} <small>${esc(propLong(l))} · ${odds(l.price)}</small></span></label><small>${pct(l.p)}</small></div>`; }).join("")}</div></div>`);
+    const games = [...new Map((OPTS_EXTRA.betpool || []).map(l => [l.game, l.kick])).entries()]
+      .sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+    if(BET_G && !games.some(g => g[0] === BET_G)) BET_G = "";
+    h.push(`<div class="ig-field"><label>Tick the legs on your slip (up to 10) — every line on the board for games still to come</label>
+      <div class="bet-filt"><select id="betgame"><option value="">All games still to come</option>${games.map(([g, k]) =>
+        `<option value="${esc(g)}"${g === BET_G ? " selected" : ""}>${esc(g)}${k ? " · " + esc(kickTxt(k)) : ""}</option>`).join("")}</select>
+        <input type="search" id="betq" placeholder="Search a player" value="${esc(BET_Q)}" autocomplete="off"></div>
+      <div class="ig-picks" id="betpicks">${betPickList()}</div></div>`);
   }
   const L = ladderNow(), ov = opt("bet", "ov", {}) || {};
   const dec = (legs || []).reduce((a, l) => a * decOf(l.price), 1);
@@ -2419,8 +2458,14 @@ function renderBet(){
   }).catch(() => {});
 }
 if($("betopts")){
+  $("betopts").addEventListener("input", e => {
+    if(e.target.id !== "betq") return;
+    BET_Q = e.target.value; const box = $("betpicks"); if(box) box.innerHTML = betPickList();
+  });
   $("betopts").addEventListener("change", e => {
     const t = e.target;
+    if(t.id === "betq") return;
+    if(t.id === "betgame"){ BET_G = t.value; const box = $("betpicks"); if(box) box.innerHTML = betPickList(); return; }
     if(t.dataset.ov){
       const ov = Object.assign({}, opt("bet", "ov", {}) || {}), v = +String(t.value).replace(/[$,\s]/g, "");
       if(v > 0) ov[t.dataset.ov] = v; else delete ov[t.dataset.ov];
