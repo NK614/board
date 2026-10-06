@@ -323,6 +323,7 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
 </div>
 <div id="ladview" hidden>
 <div class="sport-sw" role="group" aria-label="Sport"><button data-sport="nfl" aria-pressed="true">NFL <small>navy</small></button><button data-sport="mlb" aria-pressed="false">MLB <small>white</small></button><button data-sport="nba" aria-pressed="false">NBA <small>slate</small></button></div>
+<div class="wkwrap" id="wkwrap-lad" hidden><select class="wksel" id="wk-lad" aria-label="Week"></select></div>
 <div class="ld-shell" id="ldshell"><svg id="ldcard" viewBox="0 0 1080 1350" xmlns="http://www.w3.org/2000/svg" aria-label="Ladder challenge graphic"></svg></div>
 <div class="ld-panel">
   <h3>Bets · odds in, payout out</h3>
@@ -366,6 +367,7 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
 </div>
 <div id="igview" hidden>
 <div class="sport-sw" role="group" aria-label="Sport"><button data-sport="nfl" aria-pressed="true">NFL <small>navy</small></button><button data-sport="mlb" aria-pressed="false">MLB <small>white</small></button><button data-sport="nba" aria-pressed="false">NBA <small>slate</small></button></div>
+<div class="wkwrap" id="wkwrap-ig" hidden><select class="wksel" id="wk-ig" aria-label="Week"></select></div>
 <div class="ld-panel ig-cash" id="igcash">
   <h3>Cashed ✓</h3>
   <p class="ld-hint" style="margin:0 0 10px">Upload a screenshot of a winning slip and stamp it CASHED for your story or feed.</p>
@@ -432,15 +434,19 @@ $("sub").textContent = DATA.sub;
   if(nav.length < 2) return;
   const file = decodeURIComponent(location.pathname.split("/").pop() || "report.html");
   const base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|cfb-season|season|other)$/, "");
-  const sel = $("wk");
   // One sport's pages in the menu: NFL weeks + the NFL season, college weeks + the college season, the MLB page.
   const sportOf = x => /mlb$/.test(x || "") ? "mlb" : /(^cfb-season$|-c\d{2}$)/.test(x || "") ? "cfb" : "nfl";
   const mine = sportOf(DATA.me || "season");
   const list = nav.filter(n => sportOf(n.suffix) === mine);
-  sel.innerHTML = list.map(n => `<option value="${esc(n.suffix)}">${esc(n.label)}</option>`).join("");
-  sel.value = DATA.me || (list[1] || list[0] || {}).suffix;
-  sel.onchange = () => { location.href = `${base}-${sel.value}.html`; };
-  $("wkwrap").hidden = list.length < 2;
+  // The same menu on the Record, Ladder and Instagram tabs; picking a week
+  // opens that week's page on the tab you're on.
+  [["wk", "wkwrap", ""], ["wk-lad", "wkwrap-lad", "#ladder"], ["wk-ig", "wkwrap-ig", "#instagram"]].forEach(([id, wrap, hash]) => {
+    const sel = $(id); if(!sel) return;
+    sel.innerHTML = list.map(n => `<option value="${esc(n.suffix)}">${esc(n.label)}</option>`).join("");
+    sel.value = DATA.me || (list[1] || list[0] || {}).suffix;
+    sel.onchange = () => { location.href = `${base}-${sel.value}.html${hash}`; };
+    $(wrap).hidden = list.length < 2;
+  });
   // The Record tab's NFL / CFB / MLB switch: opens that sport's season page (the other tabs follow it too).
   const targetFor = sp => { const l = nav.filter(n => sportOf(n.suffix) === sp); return l.find(n => /season$/.test(n.suffix)) || l[0]; };
   document.querySelectorAll("#recsw [data-rsport]").forEach(b => {
@@ -462,16 +468,23 @@ if(DATA.season){ $("picksec").hidden = true; $("seasonnote").hidden = false; }
 // the six books (each leg at whichever book paid most). Only picks logged since
 // the other books were pulled carry those prices.
 const SHOPN = {fd: "FanDuel", dk: "DraftKings", mgm: "BetMGM", czr: "Caesars", fan: "Fanatics", tsb: "theScore Bet"};
-function shopLine(done, word){
+function shopLine(done, word, always){
   const ps = done.filter(p => p.shop_odds != null && (p.status === "won" || p.status === "lost"));
-  if(!ps.length) return "";
+  const all = done.filter(p => p.status === "won" || p.status === "lost");
+  // Other books' prices are saved with each pick from Sat Oct 3 (2026) on;
+  // earlier picks carry FanDuel's price only, so they can't be compared.
+  if(!ps.length) return always && all.length ? `<div class="kpi wide note shop"><p><strong>Line shopping</strong> · not available for these
+    ${all.length} ${word}s. The board started saving all six books' prices on Sat Oct 3, so line shopping is tracked from
+    Week 4 on; earlier picks only have FanDuel's price.</p></div>` : "";
+  const cover = ps.length < all.length ? ` <span style="color:var(--mut)">Covers the ${ps.length} of ${all.length} settled ${word}s saved
+    with every book's price (Sat Oct 3 on); the other ${all.length - ps.length} have FanDuel's price only.</span>` : "";
   const d = o => o > 0 ? 1 + o / 100 : 1 + 100 / -o, u = (p, o) => p.status === "won" ? d(o) - 1 : -1;
   const m = x => (x >= 0 ? "+$" : "−$") + Math.abs(Math.round(10 * x)).toLocaleString("en-US");
   const fd = ps.reduce((a, p) => a + u(p, p.odds), 0), best = ps.reduce((a, p) => a + u(p, p.shop_odds), 0);
   const better = ps.filter(p => d(p.shop_odds) > d(p.odds) + 1e-9).length;
   return `<div class="kpi wide note shop"><p><strong>Line shopping</strong> · ${ps.length} ${word}${ps.length === 1 ? "" : "s"} with all six books' prices:
     $10 each at FanDuel <strong>${m(fd)}</strong> · at the best book for each leg <strong class="hi">${m(best)}</strong>.
-    ${better} of ${ps.length} paid more somewhere else. <span style="color:var(--mut)">Assumes an account at every book and the posted
+    ${better} of ${ps.length} paid more somewhere else.${cover} <span style="color:var(--mut)">Assumes an account at every book and the posted
     prices; same-game legs get repriced together on a real slip.</span></p></div>`;
 }
 (function kpis(){
@@ -491,7 +504,7 @@ function shopLine(done, word){
        <span>of parlays hit<br>${w} of ${done.length}</span></div>`
   + `<div class="kpi"><b>${said == null ? "—" : said + "%"}</b>
        <span>the board predicted<br>${done.length ? `for the same ${done.length}` : ""}</span></div>`
-  + shopLine(done, "pick")
+  + shopLine(done, "pick", true)
   + (pend ? `<div class="kpi wide note"><p>${pend} more pick${pend === 1 ? "" : "s"} still waiting on games or stats — not counted yet.</p></div>` : "")
   + (hurt ? `<div class="kpi wide note"><p><span class="flag">Injury</span> <strong>${hurt}</strong> of these wins
       count only because an injured player's leg was dropped — he left the game and didn't return. Some books'
