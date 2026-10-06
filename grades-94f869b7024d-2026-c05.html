@@ -1223,6 +1223,11 @@ const winNote = () => { const w = pickedWins(); return w && w.length && w.length
 const settledAll = ps => ps.filter(p => (p.status === "won" || p.status === "lost")
   && p.results.every(r => ["hit", "miss", "void", "injury"].includes(r)));
 const tdPicks = () => (D.td || []).filter(t => t.scope === "Week" || t.scope === "All games" || t.scope === "Day");
+// $10 on every pick, at the price each was made at.
+function money10(ps){
+  return 10 * ps.reduce((a, p) => { const o = +(p.odds || p.target); return a + (p.status === "won" ? (o > 0 ? o / 100 : 100 / -o) : -1); }, 0);
+}
+const usd = x => (x >= 0 ? "+$" : "−$") + Math.abs(Math.round(x)).toLocaleString("en-US");
 function tdStat(rs){
   const d = rs.filter(t => t.result === "hit" || t.result === "miss");
   const h = d.filter(t => t.result === "hit").length;
@@ -1428,15 +1433,25 @@ B.tue = () => {
   const H = 1350;
   if(show.cover){
     const s = canvas(H); const y = frame(s, H, weekLabel, words("head", head), words("sub", sub));
-    // One column of equal tiles down the left edge.
-    let ty = y + 10;
-    const tile = (big, fill, label, small) => { statTile(s, 70, ty, 460, big, fill, label, small); ty += 210; };
-    if(done.length) tile(pct(w / done.length), tone(w / done.length), "PARLAYS HIT", `${w} of ${done.length}`);
+    // The headline numbers as a 2 x 2 box, centered in the space under the title.
+    const tiles = [];
+    if(done.length){
+      tiles.push([pct(w / done.length), tone(w / done.length), "PARLAYS HIT", `${w} of ${done.length}`]);
+      const u = money10(done);
+      tiles.push([usd(u), u >= 0 ? "#5cf2bb" : "#ff8a8a", "$10 ON EVERY PICK", `${done.length} picks · ${weekLabel === "Season so far" ? "this season" : "this week"}`]);
+    }
     const td = tdPicks();
     const rb = tdStat(td.filter(t => t.grp === "RB")), rc = tdStat(td.filter(t => t.grp === "REC"));
-    if(rb.n) tile(pct(rb.h / rb.n), tone(rb.h / rb.n), "ANYTIME TD · RBs", `${rb.h} of ${rb.n}`);
-    if(rc.n) tile(pct(rc.h / rc.n), tone(rc.h / rc.n), "ANYTIME TD · WR/TE", `${rc.h} of ${rc.n}`);
-    T(s, 70, H - 150, "Swipe for the breakdown →", {"font-size": 28, fill: "#3fd6ff", "font-weight": 800});
+    if(rb.n) tiles.push([pct(rb.h / rb.n), tone(rb.h / rb.n), "ANYTIME TD · RBs", `${rb.h} of ${rb.n}`]);
+    if(rc.n) tiles.push([pct(rc.h / rc.n), tone(rc.h / rc.n), "ANYTIME TD · WR/TE", `${rc.h} of ${rc.n}`]);
+    const TW = 460, TH = 190, GAP = 20, rowsN = Math.ceil(tiles.length / 2);
+    const gridH = rowsN * TH + (rowsN - 1) * GAP, top = y + Math.max(10, (H - 190 - y - gridH) / 2);
+    tiles.forEach((t, i) => {
+      const r = Math.floor(i / 2), inRow = Math.min(2, tiles.length - r * 2), c = i % 2;
+      const rowW = inRow * TW + (inRow - 1) * GAP, x0 = (W - rowW) / 2;
+      statTile(s, x0 + c * (TW + GAP), top + r * (TH + GAP), TW, ...t);
+    });
+    T(s, W / 2, H - 150, "Swipe for the breakdown →", {"text-anchor": "middle", "font-size": 28, fill: "#3fd6ff", "font-weight": 800});
     slides.push(s);
   }
   if(show.odds){
@@ -1512,7 +1527,8 @@ B.tue = () => {
       `Tough week, full transparency. Every pick graded 🧾👇`,
     ]);
     const td = tdPicks(), rb = tdStat(td.filter(t => t.grp === "RB")), rc = tdStat(td.filter(t => t.grp === "REC"));
-    const lines = [`✅ Parlays hit: ${pct(w / done.length)} (${w} of ${done.length})${winNote() ? ` · ${winNote()}` : ""}`];
+    const lines = [`✅ Parlays hit: ${pct(w / done.length)} (${w} of ${done.length})${winNote() ? ` · ${winNote()}` : ""}`,
+      `💰 $10 on every pick: ${usd(money10(done))}`];
     if(rb.n) lines.push(`🏈 ATD RBs: ${rb.h} of ${rb.n} scored`);
     if(rc.n) lines.push(`🏈 ATD WR/TE: ${rc.h} of ${rc.n} scored`);
     cap = caption(hook, lines.join("\n") + `\n\nNo deleted posts. No hiding the losses. Just results 📊\nSwipe for the full breakdown →`,
