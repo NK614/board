@@ -471,21 +471,23 @@ const SHOPN = {fd: "FanDuel", dk: "DraftKings", mgm: "BetMGM", czr: "Caesars", f
 function shopLine(done, word, always){
   const ps = done.filter(p => p.shop_odds != null && (p.status === "won" || p.status === "lost"));
   const all = done.filter(p => p.status === "won" || p.status === "lost");
-  // Other books' prices are saved with each pick from Sat Oct 3 (2026) on;
-  // earlier picks carry FanDuel's price only, so they can't be compared.
-  if(!ps.length) return always && all.length ? `<div class="kpi wide note shop"><p><strong>Line shopping</strong> · not available for these
-    ${all.length} ${word}s. The board started saving all six books' prices on Sat Oct 3, so line shopping is tracked from
-    Week 4 on; earlier picks only have FanDuel's price.</p></div>` : "";
-  const cover = ps.length < all.length ? ` <span style="color:var(--mut)">Covers the ${ps.length} of ${all.length} settled ${word}s saved
-    with every book's price (Sat Oct 3 on); the other ${all.length - ps.length} have FanDuel's price only.</span>` : "";
   const d = o => o > 0 ? 1 + o / 100 : 1 + 100 / -o, u = (p, o) => p.status === "won" ? d(o) - 1 : -1;
   const m = x => (x >= 0 ? "+$" : "−$") + Math.abs(Math.round(10 * x)).toLocaleString("en-US");
+  const s_ = n => n === 1 ? "" : "s";
+  // FanDuel: every settled pick, at the price it was made at.
+  const fdAll = all.reduce((a, p) => a + u(p, p.odds), 0);
+  // Other books' prices are saved with each pick from Sat Oct 3 (2026) on;
+  // earlier picks only have FanDuel's price, so they show FanDuel alone.
+  if(!ps.length) return always && all.length ? `<div class="kpi wide note shop"><p><strong>At FanDuel</strong> · $10 on each of
+    these ${all.length} ${word}${s_(all.length)}: <strong class="${fdAll >= 0 ? "hi" : ""}">${m(fdAll)}</strong>.</p></div>` : "";
   const fd = ps.reduce((a, p) => a + u(p, p.odds), 0), best = ps.reduce((a, p) => a + u(p, p.shop_odds), 0);
   const better = ps.filter(p => d(p.shop_odds) > d(p.odds) + 1e-9).length;
-  return `<div class="kpi wide note shop"><p><strong>Line shopping</strong> · ${ps.length} ${word}${ps.length === 1 ? "" : "s"} with all six books' prices:
-    $10 each at FanDuel <strong>${m(fd)}</strong> · at the best book for each leg <strong class="hi">${m(best)}</strong>.
-    ${better} of ${ps.length} paid more somewhere else.${cover} <span style="color:var(--mut)">Assumes an account at every book and the posted
-    prices; same-game legs get repriced together on a real slip.</span></p></div>`;
+  const part = ps.length < all.length;
+  return `<div class="kpi wide note shop"><p>${part ? `<strong>At FanDuel</strong> · $10 on each of these ${all.length} ${word}${s_(all.length)}:
+    <strong class="${fdAll >= 0 ? "hi" : ""}">${m(fdAll)}</strong>.<br>` : ""}<strong>Line shopping</strong> · ${ps.length} ${word}${s_(ps.length)}
+    with all six books' prices${part ? " (Sat Oct 3 on)" : ""}: $10 each at FanDuel <strong>${m(fd)}</strong> · at the best book for each leg
+    <strong class="hi">${m(best)}</strong>. ${better} of ${ps.length} paid more somewhere else. <span style="color:var(--mut)">Assumes an
+    account at every book and the posted prices; same-game legs get repriced together on a real slip.</span></p></div>`;
 }
 (function kpis(){
   // One set for both tiles: parlays whose every leg is settled. (A parlay that
