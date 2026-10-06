@@ -1339,6 +1339,7 @@ function legRows(s, y0, y1, rows, numbered){
 const DAYS_NFL = [
   {k: "mon", name: "Mon", what: "MNF parlay"},
   {k: "tue", name: "Tue", what: "Weekly results"},
+  {k: "atdr", name: "Tue", what: "ATD recap"},
   {k: "wed", name: "Wed", what: "Why it lost"},
   {k: "thu", name: "Thu", what: "TNF parlay"},
   {k: "fri", name: "Fri", what: "Heaters"},
@@ -1503,6 +1504,103 @@ B.tue = () => {
       TAGS("#nfl #nflparlays #playerprops #sportsbetting #anytimetd #parlay", "#MLB #MLBPlayoffs #mlbparlays #playerprops #sportsbetting #parlay"));
   }
   return {slides, head, sub, caption: cap, note: slides.length ? "" : "Nothing graded on this page yet — open a week in the Track record tab."};
+};
+
+// ATD RECAP (Tuesday): the week's anytime-TD list, graded on its own post.
+// Everything fills in from the grades on this page -- who scored, how many,
+// who didn't -- next to how many the model expected to score.
+B.atdr = () => {
+  if(pageMismatch()) return {slides: [], head: "", sub: "", caption: "", note: pageMismatch()};
+  const who = opt("atdr", "who", "both");
+  const all = tdPicks().filter(t => who === "both" || t.grp === who);
+  if(!all.length) return {slides: [], head: "", sub: "", caption: "",
+    note: D.season ? "Open a week page first (menu in the Track record tab) to post that week's ATD recap." : "No ATD list was graded on this page."};
+  const byP = (a, b) => b.p - a.p;
+  const done = all.filter(t => t.result === "hit" || t.result === "miss");
+  const hits = done.filter(t => t.result === "hit").sort((a, b) => (b.actual || 1) - (a.actual || 1) || byP(a, b));
+  const left = all.filter(t => !["hit", "miss", "void", "injury"].includes(t.result)).length;
+  const exp = done.reduce((a, t) => a + t.p, 0), st = tdStat(all);
+  const groups = [["RB", "RUNNING BACKS"], ["REC", "WR / TE"]].filter(([g]) => who === "both" || who === g);
+  const tds = t => (t.actual || 0) >= 2 ? `${t.actual} TDs` : "TD";
+  const head = `${weekLabel} ATD recap`, sub = "Our model's anytime TD list, graded.";
+  const show = {cover: opt("atdr", "cover", true), scorers: opt("atdr", "scorers", true), list: opt("atdr", "list", true)};
+  const slides = [], H = 1350;
+  if(show.cover){
+    const s = canvas(H); let y = frame(s, H, "ATD", words("head", head), words("sub", sub));
+    statTile(s, 70, y + 10, 940, st.n ? `${st.h} of ${st.n}` : "—", st.n ? tone(st.h / st.n) : "#fff", "SCORED A TOUCHDOWN",
+      st.n ? `${pct(st.h / st.n)} · the model expected ${exp.toFixed(1)}` : "");
+    y += 230;
+    if(groups.length > 1) groups.forEach(([g, label], i) => {
+      const x = tdStat(all.filter(t => t.grp === g));
+      if(x.n) statTile(s, 70 + i * 480, y, 460, `${x.h}/${x.n}`, tone(x.h / x.n), label, pct(x.h / x.n));
+    });
+    if(groups.length > 1) y += 230;
+    const multi = hits.filter(t => (t.actual || 0) >= 2);
+    if(multi.length){
+      T(s, 70, y + 30, "🔥 MULTI-TD GAMES", {"font-size": 24, fill: "#ffc86b", "letter-spacing": 3, "font-weight": 800});
+      wrap(multi.map(t => `${t.player} (${t.actual})`).join(" · "), 32, 940, 2).forEach((l, i) =>
+        T(s, 70, y + 80 + i * 42, l, {"font-size": 32, "font-weight": 800}));
+    }
+    if(left) T(s, 70, H - 150, `${left} still to play`, {"font-size": 26, fill: "#8e98b8", "font-weight": 700});
+    else T(s, 70, H - 150, "Swipe for every pick →", {"font-size": 28, fill: "#3fd6ff", "font-weight": 800});
+    slides.push(s);
+  }
+  if(show.scorers && hits.length){
+    const s = canvas(H); let y = frame(s, H, "ATD", "Who scored", `${hits.length} of our picks found the end zone.`);
+    const rows = hits.slice(0, 14), rowH = Math.min(96, (H - 130 - y) / rows.length), k = Math.min(1, rowH / 96);
+    rows.forEach((t, i) => {
+      const top = y + i * rowH, mid = top + rowH / 2 - 6;
+      el("rect", {x: 70, y: top, width: 940, height: rowH - 12, rx: 18 * k, fill: "rgba(39,232,156,.07)", stroke: "#27e89c", "stroke-opacity": .35, "stroke-width": 2}, s);
+      mark(s, 112, mid, "hit", 20 * k);
+      const tc = teamCol(t.team);
+      if(tc) el("rect", {x: 146, y: mid - 24 * k, width: 5 * k, height: 48 * k, rx: 2.5 * k, fill: tc.pop}, s);
+      T(s, 164, mid - 2 * k, wrap(t.player, 30 * k, 520, 1)[0], {"font-size": 30 * k, "font-weight": 800});
+      T(s, 164, mid + 26 * k, `${t.pos || (t.grp === "RB" ? "RB" : "WR/TE")} · ${t.team || ""} · ${shortGame(t.game)}`, {"font-size": 19 * k, fill: "#8e98b8", "font-weight": 700});
+      T(s, 980, mid + 4 * k, tds(t), {"text-anchor": "end", "font-size": 34 * k, "font-weight": 900, fill: (t.actual || 0) >= 2 ? "#ffc86b" : "#5cf2bb"});
+      T(s, 980, mid + 30 * k, `model ${pct(t.p)}`, {"text-anchor": "end", "font-size": 18 * k, fill: "#8e98b8", "font-weight": 600});
+    });
+    if(hits.length > rows.length) T(s, 70, H - 112, `+ ${hits.length - rows.length} more`, {"font-size": 24, fill: "#8e98b8", "font-weight": 700});
+    slides.push(s);
+  }
+  if(show.list){
+    const s = canvas(H); let y = frame(s, H, "ATD", "Every pick", "Hit or miss, the whole list.");
+    const cols = groups.length > 1 ? [[groups[0], 70], [groups[1], 560]] : [[groups[0], 70]];
+    const wide = cols.length === 1;
+    cols.forEach(([[g, label], x]) => {
+      const rs = all.filter(t => t.grp === g).sort(byP), xs = tdStat(rs), colW = wide ? 940 : 450;
+      T(s, x, y + 20, label, {"font-size": 24, fill: "#8e98b8", "letter-spacing": 3, "font-weight": 800});
+      T(s, x + colW, y + 20, xs.n ? `${xs.h}/${xs.n}` : "", {"text-anchor": "end", "font-size": 30, "font-weight": 900, fill: xs.n ? tone(xs.h / xs.n) : "#fff"});
+      const rowH = Math.min(70, (H - 150 - (y + 60)) / Math.max(1, rs.length));
+      rs.forEach((t, i) => {
+        const yy = y + 80 + i * rowH, r = ["hit", "miss", "void", "injury"].includes(t.result) ? t.result : "p";
+        mark(s, x + 22, yy - 10, r, Math.min(20, rowH * .3));
+        T(s, x + 58, yy, wrap(t.player, 26, wide ? 640 : 270, 1)[0], {"font-size": 26, "font-weight": 700, fill: t.result === "miss" ? "#8e98b8" : "#fff"});
+        T(s, x + colW, yy, t.result === "hit" ? tds(t) : pct(t.p), {"text-anchor": "end", "font-size": 24, "font-weight": 800,
+          fill: t.result === "hit" ? ((t.actual || 0) >= 2 ? "#ffc86b" : "#5cf2bb") : "#8e98b8"});
+      });
+    });
+    slides.push(s);
+  }
+  let cap = "";
+  if(done.length){
+    const good = st.h >= exp;
+    const hook = pickOf(good ? [
+      `🏈 ATD RECAP: ${st.h} of our picks found the end zone 🔥`,
+      `The model said ${exp.toFixed(1)} would score. ${st.h} did 😤🏈`,
+      `Touchdown receipts 🧾🏈 ${st.h} of ${st.n} scored`,
+    ] : [
+      `🏈 ATD recap. Not our best week, and we post it anyway 🧾`,
+      `${st.h} of ${st.n} scored. Every pick below, hits and misses 👇`,
+      `Full ATD receipts, good weeks and bad 🧾🏈`,
+    ]);
+    const lines = [`🏈 ${st.h} of ${st.n} scored (${pct(st.h / st.n)}) · model expected ${exp.toFixed(1)}`];
+    groups.forEach(([g, label]) => { const x = tdStat(all.filter(t => t.grp === g)); if(x.n && groups.length > 1) lines.push(`${g === "RB" ? "🏃 RBs" : "🙌 WR/TE"}: ${x.h} of ${x.n}`); });
+    if(hits.length) lines.push("", "✅ SCORED", ...hits.map(t => `${t.player} (${t.team})${(t.actual || 0) >= 2 ? ` · ${t.actual} TDs 🔥` : ""}`));
+    if(left) lines.push("", `⏳ ${left} still to play`);
+    cap = caption(hook, lines.join("\n") + "\n\nEvery pick graded, hits and misses. No deleted posts 📊",
+      TAGS("#nfl #anytimetd #nflparlays #playerprops #sportsbetting #touchdown", ""));
+  }
+  return {slides, head, sub, caption: cap, note: left ? `${left} pick${left === 1 ? "" : "s"} still to play — post after Monday night is graded for the full recap.` : ""};
 };
 
 B.wed = () => {
@@ -1909,6 +2007,11 @@ function optsHtml(day, R){
     h.push(`<p class="ld-hint" style="margin-top:0">A carousel from the grades on this page (${esc(weekLabel)}). Pick another week in the Track record tab to post that one.</p>`,
       chk("tue", "cover", true, "Slide 1 · headline numbers"), chk("tue", "odds", true, "Slide 2 · hit rate by odds"),
       ...(MLB() ? [] : [chk("tue", "atd", true, "Slide 3 · anytime TD list")]), chk("tue", "close", true, "Slide 4 · where we missed"));
+  } else if(day === "atdr"){
+    h.push(`<p class="ld-hint" style="margin-top:0">Fills in from the grades on this page (${esc(weekLabel)}): who scored, how many, and who didn't. Pick another week in the Track record tab to post that one.</p>`,
+      sel("atdr", "who", "both", "Who", [["both", "RBs + WR/TE"], ["RB", "Running backs only"], ["REC", "WR / TE only"]]),
+      chk("atdr", "cover", true, "Slide 1 · how many scored"), chk("atdr", "scorers", true, "Slide 2 · who scored"),
+      chk("atdr", "list", true, "Slide 3 · every pick, hit or miss"));
   } else if(day === "wed"){
     const lost = OPTS_EXTRA.wed || [];
     if(lost.length) h.push(sel("wed", "pick", 0, "Which losing parlay", lost.slice(0, 40).map((p, i) => [i,
@@ -2059,6 +2162,7 @@ function drawTop(){
 const PLAN = [
   {k: "mon", wd: 1, h: 19, m: 5, when: "Mon 7:05 PM", why: "after the 6:55 PM final MNF build"},
   {k: "tue", wd: 2, h: 9, m: 0, when: "Tue 9 AM", why: "after Monday night is graded"},
+  {k: "atdr", wd: 2, h: 9, m: 0, when: "Tue 9 AM", why: "every ATD pick, graded"},
   {k: "wed", wd: 3, h: 9, m: 0, when: "Wed 9 AM", why: "the bad beats from the week"},
   {k: "thu", wd: 4, h: 19, m: 5, when: "Thu 7:05 PM", why: "after the 6:55 PM final TNF build"},
   {k: "fri", wd: 5, h: 18, m: 15, when: "Fri 6:15 PM", why: "after the Friday 6 PM refresh"},
