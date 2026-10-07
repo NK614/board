@@ -352,10 +352,10 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
 </div>
 <div class="ld-panel">
   <div class="ld-acts" style="margin-top:0">
-    <button class="ld-btn pri" id="ldshoot">Screenshot mode</button>
+    <button class="ld-btn pri" id="ldsave">Save image</button>
     <button class="ld-btn" id="ldnew">Start a new ladder</button>
   </div>
-  <p class="ld-hint">Screenshot mode shows only the graphic, in Instagram's 4:5 shape. Tap the title on the graphic to come back.
+  <p class="ld-hint">Save image saves the ladder graphic in Instagram's 4:5 shape (1080 × 1350).
   "Start a new ladder" clears the results and the odds.</p>
 </div>
 <div class="ld-panel">
@@ -1191,9 +1191,32 @@ $("ldnew").onclick = () => {
   S.tag = (S.tag || "").replace(/#(\d+)/, (_, k) => "#" + (+k + 1));
   save(); form(); draw(); rows();
 };
-$("ldshoot").onclick = () => {
-  document.body.classList.add("shot"); window.scrollTo(0, 0);
-  const t = $("ldtoast"); t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 2200);
+// SAVE IMAGE: the ladder graphic as a 1080 x 1350 PNG -- straight to the
+// share sheet ("Save Image") on a phone, a download on a computer.
+function ladderPng(){
+  const svg = $("ldcard").cloneNode(true);
+  svg.setAttribute("xmlns", NS); svg.setAttribute("width", 1080); svg.setAttribute("height", 1350);
+  svg.setAttribute("font-family", '-apple-system,"SF Pro Display",system-ui,Helvetica,Arial,sans-serif');
+  const xml = new XMLSerializer().serializeToString(svg);
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => { try {
+      const c = document.createElement("canvas"); c.width = 1080; c.height = 1350;
+      c.getContext("2d").drawImage(img, 0, 0, 1080, 1350);
+      c.toBlob(b => b ? res(b) : rej(new Error("no image")), "image/png");
+    } catch(e) { rej(e); } };
+    img.onerror = rej;
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
+  });
+}
+$("ldsave").onclick = async () => {
+  const b = $("ldsave");
+  try {
+    const f = new File([await ladderPng()], "alp-ladder.png", {type: "image/png"});
+    if(navigator.canShare && navigator.canShare({files: [f]})) await navigator.share({files: [f]}).catch(() => {});
+    else { const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name;
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+  } catch(e) { b.textContent = "Couldn't save — try again"; setTimeout(() => { b.textContent = "Save image"; }, 2500); }
 };
 
 form(); rows();
