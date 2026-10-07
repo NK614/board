@@ -2588,11 +2588,19 @@ function betCaption(){
     `Goal: ${money(b.start)} → ${G}. Every rung posted, win or lose 📊`,
     pick(ctas, 1), `21+ | Bet responsibly\n#ladderchallenge ${TAGS("#nflparlays #playerprops #sportsbetting #parlay #nfl", "#mlbparlays #MLBPlayoffs #playerprops #sportsbetting #parlay #MLB")}`].join("\n\n");
 }
+// "+150", "-217", "217" -> a valid American price, or null.
+function slipOdds(v){
+  const n = Math.round(+String(v == null ? "" : v).replace(/[^0-9.+-]/g, ""));
+  return isFinite(n) && Math.abs(n) >= 100 ? n : null;
+}
 function betCard(legs){
   const H = 1350, s = canvas(H), L = ladderNow();
-  const dec = legs.reduce((a, l) => a * decOf(l.price), 1), odds = legs.length ? amerOfDec(dec) : 0;
-  // Rung, bet and return follow the ladder unless typed in under the picture.
+  // Rung, bet, odds and return follow the ladder unless typed in under the picture.
   const ov = opt("bet", "ov", {}) || {};
+  // The slip's own price (FanDuel reprices same-game legs together, so it
+  // often pays less than the legs multiplied); else the legs multiplied.
+  const own = slipOdds(ov.odds);
+  const dec = own ? decOf(own) : legs.reduce((a, l) => a * decOf(l.price), 1), odds = own || (legs.length ? amerOfDec(dec) : 0);
   const rung = ov.rung > 0 ? Math.round(ov.rung) : L ? L.rung : 1;
   const stake = ov.stake > 0 ? ov.stake : L ? L.bank : 25;          // 25 = the ladder's default start
   const ret = ov.ret > 0 ? ov.ret : stake * dec;
@@ -2603,7 +2611,7 @@ function betCard(legs){
   rateLegs(s, y, H - 300, legs);
   if(legs.length){
     statTile(s, 70, H - 290, 940, (odds > 0 ? "+" : "") + odds, "#fff", "PAYS",
-      `${legs.length} leg${legs.length === 1 ? "" : "s"}`);
+      `${legs.length} leg${legs.length === 1 ? "" : "s"}${own ? " · FanDuel price" : ""}`);
   }
   return s;
 }
@@ -2628,10 +2636,15 @@ function betOptsHtml(legs){
       <div class="ig-picks" id="betpicks">${betPickList()}</div></div>`);
   }
   const L = ladderNow(), ov = opt("bet", "ov", {}) || {};
-  const dec = (legs || []).reduce((a, l) => a * decOf(l.price), 1);
+  const legDec = (legs || []).reduce((a, l) => a * decOf(l.price), 1), own = slipOdds(ov.odds);
+  const dec = own ? decOf(own) : legDec;
   const aRung = L ? L.rung : 1, aStake = ov.stake > 0 ? ov.stake : L ? L.bank : 25;
   const box = (k, label, ph, mode) => `<div class="ig-field"><label>${label}</label><input type="text" inputmode="${mode}"
     data-ov="${k}" value="${ov[k] > 0 ? ov[k] : ""}" placeholder="${esc(ph)}"></div>`;
+  h.push(`<div class="ig-field"><label>Odds on your FanDuel slip</label><input type="text" inputmode="numbers-and-punctuation"
+    data-ov="odds" value="${own != null ? (own > 0 ? "+" : "") + own : ""}" placeholder="${(legs || []).length ? esc(odds(amerOfDec(legDec))) + " (legs multiplied)" : "e.g. -217 or +350"}"></div>
+    <p class="ld-hint" style="margin-top:6px">FanDuel prices same-game legs together, so the slip often pays less than the legs multiplied.
+    Type the price your slip shows and the picture, the returns and the caption use it.</p>`);
   h.push(`<div class="bet-ov">${box("rung", "Rung", String(aRung), "numeric")}${box("stake", "Bet $", Math.round(aStake).toLocaleString("en-US"), "decimal")}${
     box("ret", "Returns $", Math.round(aStake * dec).toLocaleString("en-US"), "decimal")}</div>
     <p class="ld-hint" style="margin-top:8px">Blank = the ladder's numbers (shown in gray). Returns fills in from the bet and the parlay's odds.
@@ -2665,7 +2678,8 @@ if($("betopts")){
     if(t.id === "betgame"){ BET_G = t.value; const box = $("betpicks"); if(box) box.innerHTML = betPickList(); return; }
     if(t.dataset.ov){
       const ov = Object.assign({}, opt("bet", "ov", {}) || {}), v = +String(t.value).replace(/[$,\s]/g, "");
-      if(v > 0) ov[t.dataset.ov] = v; else delete ov[t.dataset.ov];
+      if(t.dataset.ov === "odds"){ const o = slipOdds(t.value); if(o) ov.odds = o; else delete ov.odds; }
+      else if(v > 0) ov[t.dataset.ov] = v; else delete ov[t.dataset.ov];
       setOpt("bet", "ov", ov);
     }
     else if(t.dataset.k) setOpt("bet", t.dataset.k, isNaN(+t.value) ? t.value : +t.value);
