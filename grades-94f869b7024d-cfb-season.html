@@ -49,6 +49,15 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
   border-radius:999px;padding:8px 14px;font:600 13.5px/1 var(--ui);white-space:nowrap;cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#05070d}
 .rows{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.ogrid{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 8px;overflow:hidden}
+.ogrid table{width:100%;border-collapse:separate;border-spacing:3px;table-layout:fixed}
+.ogrid th{font:700 11px/1.2 var(--ui);color:var(--mut);padding:2px 0 4px;text-align:center}
+.ogrid th.rh{text-align:left;font:700 12px/1 var(--num);color:var(--ink);width:44px;padding-left:2px}
+.ogrid td{border-radius:8px;text-align:center;padding:7px 0 6px;font:700 13px/1 var(--num);color:var(--ink)}
+.ogrid td small{display:block;margin-top:4px;font:500 9.5px/1 var(--ui);color:var(--sec)}
+.ogrid td.none{color:var(--mut);background:rgba(148,163,209,.06)}
+.ogrid td.best{outline:2px solid var(--acc);outline-offset:-2px}
+.ogrid .key{display:flex;justify-content:space-between;gap:8px;margin:8px 4px 2px;font-size:11.5px;color:var(--mut);line-height:1.4}
 .row{display:grid;grid-template-columns:62px 1fr 74px;align-items:center;gap:12px;padding:13px 14px;border-top:1px solid var(--line);cursor:pointer}
 .row:first-child{border-top:0}
 .row .t{font:700 15px/1 var(--num)}
@@ -283,7 +292,8 @@ body.igfull{overflow:hidden}
 <nav class="jump" id="jump" aria-label="Jump to"></nav>
 <div class="kpis" id="kpis"></div>
 
-<h2 id="oddsec">Hit rate by target odds</h2><div class="hint">Tap a row to see each game window.</div>
+<h2 id="oddsec">Hit rate by target odds</h2><div class="hint" id="oddshint">Tap a row to see each game window.</div>
+<div class="chips" id="oddsview"></div>
 <div class="chips" id="win"></div>
 <div class="rows" id="rows"></div>
 
@@ -520,19 +530,52 @@ function chips(el, list, cur, label, onpick){
   el.innerHTML = list.map(v => `<button class="chip" aria-pressed="${v === cur}" data-v="${esc(v)}">${esc(label(v))}</button>`).join("");
   el.onclick = ev => { const b = ev.target.closest(".chip"); if(b) onpick(b.dataset.v); };
 }
+// Three ways to read the same parlays: by target odds, by number of legs,
+// or the two together as a grid (each box: hit rate, and tinted by what $10
+// on each of them made -- a high hit rate at short odds can still lose money).
+let OV = "odds";
+const legsOf = [...new Set(PS.map(p => p.legs_n))].filter(n => n != null).sort((a, b) => a - b);
+const decO = o => o > 0 ? 1 + o / 100 : 1 + 100 / -o;
+const usd10 = ps => ps.reduce((a, p) => a + (p.status === "won" ? 10 * (decO(p.odds || p.target) - 1) : -10), 0);
+function drawGrid(base){
+  const cells = {}, all = [];
+  for(const t of tgts) for(const n of legsOf){
+    const s = settled(base.filter(p => p.target === t && p.legs_n === n));
+    const c = cells[t + "|" + n] = {n: s.length, w: s.filter(p => p.status === "won").length, u: usd10(s)};
+    if(c.n >= 10) all.push(c);
+  }
+  const best = all.slice().sort((a, b) => b.u / b.n - a.u / a.n)[0];
+  const tint = c => { if(!c.n) return ""; const roi = c.u / (10 * c.n), a = Math.min(.55, .12 + Math.abs(roi) * .35);
+    return `background:${roi >= 0 ? `rgba(39,232,156,${a})` : `rgba(255,107,107,${a})`}`; };
+  $("rows").innerHTML = `<div class="ogrid"><table><thead><tr><th class="rh"></th>${legsOf.map(n => `<th>${n} legs</th>`).join("")}</tr></thead><tbody>${
+    tgts.map(t => `<tr><th class="rh">${fmt(t)}</th>${legsOf.map(n => { const c = cells[t + "|" + n];
+      return c.n ? `<td class="${c === best ? "best" : ""}" style="${tint(c)}" title="${c.w} of ${c.n} · ${c.u >= 0 ? "+" : "−"}$${Math.abs(Math.round(c.u))}">${Math.round(100 * c.w / c.n)}%<small>${c.w}/${c.n}</small></td>`
+        : `<td class="none">—</td>`; }).join("")}</tr>`).join("")}</tbody></table>
+    <div class="key"><span>Green = made money at $10 each · red = lost · brighter = bigger</span>${best ? `<span>Outlined: best $ per bet (10+ bets)</span>` : ""}</div>
+    <div class="key"><span>Each box is only ~${Math.round(settled(base).length / Math.max(1, tgts.length * legsOf.length))} parlays — read rows and columns, not single boxes.</span></div></div>`;
+  $("rows").onclick = null;
+}
 function drawRows(){
+  chips($("oddsview"), ["odds", "legs", "grid"], OV, v => ({odds: "By odds", legs: "By legs", grid: "Odds × legs"})[v], v => { OV = v; drawRows(); });
   chips($("win"), wins, WIN, v => v, v => { WIN = v; drawRows(); });
+  $("oddsec").textContent = OV === "legs" ? "Hit rate by number of legs" : OV === "grid" ? "Hit rate by odds and legs" : "Hit rate by target odds";
+  $("oddshint").textContent = OV === "grid" ? "Each box: how often those parlays hit. Color: money made or lost at $10 each."
+    : "Tap a row to see each game window.";
   const base = PS.filter(p => WIN === "All windows" || p.win === WIN);
-  $("rows").innerHTML = tgts.map(t => {
-    const ps = base.filter(p => p.target === t), s = settled(ps), w = s.filter(p => p.status === "won").length;
+  if(OV === "grid"){ drawGrid(base); SHOW = 12; if(!DATA.season) drawPicks(); drawLosses(); drawCal(); return; }
+  const keys = OV === "legs" ? legsOf : tgts, keyOf = p => OV === "legs" ? p.legs_n : p.target;
+  $("rows").innerHTML = keys.map(t => {
+    const ps = base.filter(p => keyOf(p) === t), s = settled(ps), w = s.filter(p => p.status === "won").length;
     const r = s.length ? w / s.length : null;
     const split = WIN === "All windows" ? wins.slice(1).map(wn => {
       const ss = settled(ps.filter(p => p.win === wn)); if(!ss.length) return "";
       return `<span>${esc(wn)} <b>${ss.filter(p => p.status === "won").length}/${ss.length}</b></span>`; }).join("") : "";
+    const u = usd10(s);
     return `<div class="row">
-      <div class="t">${fmt(t)}</div>
+      <div class="t"${OV === "legs" ? ' style="white-space:nowrap;font-size:14px"' : ""}>${OV === "legs" ? t + " legs" : fmt(t)}</div>
       <div class="bar">${r == null ? "" : `<i class="fill-${tone(r)}" style="width:${Math.max(3, Math.round(r * 100))}%"></i>`}</div>
-      <div class="r ${r == null ? "none" : tone(r)}">${r == null ? "—" : Math.round(r * 100) + "%"}<small>${s.length ? `${w} of ${s.length}` : "pending"}</small></div>
+      <div class="r ${r == null ? "none" : tone(r)}">${r == null ? "—" : Math.round(r * 100) + "%"}<small>${s.length ? `${w} of ${s.length}` : "pending"}</small>${
+        s.length ? `<small style="color:${u >= 0 ? "var(--goodt)" : "var(--badt)"}">${u >= 0 ? "+" : "−"}$${Math.abs(Math.round(u)).toLocaleString("en-US")}</small>` : ""}</div>
       ${split ? `<div class="split">${split}</div>` : ""}</div>`;
   }).join("");
   $("rows").onclick = ev => { const r = ev.target.closest(".row"); if(r) r.classList.toggle("open"); };
