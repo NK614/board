@@ -1,1 +1,1 @@
-{"id": "nba-backtest-1", "state": "running", "step": "buying prices", "started": "2026-10-07T20:37:08.799385-04:00"}
+{"id": "nba-backtest-1", "state": "running", "step": "building boards", "started": "2026-10-07T20:37:08.799385-04:00", "games": 181, "credits_spent": 28928, "credits_left": 71072}
