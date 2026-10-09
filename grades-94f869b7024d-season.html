@@ -399,6 +399,18 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
   page to your Home Screen and open it from there.</p>
   <div class="ld-acts"><button class="ld-btn" id="ldcopy">Copy ladder link</button></div>
 </div>
+<div class="ld-panel" id="syncpanel">
+  <h3>Sync across devices</h3>
+  <p class="ld-hint" style="margin-top:0" id="syncstatus">Off — this ladder lives only on this device.</p>
+  <div id="syncsetup">
+    <p class="ld-hint">Keeps the ladders, the progression calculator and your Instagram settings the same on your phone and laptop, through a private file in your own GitHub account (a secret Gist).</p>
+    <p class="ld-hint">1. <a href="https://github.com/settings/tokens/new?scopes=gist&description=ALP%20HQ%20sync" target="_blank" rel="noopener" style="color:#3fd6ff">Make a GitHub token</a> — only the <b>gist</b> box ticked (it can't touch anything else). Pick an expiration, tap Generate, copy it.<br>
+    2. Paste it here, on <b>each</b> device, and tap Connect. The newest copy wins.</p>
+    <div class="ig-field"><label for="synctok">GitHub token (gist only)</label><input id="synctok" type="password" autocomplete="off" placeholder="ghp_…"></div>
+    <div class="ld-acts"><button class="ld-btn pri" id="syncgo">Connect</button></div>
+  </div>
+  <div class="ld-acts" id="syncon" hidden><button class="ld-btn" id="syncnow">Sync now</button><button class="ld-btn" id="syncoff">Disconnect this device</button></div>
+</div>
 <div class="ld-panel" id="pcpanel">
   <h3>Progression calculator</h3>
   <p class="ld-hint" style="margin-top:0">All-in compounding toward a target, banking part of the winnings at checkpoints. Each bet's odds can be different — type the real price in its row. Mark each bet won or lost to track where you are.</p>
@@ -3047,6 +3059,124 @@ render(true);
     if(e.target.id === "pcnew" && confirm("Clear the whole calculator — settings, odds and results?")){ S2 = Object.assign({}, D0, {rows: {}}); save(); draw(); }
   });
   draw();
+})();
+// SYNC ACROSS DEVICES. The ladders, the progression calculator and the
+// Instagram settings live in each browser's own storage, so a phone and a
+// laptop each kept their own copy. With a GitHub token that can only touch
+// Gists (pasted once per device, kept only in that browser -- never in this
+// page's code), they're mirrored to one secret Gist. Each key carries the
+// time it last changed on a device; the newer copy wins. Pull on open, when
+// the page comes back on screen and every minute; push 2 s after a change.
+(() => {
+  const Q = id => document.getElementById(id);
+  if(!Q("syncpanel")) return;
+  const KEYS = ["alp-ladder-v2", "alp-ladder-mlb-v1", "alp-ladder-nba-v1", "alp-progress-v1", "alp-ig-v1"];
+  const FILE = "alp-hq-sync.json", DESC = "ALP HQ sync (ladders, calculator, Instagram settings)";
+  const ls = {get: k => { try { return localStorage.getItem(k); } catch(e) { return null; } },
+              set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch(e) {} }};
+  let tok = ls.get("alp-sync-token"), gid = ls.get("alp-sync-gist"), busy = false, pushT = 0, lastOk = 0, err = "";
+  let meta = {}; try { meta = JSON.parse(ls.get("alp-sync-meta") || "{}") || {}; } catch(e) { meta = {}; }
+  const saveMeta = () => ls.set("alp-sync-meta", JSON.stringify(meta));
+  const seedT = (k, v) => { try { const o = JSON.parse(v); return o && o.saved ? +o.saved : 0; } catch(e) { return 0; } };
+  // Notice local changes (the ladder / calculator / Instagram code just write
+  // to storage): compare each key with what was last seen.
+  function scan(){
+    let changed = false;
+    KEYS.forEach(k => {
+      const v = ls.get(k), m = meta[k];
+      if(!m){ meta[k] = {v, t: v == null ? 0 : seedT(k, v)}; changed = true; return; }
+      if(m.v !== v){ m.v = v; m.t = Date.now(); changed = true; m.dirty = true; }
+    });
+    if(changed) saveMeta();
+    return KEYS.some(k => meta[k] && meta[k].dirty);
+  }
+  const api = (path, opt) => fetch("https://api.github.com" + path, Object.assign({cache: "no-store",
+    headers: {"Authorization": "Bearer " + tok, "Accept": "application/vnd.github+json", "Content-Type": "application/json"}}, opt || {}))
+    .then(r => r.status === 401 ? Promise.reject("The token was refused — make a new one (gist only) and connect again.")
+      : r.ok ? r.json() : Promise.reject("GitHub said " + r.status));
+  async function findGist(){
+    if(gid) return gid;
+    for(let page = 1; page <= 5; page++){
+      const list = await api(`/gists?per_page=100&page=${page}`);
+      const g = list.find(x => x.description === DESC && x.files && x.files[FILE]);
+      if(g){ gid = g.id; break; }
+      if(list.length < 100) break;
+    }
+    if(!gid){
+      const g = await api("/gists", {method: "POST", body: JSON.stringify({description: DESC, public: false,
+        files: {[FILE]: {content: JSON.stringify({v: 1, keys: {}})}}})});
+      gid = g.id;
+    }
+    ls.set("alp-sync-gist", gid);
+    return gid;
+  }
+  async function readRemote(){
+    const g = await api(`/gists/${await findGist()}`), f = g.files && g.files[FILE];
+    let txt = f ? f.content : "";
+    if(f && f.truncated && f.raw_url) txt = await fetch(f.raw_url, {cache: "no-store"}).then(r => r.text());
+    try { return JSON.parse(txt || "{}").keys || {}; } catch(e) { return {}; }
+  }
+  async function sync(why){
+    if(!tok || busy) return;
+    busy = true; err = "";
+    try {
+      scan();
+      const remote = await readRemote();
+      let applied = [], push = false;
+      KEYS.forEach(k => {
+        const m = meta[k] || (meta[k] = {v: null, t: 0}), r = remote[k];
+        // Remote wins when it's newer -- or when this device never changed the
+        // key since connecting (t 0) and the other device has a copy.
+        if(r && r.v !== m.v && (r.t > m.t || (!m.t && !m.dirty))){ ls.set(k, r.v); meta[k] = {v: r.v, t: r.t}; applied.push(k); }
+        else if(m.v != null && (!r || m.t > r.t || (m.dirty && r.v !== m.v))) push = true;
+        else if(r && m.dirty) delete m.dirty;
+      });
+      if(push){
+        const out = {};
+        KEYS.forEach(k => { const m = meta[k]; const r = remote[k];
+          out[k] = m && m.v != null && (!r || m.t >= r.t) ? {t: m.t, v: m.v} : r; if(!out[k]) delete out[k]; });
+        await api(`/gists/${gid}`, {method: "PATCH", body: JSON.stringify({files: {[FILE]: {content: JSON.stringify({v: 1, at: Date.now(), keys: out})}}})});
+      }
+      KEYS.forEach(k => { if(meta[k]) delete meta[k].dirty; });
+      saveMeta(); lastOk = Date.now();
+      if(applied.length){
+        // Newer data from another device: reload so every tab redraws from it.
+        // (The ladder's copy in the address is dropped, or it would win back.)
+        const u = new URL(location.href); u.searchParams.delete("ld");
+        try { sessionStorage.setItem("alp-sync-applied", String(Date.now())); } catch(e) {}
+        try { history.replaceState(null, "", u.toString()); } catch(e) {}
+        location.reload(); return;
+      }
+    } catch(e) { err = typeof e === "string" ? e : "Couldn't reach GitHub — will try again."; }
+    finally { busy = false; show(); }
+  }
+  function show(){
+    const on = !!tok;
+    Q("syncsetup").hidden = on; Q("syncon").hidden = !on;
+    const t = d => new Date(d).toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"});
+    let just = 0; try { just = +sessionStorage.getItem("alp-sync-applied") || 0; } catch(e) {}
+    Q("syncstatus").innerHTML = !on ? "Off — this ladder lives only on this device."
+      : err ? `<span style="color:#ffb74d">${esc(err)}</span>`
+      : lastOk ? `<span style="color:#27e89c">●</span> On · synced ${t(lastOk)}${Date.now() - just < 15000 ? " · pulled the newer copy from your other device" : ""}`
+      : "On · syncing…";
+  }
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
+  Q("syncgo").onclick = () => {
+    const v = Q("synctok").value.trim();
+    if(!/^(ghp_|github_pat_|gho_)[A-Za-z0-9_]{20,}$/.test(v)){ err = ""; Q("syncstatus").textContent = "That doesn't look like a GitHub token (it starts with ghp_)."; return; }
+    tok = v; ls.set("alp-sync-token", v); Q("synctok").value = ""; gid = null; ls.set("alp-sync-gist", null); sync("connect"); start();
+  };
+  Q("syncnow").onclick = () => sync("manual");
+  Q("syncoff").onclick = () => { tok = null; gid = null; ls.set("alp-sync-token", null); ls.set("alp-sync-gist", null); err = ""; lastOk = 0; show(); };
+  let started = false;
+  function start(){
+    if(started) return; started = true;
+    setInterval(() => { if(tok && scan() && !pushT) pushT = setTimeout(() => { pushT = 0; sync("change"); }, 2000); }, 1500);
+    setInterval(() => { if(tok && !document.hidden) sync("poll"); }, 60000);
+    document.addEventListener("visibilitychange", () => { if(tok && !document.hidden) sync("back"); });
+  }
+  scan(); show();
+  if(tok){ sync("open"); start(); }
 })();
 // "Last updated": when this page was last published (the site's own date for it).
 (() => {
