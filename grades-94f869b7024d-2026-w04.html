@@ -432,7 +432,7 @@ const settled = ps => ps.filter(p => p.status === "won" || p.status === "lost");
 const tone = r => r >= .5 ? "hi" : r >= .25 ? "mid" : "lo";
 const LABEL = {won: "Won", lost: "Lost", pending: "Pending", void: "Void"};
 const RES = {hit: ["Hit", "hit", "✓"], miss: ["Miss", "miss", "✕"], void: ["DNP", "pend", "–"],
-             injury: ["Hit* · left injured", "inj", "✓"],
+             injury: ["Injury · Bet Protect", "inj", "✓"],
              pending: ["Pending", "pend", "○"], norecord: ["No record", "pend", "○"]};
 let WIN = "All windows", TGT = "All", SHOW = 12;
 
@@ -518,9 +518,9 @@ function shopLine(done, word, always){
        <span>the board predicted<br>${done.length ? `for the same ${done.length}` : ""}</span></div>`
   + shopLine(done, "pick", true)
   + (pend ? `<div class="kpi wide note"><p>${pend} more pick${pend === 1 ? "" : "s"} still waiting on games or stats — not counted yet.</p></div>` : "")
-  + (hurt ? `<div class="kpi wide note"><p><span class="flag">Injury</span> <strong>${hurt}</strong> of these wins
-      count only because an injured player's leg was dropped — he left the game and didn't return. Some books'
-      injury protection removes that leg (sometimes free, sometimes a paid add-on), so these wins need it.</p></div>` : "");
+  + (hurt ? `<div class="kpi wide note"><p><span class="flag">Injury · Bet Protect</span> <strong>${hurt}</strong> of these wins
+      count because an injured player's leg was dropped — he got hurt and FanDuel's Bet Protect voided his leg,
+      so the rest of the parlay paid. Without injury protection these would have lost.</p></div>` : "");
 })();
 
 const wins = ["All windows", ...new Set(PS.map(p => p.win))].sort((a, b) =>
@@ -807,7 +807,7 @@ function drawPicks(){
       <div class="top"><div class="what"><b>${p.legs_n} legs · ${fmt(p.target)}</b></div>
         <span class="pill ${p.status}">${LABEL[p.status]}</span></div>
       <div class="meta">${esc(p.win)} · ${esc(p.board)} · paid ${fmt(p.odds)} · board ${Math.round(p.prob * 100)}%${
-        p.results.includes("injury") ? '<span class="flag">Injury — needs injury protection</span>' : ""}</div>
+        p.results.includes("injury") ? '<span class="flag">Injury · Bet Protect</span>' : ""}</div>
       <div class="dots">${dots}</div>
       <div class="legs">${p.legs.map((l, k) => legHtml(l, p.results[k])).join("")}</div></div>`;
   }).join("") + (ps.length > SHOW ? `<button class="more" id="more">Show more (${ps.length - SHOW} left)</button>` : "");
