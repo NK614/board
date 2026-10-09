@@ -204,6 +204,29 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
 #ldcard .rung{cursor:pointer}
 .ld-panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:14px}
 .ld-panel h3{margin:0 0 10px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+/* progression calculator (bottom of the Ladder tab) */
+.pc-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 10px}
+.pc-stat{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.pc-stat b{display:block;font:800 21px/1.1 var(--num, inherit);color:var(--ink)}
+.pc-stat span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.pc-stat.now b{color:#3fd6ff}.pc-stat.safe b{color:#27e89c}
+.pc-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -6px}
+.pc-t{width:100%;border-collapse:collapse;font-size:12.5px;min-width:560px}
+.pc-t th{white-space:nowrap;text-align:right;font-weight:700;color:var(--mut);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:7px 5px;border-bottom:1px solid var(--line)}
+.pc-t td{white-space:nowrap;text-align:right;padding:6px 5px;border-bottom:1px solid var(--line);color:var(--sec)}
+.pc-t th:first-child,.pc-t td:first-child{text-align:left}
+.pc-t tr.cp td{background:rgba(39,232,156,.07)}
+.pc-t tr.here td{background:rgba(63,214,255,.12)}
+.pc-t tr.won td{color:var(--ink)}
+.pc-t tr.lost td{background:rgba(255,107,107,.12);color:#ff9b9b}
+.pc-t input.pc-o{width:64px;padding:5px 6px;font-size:13px;text-align:right;background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:7px}
+.pc-t input[type=checkbox]{width:17px;height:17px;accent-color:#27e89c}
+.pc-st{display:inline-flex;gap:3px}
+.pc-st button{appearance:none;border:1px solid var(--line);background:transparent;color:var(--mut);font:700 11px/1 var(--ui);border-radius:7px;padding:6px 7px;cursor:pointer}
+.pc-st button[aria-pressed=true][data-s=w]{background:#27e89c;color:#05070d;border-color:#27e89c}
+.pc-st button[aria-pressed=true][data-s=l]{background:#ff6b6b;color:#05070d;border-color:#ff6b6b}
+.pc-tag{font-size:9.5px;font-weight:800;letter-spacing:.08em;color:#27e89c;margin-left:4px}
+.pc-warn{background:rgba(255,183,77,.1);border:1px solid rgba(255,183,77,.4);color:#ffd8a0;padding:10px 12px;border-radius:10px;font-size:12.5px;margin:8px 0}
 .ld-g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .ld-g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ld-panel label{display:block;font-size:11.5px;color:var(--mut);margin-bottom:5px}
@@ -375,6 +398,24 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
   saved data after 7 days away — keep a backup with <b>Copy ladder link</b> (open it later to bring the ladder back), or add this
   page to your Home Screen and open it from there.</p>
   <div class="ld-acts"><button class="ld-btn" id="ldcopy">Copy ladder link</button></div>
+</div>
+<div class="ld-panel" id="pcpanel">
+  <h3>Progression calculator</h3>
+  <p class="ld-hint" style="margin-top:0">All-in compounding toward a target, banking part of the winnings at checkpoints. Each bet's odds can be different — type the real price in its row. Mark each bet won or lost to track where you are.</p>
+  <div class="ld-g3">
+    <div><label for="pcbank">Bankroll ($)</label><input id="pcbank" type="number" inputmode="decimal" data-pc="bank"></div>
+    <div><label for="pcodds">Default odds</label><input id="pcodds" type="text" inputmode="numbers-and-punctuation" data-pc="odds"></div>
+    <div><label for="pctarget">Target ($)</label><input id="pctarget" type="number" inputmode="decimal" data-pc="target"></div>
+    <div><label for="pccps">Checkpoints</label><input id="pccps" type="number" inputmode="numeric" data-pc="cps"></div>
+    <div><label for="pcpct">Bank % at checkpoint</label><input id="pcpct" type="number" inputmode="decimal" data-pc="pct"></div>
+    <div><label for="pcmax">Max bets</label><input id="pcmax" type="number" inputmode="numeric" data-pc="max"></div>
+  </div>
+  <div class="pc-stats" id="pcstats" style="margin-top:12px"></div>
+  <div id="pcwarn"></div>
+  <div class="pc-scroll"><table class="pc-t"><thead><tr><th>Bet</th><th>Odds</th><th>Risking</th><th>If win</th><th>Banked</th><th>Carry</th><th>Net worth</th><th>CP</th><th>Result</th></tr></thead>
+    <tbody id="pcbody"></tbody></table></div>
+  <div class="ld-acts"><button class="ld-btn" id="pcevencp">Space checkpoints evenly</button><button class="ld-btn" id="pcclear">Clear results</button><button class="ld-btn" id="pcnew">Start over</button></div>
+  <p class="ld-hint">Blank odds use the default. CP = checkpoint: tick or untick any bet (it then stops spacing them for you). The table assumes every bet still to play wins; one loss zeroes what's riding on it — checkpoints protect only cash already banked. Saved on this phone.</p>
 </div>
 <div class="ld-toast" id="ldtoast">Take your screenshot · tap the title to exit</div>
 </div>
@@ -2902,6 +2943,111 @@ render(true);
    site when this page was last published (a header-only request, no data);
    if that's newer than the copy on screen, a "Tap to refresh" bar drops in.
    Nothing reloads by itself. */
+// PROGRESSION CALCULATOR (Ladder tab): all-in compounding with checkpoints,
+// any odds per bet, and won/lost tracking. Saved on this phone only.
+(() => {
+  const P$ = id => document.getElementById(id);
+  if(!P$("pcpanel")) return;
+  const KEY = "alp-progress-v1";
+  const D0 = {bank: 1000, odds: -150, target: 150000, cps: 5, pct: 50, max: 60, rows: {}, manual: false};
+  let S2;
+  try { S2 = Object.assign({}, D0, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch(e) { S2 = Object.assign({}, D0); }
+  S2.rows = S2.rows || {};
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S2)); } catch(e) {} };
+  const okO = o => Number.isFinite(o) && (o >= 100 || o <= -100);
+  const parseO = v => { const n = Math.round(+String(v == null ? "" : v).replace(/[^0-9.+-]/g, "")); return okO(n) ? n : null; };
+  const dec = o => o > 0 ? 1 + o / 100 : 1 + 100 / -o;
+  const usd = n => "$" + Math.round(n).toLocaleString("en-US");
+  const oTxt = o => (o > 0 ? "+" : "") + o;
+  const row = i => S2.rows[i] || {};
+  const oddsAt = i => (okO(row(i).o) ? row(i).o : (parseO(S2.odds) || -150));
+
+  function run(cpSet){
+    const bank = Math.max(0, +S2.bank || 0), target = Math.max(0, +S2.target || 0), pct = Math.min(100, Math.max(0, +S2.pct || 0)) / 100;
+    const max = Math.min(300, Math.max(1, Math.round(+S2.max || 60)));
+    let carry = bank, banked = 0; const rows = []; let hit = false, lost = false;
+    for(let i = 1; i <= max; i++){
+      const o = oddsAt(i), risk = carry, win = risk * dec(o), cp = cpSet(i), st = row(i).st || "";
+      if(st === "l"){ rows.push({i, o, risk, win, cp, b: 0, carry: 0, net: banked, st}); lost = true; carry = 0; break; }
+      let b = 0;
+      if(cp){ b = win * pct; carry = win - b; banked += b; } else carry = win;
+      const net = carry + banked;
+      rows.push({i, o, risk, win, cp, b, carry, net, st});
+      if(net >= target){ hit = true; break; }
+    }
+    return {rows, hit, lost};
+  }
+  function compute(){
+    const nc = Math.max(0, Math.round(+S2.cps || 0));
+    if(S2.manual) return run(i => !!row(i).cp);
+    const place = n => { const p = new Set(); for(let k = 1; k <= nc; k++){ const x = Math.round(k * n / (nc + 1)); if(x > 0) p.add(x); } return p; };
+    let n = run(() => false).rows.length, res = null;
+    for(let it = 0; it < 30; it++){
+      const p = place(n); res = run(i => p.has(i));
+      if(res.rows.length === n) break; n = res.rows.length;
+    }
+    return res;
+  }
+  function draw(){
+    ["bank", "target", "cps", "pct", "max"].forEach(k => { const el = P$("pc" + k); if(el && document.activeElement !== el) el.value = S2[k]; });
+    if(document.activeElement !== P$("pcodds")) P$("pcodds").value = S2.odds;
+    const R = compute(), rows = R.rows;
+    const here = rows.find(r => r.st !== "w" && r.st !== "l");
+    const done = rows.filter(r => r.st === "w"), last = done[done.length - 1];
+    const banked = rows.filter(r => r.st === "w").reduce((a, r) => a + r.b, 0);
+    const nowNet = R.lost ? banked : last ? last.net : (+S2.bank || 0);
+    const left = rows.filter(r => r.st !== "w" && r.st !== "l");
+    const chance = left.reduce((a, r) => a / dec(r.o), 1);           // the book's own prices, cut included
+    P$("pcstats").innerHTML = [
+      ["", R.lost ? "—" : rows.length, "Bets to target"], ["", R.lost ? usd(banked) : rows.length ? usd(rows[rows.length - 1].net) : "$0", R.lost ? "Walk away with" : "Final net worth"],
+      ["now", R.lost ? "Busted" : usd(nowNet), R.lost ? "This run" : `Now · after bet ${done.length}`],
+      ["safe", usd(banked), "Banked (safe)"],
+      ["", here && !R.lost ? usd(here.risk) : "—", here && !R.lost ? `Next: bet ${here.i} at ${oTxt(here.o)}` : "Next bet"],
+      ["", R.lost || !left.length ? "—" : (chance >= 0.01 ? (100 * chance).toFixed(1) : (100 * chance).toFixed(3)) + "%", "Book's chance to finish"],
+    ].map(([c, b, l]) => `<div class="pc-stat ${c}"><b>${b}</b><span>${l}</span></div>`).join("");
+    P$("pcwarn").innerHTML = R.lost ? `<div class="pc-warn">Bet ${rows[rows.length - 1].i} lost — this run is over. You keep the ${usd(banked)} banked at checkpoints. "Clear results" to replay the plan, or "Start over".</div>`
+      : !R.hit ? `<div class="pc-warn">Target not reached in ${S2.max} bets. Raise Max bets or lower the target.</div>` : "";
+    P$("pcbody").innerHTML = rows.map(r => {
+      const own = okO(row(r.i).o), cls = [r.cp ? "cp" : "", r === here ? "here" : "", r.st === "w" ? "won" : "", r.st === "l" ? "lost" : ""].join(" ");
+      return `<tr class="${cls}"><td>${r.i}${r.cp ? '<span class="pc-tag">CP</span>' : ""}${r === here ? ' <span class="pc-tag" style="color:#3fd6ff">NOW</span>' : ""}</td>
+        <td><input class="pc-o" data-i="${r.i}" inputmode="numbers-and-punctuation" value="${own ? oTxt(row(r.i).o) : ""}" placeholder="${oTxt(oddsAt(r.i))}"></td>
+        <td>${usd(r.risk)}</td><td>${r.st === "l" ? "—" : usd(r.win)}</td><td>${r.b > 0 ? usd(r.b) : "—"}</td><td>${usd(r.carry)}</td><td>${usd(r.net)}</td>
+        <td><input type="checkbox" data-cp="${r.i}" ${r.cp ? "checked" : ""}></td>
+        <td><span class="pc-st"><button data-r="${r.i}" data-s="w" aria-pressed="${r.st === "w"}">W</button><button data-r="${r.i}" data-s="l" aria-pressed="${r.st === "l"}">L</button></span></td></tr>`;
+    }).join("");
+  }
+  P$("pcpanel").addEventListener("input", e => {
+    const t = e.target;
+    if(t.dataset.pc){ S2[t.dataset.pc] = t.dataset.pc === "odds" ? t.value : +t.value; save(); draw(); return; }
+  });
+  P$("pcpanel").addEventListener("change", e => {
+    const t = e.target;
+    if(t.classList.contains("pc-o")){ const r = S2.rows[t.dataset.i] = row(t.dataset.i); const o = parseO(t.value); if(o) r.o = o; else delete r.o; save(); draw(); return; }
+    if(t.dataset.cp){
+      if(!S2.manual){ const cur = compute(); cur.rows.forEach(x => { (S2.rows[x.i] = row(x.i)).cp = x.cp; }); S2.manual = true; }
+      (S2.rows[t.dataset.cp] = row(t.dataset.cp)).cp = t.checked; save(); draw();
+    }
+  });
+  P$("pcpanel").addEventListener("click", e => {
+    const b = e.target.closest("button[data-r]");
+    if(b){
+      // Results run in order: marking bet N means every bet before it won;
+      // undoing bet N also undoes everything after it.
+      const n = +b.dataset.r, r = S2.rows[n] = row(n), off = r.st === b.dataset.s;
+      if(off){ Object.keys(S2.rows).forEach(k => { if(+k >= n) delete S2.rows[k].st; }); }
+      else {
+        for(let k = 1; k < n; k++) (S2.rows[k] = row(k)).st = "w";
+        Object.keys(S2.rows).forEach(k => { if(+k > n) delete S2.rows[k].st; });
+        r.st = b.dataset.s;
+      }
+      save(); draw(); return;
+    }
+    if(e.target.id === "pcevencp"){ S2.manual = false; Object.values(S2.rows).forEach(r => delete r.cp); save(); draw(); }
+    if(e.target.id === "pcclear"){ Object.values(S2.rows).forEach(r => delete r.st); save(); draw(); }
+    if(e.target.id === "pcnew" && confirm("Clear the whole calculator — settings, odds and results?")){ S2 = Object.assign({}, D0, {rows: {}}); save(); draw(); }
+  });
+  draw();
+})();
 // "Last updated": when this page was last published (the site's own date for it).
 (() => {
   const el = document.getElementById("upd"), d = new Date(document.lastModified);
