@@ -32,6 +32,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 var(--ui)}
 .eyebrow{font:700 11px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
 h1{margin:6px 0 4px;font-size:26px;letter-spacing:-.02em}
 .sub{color:var(--mut);font-size:12.5px;line-height:1.5}
+.upd{color:var(--mut);font-size:12px;margin:-6px 0 12px;display:flex;align-items:center;gap:6px}
+.upd::before{content:"";width:7px;height:7px;border-radius:50%;background:#27e89c;box-shadow:0 0 8px #27e89c}
 .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 6px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
 .kpi b{display:block;font:700 26px/1 var(--num);letter-spacing:-.02em}
@@ -284,6 +286,7 @@ body.igfull{overflow:hidden}
 </style></head><body><div class="wrap">
 <div class="eyebrow">Parlay Generator</div>
 <h1 id="pagetitle">Track record</h1>
+<div class="upd" id="upd" hidden></div>
 <div class="tabs" role="tablist"><button id="tab-rec" role="tab" aria-selected="true">Record</button><button id="tab-lad" role="tab" aria-selected="false">Ladder</button><button id="tab-ig" role="tab" aria-selected="false">Instagram</button></div>
 <div id="recview">
 <div class="sport-sw" id="recsw" role="group" aria-label="Sport"><button data-rsport="nfl" aria-pressed="true">NFL</button><button data-rsport="cfb" aria-pressed="false">CFB</button><button data-rsport="mlb" aria-pressed="false">MLB</button><button data-rsport="nba" aria-pressed="false">NBA</button></div>
@@ -346,7 +349,7 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
   <div id="betopts"></div>
   <div class="ig-slides" id="betslide"></div>
   <div class="ld-acts"><button class="ld-btn pri" id="betsave">Save image</button>
-    <button class="ld-btn" id="betcopy">Copy caption</button><button class="ld-btn" id="bethook">New hook</button></div>
+    <button class="ld-btn" id="betcopy">Copy caption</button><button class="ld-btn" id="bethook">↻ Regenerate</button></div>
   <p class="ld-hint">Or press and hold the picture and pick "Save to Photos".</p>
   <div class="ig-field"><label for="betcap">Caption</label><textarea id="betcap"></textarea></div>
 </div>
@@ -409,7 +412,7 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
   <div class="ld-acts" style="margin-top:0">
     <button class="ld-btn pri" id="igsave">Save image</button>
     <button class="ld-btn" id="igcopy">Copy caption</button>
-    <button class="ld-btn" id="ighook">New hook</button>
+    <button class="ld-btn" id="ighook">↻ Regenerate</button>
   </div>
   <p class="ld-hint" id="igsavehint">Save sends every slide to the share sheet — tap “Save Images” to put them all in Photos at once. Tap a post to see it full screen.</p>
   <div class="ig-field"><label for="igcap">Caption</label><textarea id="igcap"></textarea></div>
@@ -1470,16 +1473,67 @@ function applySport(){
 applySport();
 
 // ---------- captions: a rotating hook on top, the facts, a call to action ----------
-// "New hook" steps through each day's list; hooks never promise a win.
+// "Regenerate" steps each post's hook, call to action and hashtags together;
+// hooks never promise a win.
 S.hooks = S.hooks || {};
 const pickOf = (arr, bump) => arr[((S.hooks[wk(DAY)] || 0) + (bump || 0)) % arr.length];
-// Hashtags by sport.
-const TAGS = (nfl, mlb) => MLB() ? mlb : NBA() ? "#NBA #nbabetting #playerprops #sportsbetting #parlay" : nfl;
+// Hashtags: always 5, from hand-picked sets per post type. Regenerate steps
+// through the sets (with the hook and the call to action).
+const TAGSETS = {
+  nfl: {
+    recap:  ["#NFLPicks #PlayerProps #ParlayResults #NFLBetting #SportsBetting",
+             "#NFL #PropBets #ParlayPicks #BettingResults #NFLParlays",
+             "#NFLBetting #PlayerProps #SameGameParlay #ParlayWins #NFLPicks",
+             "#NFLParlays #PropBets #ReceiptsPosted #NFLPicks #SportsBettingTips"],
+    loss:   ["#NFLPicks #PlayerProps #NFLBetting #ParlayPicks #SportsBetting",
+             "#NFL #PropBets #NFLParlays #BettingCommunity #PlayerProps",
+             "#NFLBetting #ParlayLife #PlayerProps #NFLPicks #SportsBetting"],
+    picks:  ["#{W} #NFLPicks #PlayerProps #SameGameParlay #NFLBetting",
+             "#{W} #NFLParlays #PropBets #ParlayPicks #NFL",
+             "#{W} #PlayerProps #NFLBetting #SGP #BettingTips",
+             "#{W} #NFLPicks #ParlayOfTheDay #PropBets #SportsBetting"],
+    streak: ["#PlayerProps #NFLPicks #HotStreak #FantasyFootball #NFLBetting",
+             "#NFL #PropBets #OnFire #NFLStats #PlayerProps",
+             "#NFLBetting #PlayerProps #Trending #FantasyFootball #NFLPicks"],
+    atd:    ["#AnytimeTD #NFLPicks #TouchdownProps #PlayerProps #NFLBetting",
+             "#AnytimeTouchdown #NFLSunday #PropBets #NFLParlays #TDScorer",
+             "#ATD #NFLBetting #TouchdownScorer #PlayerProps #NFLPicks"],
+    atdr:   ["#AnytimeTD #NFLPicks #TouchdownProps #ReceiptsPosted #NFLBetting",
+             "#AnytimeTouchdown #NFLSunday #PropBets #TDScorer #NFLResults",
+             "#ATD #NFLBetting #PlayerProps #TouchdownScorer #NFLPicks"],
+    ladder: ["#LadderChallenge #NFLParlays #PlayerProps #ParlayPicks #SportsBetting",
+             "#LadderChallenge #NFLPicks #SameGameParlay #BettingChallenge #PropBets",
+             "#LadderChallenge #NFLBetting #ParlayLadder #PlayerProps #NFL",
+             "#LadderChallenge #BankrollChallenge #NFLParlays #PropBets #NFLPicks"],
+  },
+  mlb: {any: ["#MLBPicks #PlayerProps #MLBBetting #ParlayPicks #SportsBetting",
+              "#MLB #PropBets #MLBPlayoffs #MLBParlays #PlayerProps",
+              "#MLBBetting #PlayerProps #Postseason #ParlayPicks #MLBPicks"],
+        atd: ["#HomeRunProps #MLBPicks #Dingers #PlayerProps #MLBBetting",
+              "#MLB #HomeRun #PropBets #MLBPlayoffs #MLBPicks"],
+        ladder: ["#LadderChallenge #MLBParlays #PlayerProps #MLBPicks #SportsBetting",
+                 "#LadderChallenge #MLBBetting #PropBets #MLBPlayoffs #ParlayPicks"]},
+  nba: {any: ["#NBAPicks #PlayerProps #NBABetting #ParlayPicks #SportsBetting",
+              "#NBA #PropBets #NBAParlays #PlayerProps #NBAPicks",
+              "#NBABetting #PlayerProps #SameGameParlay #NBAPicks #BettingTips"],
+        ladder: ["#LadderChallenge #NBAParlays #PlayerProps #NBAPicks #SportsBetting",
+                 "#LadderChallenge #NBABetting #PropBets #ParlayPicks #NBA"]},
+};
+const WIN_TAG = w => { w = String(w || ""); return /^TNF/.test(w) ? "#TNF" : /^SNF/.test(w) ? "#SNF" : /^MNF/.test(w) ? "#MNF"
+  : /^Sun/.test(w) ? "#NFLSunday" : /^Sat/.test(w) ? "#NFLSaturday" : "#NFL"; };
+function TAGS(kind, win, n){
+  const sp = MLB() ? "mlb" : NBA() ? "nba" : "nfl", T = TAGSETS[sp];
+  const list = T[kind] || T[kind === "atdr" ? "atd" : "any"] || T.any || T.recap;
+  const i = n != null ? n : (S.hooks[wk(DAY)] || 0);
+  const tags = list[i % list.length].replace("#{W}", WIN_TAG(win)).split(" ");
+  return [...new Set(tags)].slice(0, 5).join(" ");
+}
 const handleTag = () => { const h = (S.handle || "").trim(); return h ? (h[0] === "@" ? h : "@" + h) : ""; };
 const CTAS = [
   () => `🔔 Follow ${handleTag() || "us"} so you never miss a post`,
-  () => `📌 Save this for game day`,
+  () => `💬 Tailing or fading this week? Tell us below 👇`,
   () => `🔔 Turn on post notifications. ${handleTag()} drops picks every ${MLB() ? "day" : "week"}`,
+  () => `📲 Send this to the friend who always needs a parlay`,
 ];
 const cta = () => pickOf(CTAS, 1)().replace(/\s+$/, "");
 const FOOT = "21+ | Bet responsibly";
@@ -1598,7 +1652,7 @@ B.tue = () => {
     if(rb.n) lines.push(`🏈 ATD RBs: ${rb.h} of ${rb.n} scored`);
     if(rc.n) lines.push(`🏈 ATD WR/TE: ${rc.h} of ${rc.n} scored`);
     cap = caption(hook, lines.join("\n") + `\n\nNo deleted posts. No hiding the losses. Just results 📊\nSwipe for the full breakdown →`,
-      TAGS("#nfl #nflparlays #playerprops #sportsbetting #anytimetd #parlay", "#MLB #MLBPlayoffs #mlbparlays #playerprops #sportsbetting #parlay"));
+      TAGS("recap"));
   }
   return {slides, head, sub, caption: cap, note: slides.length ? "" : "Nothing graded on this page yet — open a week in the Track record tab."};
 };
@@ -1695,7 +1749,7 @@ B.atdr = () => {
     if(hits.length) lines.push("", "✅ SCORED", ...hits.map(t => `${t.player} (${t.team})${(t.actual || 0) >= 2 ? ` · ${t.actual} TDs 🔥` : ""}`));
     if(left) lines.push("", `⏳ ${left} still to play`);
     cap = caption(hook, lines.join("\n") + "\n\nEvery pick graded, hits and misses. No deleted posts 📊",
-      TAGS("#nfl #anytimetd #nflparlays #playerprops #sportsbetting #touchdown", ""));
+      TAGS("atdr"));
   }
   return {slides, head, sub, caption: cap, note: left ? `${left} pick${left === 1 ? "" : "s"} still to play — post after Monday night is graded for the full recap.` : ""};
 };
@@ -1750,7 +1804,7 @@ B.wed = () => {
       `Taking the L out loud 📉 Here's what happened`,
     ]);
   const cap = caption(hook, `${take}\n\nWe post the losses too. That's how you know the wins are real 💯\nOn to the next one 💪`,
-    TAGS("#nfl #nflparlays #playerprops #sportsbetting #parlay", "#MLB #MLBPlayoffs #mlbparlays #playerprops #sportsbetting #parlay"));
+    TAGS("loss"));
   return {slides: [s], head, sub, caption: cap, take};
 };
 
@@ -1809,8 +1863,7 @@ function parlayPost(dk){
     ]);
   const cap = caption(hook,
     `${legs.map(l => `🎯 ${l.player} ${prop(l)} (${odds(l.price)})`).join("\n")}\n\n💰 Pays ${odds(pOdds)}\n\nTail it, fade it, or just sweat it with us 😤 Result goes up either way 📊`,
-    TAGS(`#${w.name.replace(/[^A-Za-z0-9]/g, "")} #nfl #nflparlays #playerprops #sportsbetting #parlay`,
-         "#MLB #MLBPlayoffs #mlbparlays #playerprops #sportsbetting #parlay"));
+    TAGS("picks", w.name));
   return {slides: [s], head, sub, caption: cap};
 };
 
@@ -1905,7 +1958,7 @@ B.fri = () => {
       `Don't bet against a streak like this 👀🔥`,
     ]);
   const cap = caption(hook, `${lines.join("\n\n")}\n\nWho keeps it rolling this week? 👀`,
-    TAGS("#nfl #playerprops #fantasyfootball #nflbetting #sportsbetting", "#MLB #MLBPlayoffs #playerprops #mlbbetting #sportsbetting"));
+    TAGS("streak"));
   return {slides, head, sub: stats.length > 1 ? `${stats.length} stats · ${len} straight games` : sub, caption: cap};
 };
 // The metrics picked for the Heaters post (several at once: one image each).
@@ -1989,7 +2042,7 @@ function atdTop10(){
       `Six points incoming? Here's who the model likes 🙌`,
     ]);
   const cap = caption(hook, `${capParts.join("\n\n")}\n\nWe'll post how they did, win or lose 📊`,
-    TAGS("#nfl #anytimetd #nflparlays #playerprops #sportsbetting #nflsunday", ""));
+    TAGS("atd"));
   return {slides, head, sub: groups.length > 1 ? `Receivers + running backs · top ${n} each` : firstSub, caption: cap};
 }
 function sunamDingers(){
@@ -2031,7 +2084,7 @@ function sunamDingers(){
     ]);
   const cap = caption(hook,
     `${top.map((t, k) => `${["🥇", "🥈", "🥉"][k] || `${k + 1}.`} ${t.player} (${t.team}) · ${pct(t.p)}`).join("\n")}\n\nWe'll post how they did tonight, win or lose 📊`,
-    TAGS("#nfl #anytimetd #nflparlays #playerprops #sportsbetting #nflsunday", "#MLB #MLBPlayoffs #homerun #dingers #playerprops #sportsbetting"));
+    TAGS("atd"));
   return {slides: [s], head, sub, caption: cap};
 };
 
@@ -2075,7 +2128,7 @@ B.sunpm = () => {
       `They're SCORING 🙌 ${hit} of ${all.length}${live ? " and counting" : ""}`,
       `Touchdown tracker 🏈 ${hit} of ${all.length} have cashed${live ? " so far" : ""} ✅`,
     ]) : live ? `Still waiting on the first one 👀 ${all.length} scorers on the list` : `Rough day for the TD list 😤 0 of ${all.length}. Back at it next week 💪`;
-  const cap = caption(hook, "", TAGS("#nfl #anytimetd #nflsunday", "#MLB #MLBPlayoffs #homerun #dingers"));
+  const cap = caption(hook, "", TAGS("atdr"));
   return {slides: [s], head, sub, caption: cap, story: true};
 };
 
@@ -2604,12 +2657,12 @@ function betCaption(){
     const hot = (l.flags || []).some(f => /hot streak/i.test(f[0])) ? " 🔥" : "";
     return `🎯 ${l.player} ${propLong(l)} (${odds(l.price)})${hot}\n     Model ${pct(l.p)}${l.n ? ` · hit in ${l.hits} of ${l.n}` : ""}`;
   }).join("\n");
-  const ctas = [`🔔 Follow ${handleTag() || "along"} to watch every rung`, `📌 Save this and check back after the game`,
+  const ctas = [`🔔 Follow ${handleTag() || "along"} to watch every rung`, `💬 Think this rung cashes? Let us know 👇`,
                 `🔔 Turn on post notifications so you catch the next rung`];
   return [hook,
     `Rung ${b.rung} bet: ${b.sTxt} → ${b.rTxt}\n\n${legLines}\n\n💰 Pays ${odds(b.pays)}`,
     `Goal: ${money(b.start)} → ${G}. Every rung posted, win or lose 📊`,
-    pick(ctas, 1), `21+ | Bet responsibly\n#ladderchallenge ${TAGS("#nflparlays #playerprops #sportsbetting #parlay #nfl", "#mlbparlays #MLBPlayoffs #playerprops #sportsbetting #parlay #MLB")}`].join("\n\n");
+    pick(ctas, 1), `21+ | Bet responsibly\n${TAGS("ladder", "", n)}`].join("\n\n");
 }
 // "+150", "-217", "217" -> a valid American price, or null.
 function slipOdds(v){
@@ -2749,6 +2802,14 @@ render(true);
    site when this page was last published (a header-only request, no data);
    if that's newer than the copy on screen, a "Tap to refresh" bar drops in.
    Nothing reloads by itself. */
+// "Last updated": when this page was last published (the site's own date for it).
+(() => {
+  const el = document.getElementById("upd"), d = new Date(document.lastModified);
+  if(!el || !/^https?:$/.test(location.protocol) || !isFinite(d)) return;
+  const f = new Intl.DateTimeFormat("en-US", {timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"});
+  el.textContent = "Last updated " + f.format(d) + " ET";
+  el.hidden = false;
+})();
 (() => {
   if(!/^https?:$/.test(location.protocol)) return;
   const shown = new Date(document.lastModified).getTime();   // when the copy on screen was published
