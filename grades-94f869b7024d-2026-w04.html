@@ -391,7 +391,8 @@ prices. Settled picks only in the hit rates — pending ones aren't counted.
     <div><label for="ldgoal">Goal ($)</label><input id="ldgoal" type="number" inputmode="decimal"></div>
     <div><label for="ldplan">Planned odds</label><input id="ldplan" type="text" inputmode="numbers-and-punctuation"></div>
   </div>
-  <p class="ld-hint">Planned odds fill in any bet you haven't priced yet, so you can see how many bets the climb takes. Put each bet's real odds in the list above as you place it.</p>
+  <div class="ig-field" style="margin-top:12px"><label for="ldrungs">Number of bets</label><input id="ldrungs" type="number" inputmode="numeric" min="1" max="15" placeholder="Blank = as many as it takes to reach the goal"></div>
+  <p class="ld-hint">Planned odds fill in any bet you haven't priced yet. With a number of bets set, the ladder always has that many rungs and the last one shows what it actually pays; leave it blank to add bets until the goal is reached. Put each bet's real odds in the list above as you place it.</p>
   <div class="ig-field" style="margin-top:12px"><label for="ldlabel">Bet type (shown after the odds)</label><input id="ldlabel" type="text" placeholder="parlay"></div>
   <div class="ig-field" style="margin-top:12px"><label for="ldhandle">Handle</label><input id="ldhandle" type="text"></div>
   <p class="ld-hint"><span id="ldsaved"></span> Saved on this phone, and in this page's address. Safari can clear a site's
@@ -1065,12 +1066,18 @@ document.addEventListener("click", e => {
   if(b && b.dataset.sport !== SPORT) setSport(b.dataset.sport);
 });
 function compute(){
+  if(S.fixed === undefined) S.fixed = SPORT === "nfl" ? 8 : null;     // the NFL ladder is the 8-rung $25 -> $1,000 series
   S.start = Math.max(1, +S.start || 25);
   S.goal = Math.max(S.start + 1, +S.goal || 1000);
   if(!valid(S.plan)) S.plan = -150;
   const out = [];
   let amt = S.start;
-  for(let i = 0; i < MAXR && amt < S.goal - 0.005; i++){
+  // FIXED NUMBER OF BETS. A ladder announced as 8 rungs stays 8 rungs: the
+  // last one pays whatever the odds give, instead of a bet being added (or
+  // dropped) whenever a price moves the total around the goal. Blank = as
+  // many bets as it takes to reach the goal.
+  const fixed = S.fixed >= 1 ? Math.min(MAXR, Math.round(S.fixed)) : 0;
+  for(let i = 0; i < MAXR && (fixed ? i < fixed : amt < S.goal - 0.005); i++){
     const set = valid(S.odds[i]) ? S.odds[i] : null, o = set == null ? S.plan : set;
     amt = amt * dec(o);
     out.push({amt, odds: o, planned: set == null, st: S.st[i] || "p"});
@@ -1153,7 +1160,7 @@ function draw(){
     // The bet's odds on the right, shrunk if it would run into the amount.
     const amtTxt = isStart ? money(S.start) : (r.planned && st === "p" ? "~" : "") + money(r.amt);
     // The top rung is the finish line, so it just says GOAL.
-    const lab = isStart ? "START" : i === n ? "GOAL" : `${odd(r.odds)} ${S.label || ""}`.trim().toUpperCase();
+    const lab = isStart ? "START" : i === n && r.amt >= S.goal - 0.005 ? "GOAL" : `${odd(r.odds)} ${S.label || ""}`.trim().toUpperCase();
     const room = x1 - (x0 + amtTxt.length * (isStart ? 26 : 31) + 44);
     const lfs = Math.max(14, Math.min(24, room / Math.max(1, lab.length * .66)));
     el("text", {x: x1, y: y + 2, "text-anchor": "end", "font-weight": 650, "font-size": lfs, fill: "#8e98b8", "letter-spacing": 1}, g, lab);
@@ -1208,10 +1215,12 @@ function rows(){
         <button class="h" aria-pressed="${r.st === "h"}" data-s="h" data-i="${i}" title="Hit">✓</button>
         <button class="m" aria-pressed="${r.st === "m"}" data-s="m" data-i="${i}" title="Miss">✕</button>
       </div></div>`).join("")
-    + (R.length >= MAXR && R[R.length - 1].amt < S.goal ? `<p class="ld-hint">Stopped at ${MAXR} bets — raise the odds to reach the goal sooner.</p>` : "");
+    + (!(S.fixed >= 1) && R.length >= MAXR && R[R.length - 1].amt < S.goal ? `<p class="ld-hint">Stopped at ${MAXR} bets — raise the odds to reach the goal sooner.</p>` : "")
+    + (S.fixed >= 1 && R.length && R[R.length - 1].amt < S.goal - 0.005 ? `<p class="ld-hint">At these odds the ${R.length} bets finish at ${money(R[R.length - 1].amt)}, short of ${money(S.goal)}. The ladder stays at ${R.length} bets — longer odds on a remaining bet close the gap.</p>` : "");
 }
 function form(){
   $("ldstart").value = S.start; $("ldgoal").value = S.goal; $("ldplan").value = odd(S.plan); $("ldlabel").value = S.label || "";
+  $("ldrungs").value = S.fixed >= 1 ? S.fixed : "";
   $("ldhandle").value = S.handle || "";
 }
 // Typing odds updates the payouts as you go; the list redraws when you leave the box
@@ -1230,9 +1239,10 @@ $("ldrows").addEventListener("click", e => {
 const reset = () => {
   S.start = +$("ldstart").value || S.start; S.goal = +$("ldgoal").value || S.goal;
   const pl = parseOdds($("ldplan").value); if(pl != null) S.plan = pl;
+  const fx = Math.round(+$("ldrungs").value); S.fixed = fx >= 1 ? Math.min(MAXR, fx) : null;
   save(); form(); draw(); rows();
 };
-["ldstart", "ldgoal", "ldplan"].forEach(id => $(id).addEventListener("change", reset));
+["ldstart", "ldgoal", "ldplan", "ldrungs"].forEach(id => $(id).addEventListener("change", reset));
 $("ldlabel").oninput = e => { S.label = e.target.value; save(); draw(); };
 $("ldhandle").oninput = e => { S.handle = e.target.value; save(); draw(); };
 $("ldsaved").textContent = ldSavedText();
@@ -2690,11 +2700,12 @@ function ladderNow(){
   const ok = o => Number.isFinite(o) && (o >= 100 || o <= -100);
   let amt = +L.start || 25, hits = 0;
   const plan = ok(L.plan) ? L.plan : -150;
-  for(let i = 0; i < 15 && amt < (+L.goal || 1000) - 0.005; i++){
+  const fixed = L.fixed === undefined ? (MLB() ? 0 : 8) : (L.fixed >= 1 ? Math.round(L.fixed) : 0);
+  for(let i = 0; i < 15 && (fixed ? i < fixed : amt < (+L.goal || 1000) - 0.005); i++){
     if((L.st || [])[i] !== "h") break;
     amt *= decOf(ok((L.odds || [])[i]) ? L.odds[i] : plan); hits++;
   }
-  return {bank: amt, rung: hits + 1, busted: (L.st || [])[hits] === "m", start: +L.start || 25, goal: +L.goal || 1000};
+  return {bank: amt, rung: hits + 1, busted: (L.st || [])[hits] === "m", start: +L.start || 25, goal: +L.goal || 1000, fixed};
 }
 const betKey = l => l.player + "|" + l.stat + "|" + l.threshold;
 // A window's full line list (packed by the board: see sportFeed's w.all), or its top 60.
@@ -2790,7 +2801,7 @@ function betCaption(){
   const b = BET_NOW; if(!b || !b.legs.length) return "";
   const n = (S.hooks[wk("bet")] || 0), pick = (arr, bump) => arr[(n + (bump || 0)) % arr.length];
   const money = v => "$" + Math.round(v).toLocaleString("en-US");
-  const G = money(b.goal), last = b.ret >= b.goal - 0.005;
+  const G = money(b.goal), last = b.fixed ? b.rung >= b.fixed : b.ret >= b.goal - 0.005;
   const hook = b.rung <= 1 ? pick([
       `🪜 THE ${money(b.start)} → ${G} LADDER STARTS NOW 🪜`,
       `${money(b.start)} to ${G}. Rung 1. Let's climb 🧗‍♂️🔥`,
@@ -2833,7 +2844,7 @@ function betCard(legs){
   const rung = ov.rung > 0 ? Math.round(ov.rung) : L ? L.rung : 1;
   const stake = ov.stake > 0 ? ov.stake : L ? L.bank : 25;          // 25 = the ladder's default start
   const ret = ov.ret > 0 ? ov.ret : stake * dec;
-  BET_NOW = {rung, stake, ret, pays: odds, legs, start: L ? L.start : 25, goal: L ? L.goal : 1000,
+  BET_NOW = {rung, stake, ret, pays: odds, legs, start: L ? L.start : 25, goal: L ? L.goal : 1000, fixed: L ? L.fixed : 0,
              sTxt: cash(stake, ov.stake > 0), rTxt: cash(ret, ov.ret > 0)};
   let y = frame(s, H, `Rung ${rung}`, `Rung ${rung} bet`,
     stake ? `${cash(stake, ov.stake > 0)} → ${cash(ret, ov.ret > 0)}` : "");
