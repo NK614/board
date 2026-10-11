@@ -309,6 +309,12 @@ body.igfull{overflow:hidden}
   padding:6px 10px;font:600 12.5px/1.2 inherit;cursor:pointer}
 .bet-chip b{margin-left:4px;color:var(--mut)}
 .ig-pick.on{background:rgba(63,214,255,.06)}
+.pickrow{appearance:none;-webkit-appearance:none;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid var(--line);
+  color:var(--ink);font:inherit;font-size:14px;cursor:pointer;grid-template-columns:22px minmax(0,1fr) auto;padding:10px 4px;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;border-radius:0}
+.pickrow .pk-box{width:20px;height:20px;border-radius:6px;border:2px solid var(--mut);box-sizing:border-box;display:inline-block}
+.pickrow.on .pk-box{background:#3fd6ff;border-color:#3fd6ff;box-shadow:inset 0 0 0 3px var(--card2,#0b1124)}
+.pickrow .pk-txt small{color:var(--mut);font-size:12px}
 .ig-pick-h{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);padding:10px 0 4px}
 #betopts input[type=search],#betopts select{width:100%;min-width:0;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:transparent;color:inherit}
 </style></head><body><div class="wrap">
@@ -1961,8 +1967,7 @@ function cusPickList(){
     && (!q || l.player.toLowerCase().includes(q)));
   const total = rows.length, CAP = 150;
   rows = rows.slice().sort((a, b) => b.p - a.p).slice(0, CAP);
-  const row = (l, on) => `<div class="ig-pick${on ? " on" : ""}"><label><input type="checkbox" data-cus="${esc(betKey(l))}" ${on ? "checked" : ""}>
-    <span>${esc(l.player)} <small>${esc(propLong(l))} · ${odds(l.price)}${l.kick ? " · " + esc(kickTxt(l.kick)) : ""}</small></span></label><small>${pct(l.p)}</small></div>`;
+  const row = (l, on) => pickRow("data-cus", betKey(l), on, l);
   return `<div class="ig-pick-h">${total} line${total === 1 ? "" : "s"}${total > CAP ? ` — showing the likeliest ${CAP}; pick a game or stat, or type a name` : ""}</div>`
     + (rows.length ? rows.map(l => row(l, mine.has(betKey(l)))).join("") : `<p class="ig-note">No lines match.</p>`);
 }
@@ -2644,12 +2649,6 @@ $("igopts").addEventListener("change", e => {
     if(t.id === "cusgame") CUS_G = t.value; else CUS_S = t.value;
     const box = $("cuspicks"); if(box) box.innerHTML = cusPickList(); return;
   }
-  if(t.dataset.cus != null){
-    let mine = (opt("custom", "mine", []) || []).slice();
-    if(t.checked && !mine.includes(t.dataset.cus) && mine.length >= 10){ t.checked = false; toast("10 legs max"); return; }
-    mine = t.checked ? [...new Set([...mine, t.dataset.cus])] : mine.filter(x => x !== t.dataset.cus);
-    setOpt("custom", "mine", mine); render(true); return;
-  }
   if(t.dataset.k){ setOpt(t.dataset.day, t.dataset.k, t.type === "checkbox" ? t.checked : (isNaN(+t.value) ? t.value : +t.value)); render(true); }
   else if(t.dataset.mine != null){
     const pd = PARLAY_DAY[DAY] ? DAY : "thu";
@@ -2667,6 +2666,12 @@ $("igopts").addEventListener("input", e => {
 });
 $("igopts").addEventListener("click", e => {
   if(e.target.id === "cusclear"){ setOpt("custom", "mine", []); render(true); return; }
+  const cpk = e.target.closest && e.target.closest("[data-cus]");
+  if(cpk){
+    const key = cpk.dataset.cus, mine = (opt("custom", "mine", []) || []).slice(), on = mine.includes(key);
+    if(!on && mine.length >= 10){ toast("10 legs max"); return; }
+    setOpt("custom", "mine", on ? mine.filter(x => x !== key) : [...mine, key]); render(true); return;
+  }
   const crm = e.target.closest && e.target.closest("[data-cusrm]");
   if(crm){ setOpt("custom", "mine", (opt("custom", "mine", []) || []).filter(x => x !== crm.dataset.cusrm)); render(true); return; }
   const hb = e.target.closest("button[data-heat]");
@@ -2751,10 +2756,18 @@ function betPickList(){
   let rows = pool.filter(l => (!BET_G || l.game === BET_G) && (!q || l.player.toLowerCase().includes(q)));
   const total = rows.length, CAP = 150;
   rows = rows.slice(0, CAP);
-  const row = (l, on) => `<div class="ig-pick${on ? " on" : ""}"><label><input type="checkbox" data-bet="${esc(betKey(l))}" ${on ? "checked" : ""}>
-    <span>${esc(l.player)} <small>${esc(propLong(l))} · ${odds(l.price)}${l.kick ? " · " + esc(kickTxt(l.kick)) : ""}</small></span></label><small>${pct(l.p)}</small></div>`;
+  const row = (l, on) => pickRow("data-bet", betKey(l), on, l);
   return `<div class="ig-pick-h">${total} line${total === 1 ? "" : "s"}${total > CAP ? ` — showing the likeliest ${CAP}; pick a game or type a name to narrow` : ""}</div>`
     + (rows.length ? rows.map(l => row(l, mine.has(betKey(l)))).join("") : `<p class="ig-note">No lines match.</p>`);
+}
+/* PICK ROWS. Each line is one big tap target (a button), not a checkbox in a
+   label: iPhone Safari's label/checkbox handling, plus the list being redrawn
+   on every tick, kept dropping all but one pick. A tap now flips that row in
+   place -- the list itself is never redrawn -- and only the slip chips, the
+   odds and the picture update. */
+function pickRow(attr, key, on, l){
+  return `<button type="button" class="ig-pick pickrow${on ? " on" : ""}" ${attr}="${esc(key)}" aria-pressed="${on}">
+    <span class="pk-box" aria-hidden="true"></span><span class="pk-txt">${esc(l.player)} <small>${esc(propLong(l))} · ${odds(l.price)}${l.kick ? " · " + esc(kickTxt(l.kick)) : ""}</small></span><small>${pct(l.p)}</small></button>`;
 }
 // What's on the slip, above the scrolling list (so ticking never moves the rows).
 function betChips(){
@@ -2900,7 +2913,7 @@ function betOptsHtml(legs){
       <div class="bet-filt"><select id="betgame"><option value="">All games still to come</option>${games.map(([g, k]) =>
         `<option value="${esc(g)}"${g === BET_G ? " selected" : ""}>${esc(g)}${k ? " · " + esc(kickTxt(k)) : ""}</option>`).join("")}</select>
         <input type="search" id="betq" placeholder="Search a player" value="${esc(BET_Q)}" autocomplete="off"></div>
-      ${betChips()}<div class="ig-picks" id="betpicks">${betPickList()}</div></div>`);
+      <div id="betchips">${betChips()}</div><div class="ig-picks" id="betpicks">${betPickList()}</div></div>`);
   }
   const L = ladderNow(), ov = opt("bet", "ov", {}) || {};
   const legDec = (legs || []).reduce((a, l) => a * decOf(l.price), 1), own = slipOdds(ov.odds);
@@ -2919,15 +2932,7 @@ function betOptsHtml(legs){
   return h.join("");
 }
 let BET_FILE = null;
-function renderBet(){
-  if(!$("betopts")) return;
-  const legs = betLegs();
-  // Keep the leg list exactly where it was on screen: same scroll inside the
-  // list, and the page nudged by however much the slip chips above it grew.
-  const lst = $("betpicks"), keepTop = lst ? lst.scrollTop : 0, top0 = lst ? lst.getBoundingClientRect().top : null;
-  $("betopts").innerHTML = betOptsHtml(legs);
-  const lst2 = $("betpicks");
-  if(lst2 && top0 != null){ lst2.scrollTop = keepTop; window.scrollBy(0, lst2.getBoundingClientRect().top - top0); }
+function betPicture(legs){
   const box = $("betslide"); box.innerHTML = ""; BET_FILE = null;
   if(!legs) return;
   const svg = LIGHT(betCard(legs)), d = document.createElement("div");
@@ -2938,6 +2943,30 @@ function renderBet(){
     const img = new Image(); img.src = await asDataUrl(blob); img.width = 1080; img.height = 1350; img.alt = "Ladder bet";
     if(d.isConnected) d.replaceChildren(img);
   }).catch(() => {});
+}
+// A pick changed: everything but the list (which stays exactly as it is on screen).
+function betPickChanged(){
+  const legs = betLegs(), lst = $("betpicks"), top0 = lst ? lst.getBoundingClientRect().top : null;
+  const ch = $("betchips"); if(ch) ch.innerHTML = betChips();
+  if(lst && top0 != null) window.scrollBy(0, lst.getBoundingClientRect().top - top0);
+  const legDec = (legs || []).reduce((a, l) => a * decOf(l.price), 1);
+  const oi = document.querySelector('#betopts [data-ov="odds"]');
+  if(oi) oi.placeholder = (legs || []).length ? odds(amerOfDec(legDec)) + " (legs multiplied)" : "e.g. -217 or +350";
+  const ri = document.querySelector('#betopts [data-ov="ret"]'), L = ladderNow(), ov = opt("bet", "ov", {}) || {};
+  const own = slipOdds(ov.odds), stake = ov.stake > 0 ? ov.stake : L ? L.bank : 25;
+  if(ri) ri.placeholder = Math.round(stake * (own ? decOf(own) : legDec)).toLocaleString("en-US");
+  betPicture(legs);
+}
+function renderBet(){
+  if(!$("betopts")) return;
+  const legs = betLegs();
+  // Keep the leg list exactly where it was on screen: same scroll inside the
+  // list, and the page nudged by however much the slip chips above it grew.
+  const lst = $("betpicks"), keepTop = lst ? lst.scrollTop : 0, top0 = lst ? lst.getBoundingClientRect().top : null;
+  $("betopts").innerHTML = betOptsHtml(legs);
+  const lst2 = $("betpicks");
+  if(lst2 && top0 != null){ lst2.scrollTop = keepTop; window.scrollBy(0, lst2.getBoundingClientRect().top - top0); }
+  betPicture(legs);
 }
 if($("betopts")){
   $("betopts").addEventListener("input", e => {
@@ -2955,12 +2984,6 @@ if($("betopts")){
       setOpt("bet", "ov", ov);
     }
     else if(t.dataset.k) setOpt("bet", t.dataset.k, isNaN(+t.value) ? t.value : +t.value);
-    else if(t.dataset.bet != null){
-      let mine = (opt("bet", "mine", []) || []).slice();
-      if(t.checked && !mine.includes(t.dataset.bet) && mine.length >= 10){ t.checked = false; toast("10 legs max"); return; }
-      mine = t.checked ? [...new Set([...mine, t.dataset.bet])] : mine.filter(x => x !== t.dataset.bet);
-      setOpt("bet", "mine", mine);
-    }
     renderBet();
   });
   $("bethook").onclick = () => { S.hooks[wk("bet")] = (S.hooks[wk("bet")] || 0) + 1; save(); $("betcap").value = betCaption(); };
@@ -2971,8 +2994,21 @@ if($("betopts")){
   };
   $("betopts").addEventListener("click", e => {
     if(e.target.id === "betovreset"){ setOpt("bet", "ov", {}); renderBet(); }
+    const pk = e.target.closest && e.target.closest("[data-bet]");
+    if(pk){
+      const key = pk.dataset.bet, mine = (opt("bet", "mine", []) || []).slice(), on = mine.includes(key);
+      if(!on && mine.length >= 10){ toast("10 legs max"); return; }
+      setOpt("bet", "mine", on ? mine.filter(x => x !== key) : [...mine, key]);
+      pk.classList.toggle("on", !on); pk.setAttribute("aria-pressed", String(!on));
+      betPickChanged(); return;
+    }
     const rm = e.target.closest && e.target.closest("[data-betrm]");
-    if(rm){ setOpt("bet", "mine", (opt("bet", "mine", []) || []).filter(x => x !== rm.dataset.betrm)); renderBet(); }
+    if(rm){
+      setOpt("bet", "mine", (opt("bet", "mine", []) || []).filter(x => x !== rm.dataset.betrm));
+      const row = [...document.querySelectorAll("#betpicks [data-bet]")].find(b => b.dataset.bet === rm.dataset.betrm);
+      if(row){ row.classList.remove("on"); row.setAttribute("aria-pressed", "false"); }
+      betPickChanged();
+    }
   });
   $("betsave").onclick = () => {
     if(!BET_FILE){ toast("Still drawing — tap again in a second"); return; }
