@@ -309,6 +309,7 @@ body.igfull{overflow:hidden}
   padding:6px 10px;font:600 12.5px/1.2 inherit;cursor:pointer}
 .bet-chip b{margin-left:4px;color:var(--mut)}
 .ig-pick.on{background:rgba(63,214,255,.06)}
+.pk-nr{font-style:normal;color:#ffc86b}
 .pickrow{appearance:none;-webkit-appearance:none;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid var(--line);
   color:var(--ink);font:inherit;font-size:14px;cursor:pointer;grid-template-columns:22px minmax(0,1fr) auto;padding:10px 4px;
   touch-action:manipulation;-webkit-tap-highlight-color:transparent;border-radius:0}
@@ -1308,7 +1309,7 @@ const NS = "http://www.w3.org/2000/svg";
 const FONT = "Helvetica Neue, Helvetica, Arial, sans-serif";
 const W = 1080;
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
-const pct = x => Math.round(100 * x) + "%";
+const pct = x => x == null || !isFinite(x) ? "—" : Math.round(100 * x) + "%";
 const odds = a => (a > 0 ? "+" : "") + a;
 const nick = team => { const w = String(team || "").trim().split(" ");       // "White Sox", "Blue Jays"
   return w.length > 1 && /^(Sox|Jays)$/.test(w[w.length - 1]) ? w.slice(-2).join(" ") : w.pop(); };
@@ -1953,7 +1954,7 @@ function cusPool(){
   ((FEED && FEED.windows) || []).forEach(w => linesOf(w).forEach(l => all.push(Object.assign({win: w.name}, l))));
   const seen = new Set();
   return all.filter(l => { const k = betKey(l); if(seen.has(k)) return false; seen.add(k); return true; })
-    .sort((a, b) => String(a.kick || "").localeCompare(String(b.kick || "")) || b.p - a.p);
+    .sort((a, b) => String(a.kick || "").localeCompare(String(b.kick || "")) || (b.p == null ? -1 : b.p) - (a.p == null ? -1 : a.p));
 }
 function cusLegs(){
   const keys = opt("custom", "mine", []) || [], pool = cusPool(), by = new Map(pool.map(l => [betKey(l), l]));
@@ -1966,7 +1967,7 @@ function cusPickList(){
   let rows = pool.filter(l => (!CUS_G || l.game === CUS_G) && (!CUS_S || l.stat === CUS_S)
     && (!q || l.player.toLowerCase().includes(q)));
   const total = rows.length, CAP = 150;
-  rows = rows.slice().sort((a, b) => b.p - a.p).slice(0, CAP);
+  rows = rows.slice().sort((a, b) => (b.p == null ? -1 : b.p) - (a.p == null ? -1 : a.p)).slice(0, CAP);
   const row = (l, on) => pickRow("data-cus", betKey(l), on, l);
   return `<div class="ig-pick-h">${total} line${total === 1 ? "" : "s"}${total > CAP ? ` — showing the likeliest ${CAP}; pick a game or stat, or type a name` : ""}</div>`
     + (rows.length ? rows.map(l => row(l, mine.has(betKey(l)))).join("") : `<p class="ig-note">No lines match.</p>`);
@@ -2736,7 +2737,7 @@ function linesOf(w){
   const a = w.all;
   if(!a || !a.r) return w.top || [];
   if(!ALL_CACHE.has(w)) ALL_CACHE.set(w, a.r.map(x => ({player: x[0], team: x[1], pos: x[2], game: a.g[x[3]], kick: a.k[x[3]],
-    stat: x[4], threshold: x[5], price: x[6], p: x[7], hits: x[8], n: x[9]})));
+    stat: x[4], threshold: x[5], price: x[6], p: x[7] == null ? null : x[7], hits: x[8], n: x[9], why: x[10] || ""})));
   return ALL_CACHE.get(w);
 }
 // The board's TV windows that haven't kicked off: on a Sunday night that's
@@ -2767,7 +2768,7 @@ function betPickList(){
    odds and the picture update. */
 function pickRow(attr, key, on, l){
   return `<button type="button" class="ig-pick pickrow${on ? " on" : ""}" ${attr}="${esc(key)}" aria-pressed="${on}">
-    <span class="pk-box" aria-hidden="true"></span><span class="pk-txt">${esc(l.player)} <small>${esc(propLong(l))} · ${odds(l.price)}${l.kick ? " · " + esc(kickTxt(l.kick)) : ""}</small></span><small>${pct(l.p)}</small></button>`;
+    <span class="pk-box" aria-hidden="true"></span><span class="pk-txt">${esc(l.player)} <small>${esc(propLong(l))} · ${odds(l.price)}${l.kick ? " · " + esc(kickTxt(l.kick)) : ""}${l.p == null ? ` · <i class="pk-nr">model doesn't rate it${l.why ? ` (${esc(l.why)})` : ""}</i>` : ""}</small></span><small>${pct(l.p)}</small></button>`;
 }
 // What's on the slip, above the scrolling list (so ticking never moves the rows).
 function betChips(){
@@ -2785,7 +2786,7 @@ function betLegs(){
     // Every line on the board for games that haven't kicked off yet.
     const all = [], now = Date.now();
     wins.forEach(w => linesOf(w).forEach(l => { if(!l.kick || new Date(l.kick).getTime() > now) all.push(l); }));
-    all.sort((a, b) => b.p - a.p);
+    all.sort((a, b) => (b.p == null ? -1 : b.p) - (a.p == null ? -1 : a.p));
     const seen = new Set(), pool = all.filter(l => { const k = betKey(l); if(seen.has(k)) return false; seen.add(k); return true; });
     OPTS_EXTRA.betpool = pool;
     const keys = new Set(opt("bet", "mine", []) || []);
@@ -2859,7 +2860,7 @@ function betCaption(){
     ]);
   const legLines = b.legs.map(l => {
     const hot = (l.flags || []).some(f => /hot streak/i.test(f[0])) ? " 🔥" : "";
-    return `🎯 ${l.player} ${propLong(l)} (${odds(l.price)})${hot}\n     Model ${pct(l.p)}${l.n ? ` · hit in ${l.hits} of ${l.n}` : ""}`;
+    return `🎯 ${l.player} ${propLong(l)} (${odds(l.price)})${hot}\n     ${l.p == null ? "" : `Model ${pct(l.p)}`}${l.p == null || !l.n ? "" : " · "}${l.n ? `hit in ${l.hits} of ${l.n}` : ""}`;
   }).join("\n");
   const ctas = [`🔔 Follow ${handleTag() || "along"} to watch every rung`, `💬 Think this rung cashes? Let us know 👇`,
                 `🔔 Turn on post notifications so you catch the next rung`];
