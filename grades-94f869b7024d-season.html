@@ -677,7 +677,7 @@ function htile(t, label, suffix, opts){
     <div class="hp"><span class="${cls}">${pctS(r)}</span>${arrow(t, o.prev, "hit")}</div>
     <div class="hd">${t.w} of ${t.n} hit · model ${pctS(t.pred / t.n)}${t.pend && o.live ? `<br>${t.pend} still to play` : ""}</div>
     <div class="hu"><span class="${cls}">${usd(t.u)}</span> ${arrow(t, o.prev, "u")}</div>
-    <div class="hr">ROI ${t.u >= 0 ? "+" : "−"}${Math.abs(Math.round(100 * t.u / (10 * t.n)))}% · need ${pctS(t.be / t.n)}</div>
+    <div class="hr">ROI ${t.u >= 0 ? "+" : "−"}${Math.abs(Math.round(100 * t.u / (10 * t.n)))}% on $${(10 * t.n).toLocaleString("en-US")} bet</div>
     ${t.prot ? `<div class="hpr">incl. ${t.prot} Bet Protect win${t.prot === 1 ? "" : "s"}</div>` : ""}</${tag}>`;
 }
 // Weekly trend: a bar per week for the money ($10 a pick), a line for the hit rate.
