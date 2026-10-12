@@ -1320,7 +1320,9 @@ function setSport(sp){
   document.querySelectorAll(".sport-sw button[data-sport]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sport === SPORT));
   onSport.forEach(f => { try { f(SPORT); } catch(e) {} });
 }
-window.ALP = {sport: () => SPORT, light: theme, onSport, setSport};
+window.ALP = {sport: () => SPORT, light: theme, onSport, setSport,
+  // The ladder bet card's "Put it on rung N": that bet's odds onto the ladder.
+  setRungOdds: (i, o) => { if(!S || !valid(o) || i < 0 || i >= MAXR) return false; S.odds[i] = o; save(); rows(); draw(); return true; }};
 // NBA: a tab that's there, not open yet.
 function nbaSoon(btn){
   const sw = btn.closest(".sport-sw");
@@ -2995,7 +2997,7 @@ function linesOf(w){
   const a = w.all;
   if(!a || !a.r) return w.top || [];
   if(!ALL_CACHE.has(w)) ALL_CACHE.set(w, a.r.map(x => ({player: x[0], team: x[1], pos: x[2], game: a.g[x[3]], kick: a.k[x[3]],
-    stat: x[4], threshold: x[5], price: x[6], p: x[7] == null ? null : x[7], hits: x[8], n: x[9], why: x[10] || ""})));
+    stat: x[4], threshold: x[5], price: x[6], p: x[7] == null ? null : x[7], hits: x[8], n: x[9], why: x[10] || "", fd: x[11] || null})));
   return ALL_CACHE.get(w);
 }
 // The board's TV windows that haven't kicked off: on a Sunday night that's
@@ -3132,13 +3134,50 @@ function slipOdds(v){
   const n = Math.round(+String(v == null ? "" : v).replace(/[^0-9.+-]/g, ""));
   return isFinite(n) && Math.abs(n) >= 100 ? n : null;
 }
+// The typed FanDuel price belongs to the legs it was typed for: pick other legs
+// (or another window) and the card goes back to the legs multiplied.
+const legSig = legs => (legs || []).map(betKey).sort().join(";");
+function slipOwn(legs, ov){
+  const o = slipOdds(ov && ov.odds);
+  return o != null && (!ov.oddsFor || ov.oddsFor === legSig(legs)) ? o : null;
+}
+// SGP QUOTES. Every FanDuel price typed here, with its legs and the legs
+// multiplied -- the data to teach the board FanDuel's same-game pricing.
+// Kept with the Instagram settings (so it syncs between devices).
+function logQuote(legs, fd){
+  if(!legs.length) return;
+  const mult = amerOfDec(legs.reduce((a, l) => a * decOf(l.price), 1)), sig = legSig(legs);
+  const q = (S.sgpq = S.sgpq || []).filter(x => !(x.sig === sig && x.fd === fd));
+  q.push({t: Date.now(), sp: SPORT(), sig, fd, mult, games: [...new Set(legs.map(l => l.game))].length,
+          legs: legs.map(l => [l.player, l.stat, l.threshold, l.price, l.p, l.game])});
+  S.sgpq = q.slice(-500); save();
+}
+const FD_SLIP = "https://sportsbook.fanduel.com/addToBetslip";
+function betFdHtml(legs){
+  legs = legs || [];
+  if(!legs.length) return "";
+  const ok = legs.filter(l => Array.isArray(l.fd) && l.fd[0] && l.fd[1]);
+  const url = FD_SLIP + "?" + ok.map((l, i) => `marketId%5B${i}%5D=${encodeURIComponent(l.fd[0])}&selectionId%5B${i}%5D=${encodeURIComponent(l.fd[1])}`).join("&");
+  const miss = legs.length - ok.length;
+  return `<div class="ld-acts" style="margin:4px 0 6px">${ok.length
+      ? `<a class="ld-btn pri" href="${esc(url)}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">Open in FanDuel · ${ok.length} leg${ok.length === 1 ? "" : "s"}</a>`
+      : `<span class="ld-btn" aria-disabled="true" style="opacity:.5">Open in FanDuel</span>`}</div>${miss
+      ? `<p class="ld-hint" style="margin-top:0">${miss === legs.length ? "These legs" : `${miss} of the ${legs.length} legs`} can't be sent to FanDuel yet —
+         the FanDuel links arrive with the next board build. Add ${miss === legs.length ? "them" : "those"} in FanDuel by hand.</p>` : ""}`;
+}
+function betUseHtml(legs){
+  const ov = opt("bet", "ov", {}) || {}, own = slipOwn(legs || [], ov), L = ladderNow();
+  if(own == null || !(legs || []).length) return "";
+  const rung = ov.rung > 0 ? Math.round(ov.rung) : L ? L.rung : 1;
+  return `<button type="button" class="ld-btn" id="betuserung" style="margin:2px 0 8px">Put ${esc(odds(own))} on rung ${rung} of the ladder</button>`;
+}
 function betCard(legs){
   const H = 1350, s = canvas(H), L = ladderNow();
   // Rung, bet, odds and return follow the ladder unless typed in under the picture.
   const ov = opt("bet", "ov", {}) || {};
   // The slip's own price (FanDuel reprices same-game legs together, so it
   // often pays less than the legs multiplied); else the legs multiplied.
-  const own = slipOdds(ov.odds);
+  const own = slipOwn(legs, ov);
   const dec = own ? decOf(own) : legs.reduce((a, l) => a * decOf(l.price), 1), odds = own || (legs.length ? amerOfDec(dec) : 0);
   const rung = ov.rung > 0 ? Math.round(ov.rung) : L ? L.rung : 1;
   const stake = ov.stake > 0 ? ov.stake : L ? L.bank : 25;          // 25 = the ladder's default start
@@ -3175,15 +3214,18 @@ function betOptsHtml(legs){
       <div id="betchips">${betChips()}</div><div class="ig-picks" id="betpicks">${betPickList()}</div></div>`);
   }
   const L = ladderNow(), ov = opt("bet", "ov", {}) || {};
-  const legDec = (legs || []).reduce((a, l) => a * decOf(l.price), 1), own = slipOdds(ov.odds);
+  const legDec = (legs || []).reduce((a, l) => a * decOf(l.price), 1), own = slipOwn(legs, ov);
   const dec = own ? decOf(own) : legDec;
   const aRung = L ? L.rung : 1, aStake = ov.stake > 0 ? ov.stake : L ? L.bank : 25;
   const box = (k, label, ph, mode) => `<div class="ig-field"><label>${label}</label><input type="text" inputmode="${mode}"
     data-ov="${k}" value="${ov[k] > 0 ? ov[k] : ""}" placeholder="${esc(ph)}"></div>`;
-  h.push(`<div class="ig-field"><label>Odds on your FanDuel slip</label><input type="text" inputmode="numbers-and-punctuation"
+  h.push(`<div id="betfd">${betFdHtml(legs)}</div>
+    <div class="ig-field"><label>FanDuel's odds for this slip (custom)</label><input type="text" inputmode="numbers-and-punctuation"
     data-ov="odds" value="${own != null ? (own > 0 ? "+" : "") + own : ""}" placeholder="${(legs || []).length ? esc(odds(amerOfDec(legDec))) + " (legs multiplied)" : "e.g. -217 or +350"}"></div>
-    <p class="ld-hint" style="margin-top:6px">FanDuel prices same-game legs together, so the slip often pays less than the legs multiplied.
-    Type the price your slip shows and the picture, the returns and the caption use it.</p>`);
+    <p class="ld-hint" style="margin-top:6px">FanDuel prices same-game parlays as one bet, so its price often differs from the legs multiplied.
+    Type the price FanDuel shows: the picture, the returns and the caption use it, and it's kept for the model's SGP pricing.
+    Change the legs and it goes back to the legs multiplied.</p>
+    <div id="betuse">${betUseHtml(legs)}</div>`);
   h.push(`<div class="bet-ov">${box("rung", "Rung", String(aRung), "numeric")}${box("stake", "Bet $", Math.round(aStake).toLocaleString("en-US"), "decimal")}${
     box("ret", "Returns $", Math.round(aStake * dec).toLocaleString("en-US"), "decimal")}</div>
     <p class="ld-hint" style="margin-top:8px">Blank = the ladder's numbers (shown in gray). Returns fills in from the bet and the parlay's odds.
@@ -3209,10 +3251,13 @@ function betPickChanged(){
   const ch = $("betchips"); if(ch) ch.innerHTML = betChips();
   if(lst && top0 != null) window.scrollBy(0, lst.getBoundingClientRect().top - top0);
   const legDec = (legs || []).reduce((a, l) => a * decOf(l.price), 1);
-  const oi = document.querySelector('#betopts [data-ov="odds"]');
-  if(oi) oi.placeholder = (legs || []).length ? odds(amerOfDec(legDec)) + " (legs multiplied)" : "e.g. -217 or +350";
   const ri = document.querySelector('#betopts [data-ov="ret"]'), L = ladderNow(), ov = opt("bet", "ov", {}) || {};
-  const own = slipOdds(ov.odds), stake = ov.stake > 0 ? ov.stake : L ? L.bank : 25;
+  const own = slipOwn(legs, ov), stake = ov.stake > 0 ? ov.stake : L ? L.bank : 25;
+  const oi = document.querySelector('#betopts [data-ov="odds"]');
+  if(oi){ oi.placeholder = (legs || []).length ? odds(amerOfDec(legDec)) + " (legs multiplied)" : "e.g. -217 or +350";
+    oi.value = own != null ? (own > 0 ? "+" : "") + own : ""; }
+  const fdb = $("betfd"); if(fdb) fdb.innerHTML = betFdHtml(legs);
+  const ub = $("betuse"); if(ub) ub.innerHTML = betUseHtml(legs);
   if(ri) ri.placeholder = Math.round(stake * (own ? decOf(own) : legDec)).toLocaleString("en-US");
   betPicture(legs);
 }
@@ -3238,7 +3283,10 @@ if($("betopts")){
     if(t.id === "betgame"){ BET_G = t.value; const box = $("betpicks"); if(box) box.innerHTML = betPickList(); return; }
     if(t.dataset.ov){
       const ov = Object.assign({}, opt("bet", "ov", {}) || {}), v = +String(t.value).replace(/[$,\s]/g, "");
-      if(t.dataset.ov === "odds"){ const o = slipOdds(t.value); if(o) ov.odds = o; else delete ov.odds; }
+      if(t.dataset.ov === "odds"){
+        const o = slipOdds(t.value), legs = betLegs() || [];
+        if(o){ ov.odds = o; ov.oddsFor = legSig(legs); logQuote(legs, o); } else { delete ov.odds; delete ov.oddsFor; }
+      }
       else if(v > 0) ov[t.dataset.ov] = v; else delete ov[t.dataset.ov];
       setOpt("bet", "ov", ov);
     }
@@ -3253,6 +3301,12 @@ if($("betopts")){
   };
   $("betopts").addEventListener("click", e => {
     if(e.target.id === "betovreset"){ setOpt("bet", "ov", {}); renderBet(); }
+    if(e.target.id === "betuserung"){
+      const legs = betLegs() || [], ov = opt("bet", "ov", {}) || {}, own = slipOwn(legs, ov), L = ladderNow();
+      const rung = ov.rung > 0 ? Math.round(ov.rung) : L ? L.rung : 1;
+      if(own && window.ALP && window.ALP.setRungOdds && window.ALP.setRungOdds(rung - 1, own)){ toast(`${odds(own)} is on rung ${rung}`); betPickChanged(); }
+      return;
+    }
     const pk = e.target.closest && e.target.closest("[data-bet]");
     if(pk){
       const key = pk.dataset.bet, mine = (opt("bet", "mine", []) || []).slice(), on = mine.includes(key);
