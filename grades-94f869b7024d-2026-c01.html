@@ -2175,6 +2175,9 @@ function parlayPost(dk){
     const pl = w.parlays.find(x => x.legs_n === n && x.target === t) || w.parlays[0];
     legs = pl ? pl.legs : []; pOdds = pl ? pl.odds : 0; prob = pl ? pl.prob : 0;
   }
+  // FanDuel's own price for these legs, when typed in (same-game parlays get repriced).
+  const own = igOwn(legs);
+  if(own != null) pOdds = own;
   const head = MLB() ? "MLB parlay" : `${w.name} parlay`;
   const sub = `${MLB() ? w.name + " · " : ""}${shortGame(w.games[0])}${w.games.length > 1 ? ` + ${w.games.length - 1} more` : ""} · built by our model`;
   const H = 1350, s = canvas(H);
@@ -2182,7 +2185,7 @@ function parlayPost(dk){
   if(!legs.length){ T(s, 70, y + 60, "Pick some legs in the options.", {"font-size": 32, fill: "#8e98b8"}); }
   if(legs.length) rateLegs(s, y + 10, H - 360, legs);
   if(legs.length){
-    statTile(s, 70, H - 330, 940, odds(pOdds), "#fff", "PAYS", `${legs.length} legs`);
+    statTile(s, 70, H - 330, 940, odds(pOdds), "#fff", "PAYS", `${legs.length} legs${own != null ? " · FanDuel price" : ""}`);
   }
   const hook = pickOf(MLB() ? [
       `⚾ TODAY'S MLB PARLAY IS LIVE ⚾`,
@@ -2202,7 +2205,7 @@ function parlayPost(dk){
   const cap = caption(hook,
     `${legs.map(l => `🎯 ${l.player} ${prop(l)} (${odds(l.price)})`).join("\n")}\n\n💰 Pays ${odds(pOdds)}\n\nTail it, fade it, or just sweat it with us 😤 Result goes up either way 📊`,
     TAGS("picks", w.name));
-  return {slides: [s], head, sub, caption: cap};
+  return {slides: [s], head, sub, caption: cap, legs};
 };
 
 // PARLAY BUILDER: the TNF/SNF/MNF post as a template -- any game, any day,
@@ -2249,7 +2252,7 @@ B.custom = () => {
   const legs = cusLegs();
   const tag = (words("tag", "") || cusTag(legs)).slice(0, 14);
   const games = [...new Set(legs.map(l => l.game))];
-  const own = slipOdds(words("odds", ""));
+  const own = igOwn(legs);
   const legDec = legs.reduce((a, l) => a * decOf(l.price), 1);
   const pOdds = own != null ? own : legs.length ? amerOfDec(legDec) : 0;
   const head = /parlay/i.test(tag) ? tag : `${tag} parlay`;
@@ -2270,7 +2273,7 @@ B.custom = () => {
   const cap = legs.length ? caption(hook,
     `${legs.map(l => `🎯 ${l.player} ${propLong(l)} (${odds(l.price)})`).join("\n")}\n\n💰 Pays ${odds(pOdds)}\n\nTail it, fade it, or just sweat it with us 😤 Result goes up either way 📊`,
     TAGS("picks", tag)) : "";
-  return {slides: legs.length ? [s] : [], head, sub, caption: cap,
+  return {slides: legs.length ? [s] : [], head, sub, caption: cap, legs,
     note: legs.length ? "" : "Tick up to 10 legs below — any game, any stat on the board."};
 };
 
@@ -2580,12 +2583,14 @@ function optsHtml(day, R){
       const games = [...new Map(pool.map(l => [l.game, l.kick])).entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1])));
       const stats = [...new Set(pool.map(l => l.stat))];
       if(CUS_G && !games.some(g => g[0] === CUS_G)) CUS_G = "";
-      const own = words("odds", ""), legs = cusLegs(), legDec = legs.reduce((a, l) => a * decOf(l.price), 1);
+      const legs = cusLegs(), legDec = legs.reduce((a, l) => a * decOf(l.price), 1);
       h.push(`<div class="ld-g2"><div class="ig-field"><label for="igtag">Tag (top right)</label><input id="igtag" type="text" data-w="tag" maxlength="14"
           value="${esc((S.words[wk("custom")] || {}).tag || "")}" placeholder="${esc(cusTag(legs))}"></div>
-        <div class="ig-field"><label for="igodds">Odds on your FanDuel slip</label><input id="igodds" type="text" inputmode="numbers-and-punctuation" data-w="odds"
-          value="${esc(own)}" placeholder="${legs.length ? esc(odds(amerOfDec(legDec))) + " (legs multiplied)" : "e.g. -217 or +350"}"></div></div>
-        <p class="ld-hint" style="margin-top:6px">Title and subtitle are the boxes above. Blank = filled in for you. FanDuel prices same-game legs together, so type your slip's odds if they differ.</p>
+        <div class="ig-field"><label for="igodds">FanDuel's odds (custom)</label><input id="igodds" type="text" inputmode="numbers-and-punctuation" data-w="odds"
+          value="${esc(igOwnText(legs))}" placeholder="${legs.length ? esc(odds(amerOfDec(legDec))) + " (legs multiplied)" : "e.g. -217 or +350"}"></div></div>
+        ${betFdHtml(legs)}
+        <p class="ld-hint" style="margin-top:6px">Title and subtitle are the boxes above. Blank = filled in for you. FanDuel prices same-game parlays as one bet,
+        so type the price FanDuel shows if it differs — it's kept with these legs (and for the model's SGP pricing).</p>
         <div class="ig-field"><label>Pick the legs (up to 10) — every line on the board, any game</label>
         <div class="bet-filt"><select id="cusgame"><option value="">All games</option>${games.map(([g, k]) =>
           `<option value="${esc(g)}"${g === CUS_G ? " selected" : ""}>${esc(g)}${k ? " · " + esc(kickTxt(k)) : ""}</option>`).join("")}</select>
@@ -2609,6 +2614,12 @@ function optsHtml(day, R){
           (w.top || []).map((l, i) => `<div class="ig-pick"><label><input type="checkbox" data-mine="${i}" ${mine.has(i) ? "checked" : ""}>
             <span>${esc(l.player)} <small>${esc(prop(l))} · ${odds(l.price)}</small></span></label><small>${pct(l.p)}</small></div>`).join("")}</div></div>`);
       }
+      const legs = R.legs || [], legDec = legs.reduce((a, l) => a * decOf(l.price), 1);
+      if(legs.length) h.push(betFdHtml(legs), `<div class="ig-field"><label for="igodds">FanDuel's odds for this parlay (custom)</label>
+        <input id="igodds" type="text" inputmode="numbers-and-punctuation" data-w="odds" value="${esc(igOwnText(legs))}"
+          placeholder="${esc(odds(amerOfDec(legDec)))} (legs multiplied)"></div>
+        <p class="ld-hint" style="margin-top:6px">FanDuel prices same-game parlays as one bet. Type the price FanDuel shows and the picture and caption use it —
+        kept with these legs (pick others and it goes back to the legs multiplied) and saved for the model's SGP pricing.</p>`);
     }
   } else if(day === "fri"){
     const on = heatStats();
@@ -2922,7 +2933,14 @@ $("igopts").addEventListener("input", e => {
   const t = e.target;
   if(t.id === "cusq"){ CUS_Q = t.value; const box = $("cuspicks"); if(box) box.innerHTML = cusPickList(); return; }
   if(!t.dataset.w) return;
-  setWord(t.dataset.w, t.value); const id = t.id; render(DAY === "custom");   // the builder's caption follows its tag and odds
+  setWord(t.dataset.w, t.value);
+  if(t.dataset.w === "odds"){
+    const legs = (CUR && CUR.legs) || [];
+    setWord("oddsFor", legSig(legs));
+    // Saved for the SGP pricing once you stop typing (not every keystroke).
+    clearTimeout(window.__igQ); window.__igQ = setTimeout(() => { const o = slipOdds(t.value); if(o != null && legs.length) logQuote(legs, o); }, 1500);
+  }
+  const id = t.id; render(DAY === "custom" || (t.dataset.w === "odds" && !!PARLAY_DAY[DAY]));   // the caption follows the tag and the odds
   const back = $(id); if(back){ back.focus(); back.setSelectionRange(back.value.length, back.value.length); }
 });
 $("igopts").addEventListener("click", e => {
@@ -3136,7 +3154,13 @@ function slipOdds(v){
 }
 // The typed FanDuel price belongs to the legs it was typed for: pick other legs
 // (or another window) and the card goes back to the legs multiplied.
-const legSig = legs => (legs || []).map(betKey).sort().join(";");
+function legSig(legs){ return (legs || []).map(betKey).sort().join(";"); }
+// The Instagram tab's typed FanDuel price (per post), kept with the legs it was typed for.
+function igOwn(legs){
+  const w = S.words[wk(DAY)] || {}, o = slipOdds(w.odds);
+  return o != null && (!w.oddsFor || w.oddsFor === legSig(legs)) ? o : null;
+}
+function igOwnText(legs){ const w = S.words[wk(DAY)] || {}; return !w.oddsFor || w.oddsFor === legSig(legs) ? (w.odds || "") : ""; }
 function slipOwn(legs, ov){
   const o = slipOdds(ov && ov.odds);
   return o != null && (!ov.oddsFor || ov.oddsFor === legSig(legs)) ? o : null;
@@ -3152,8 +3176,8 @@ function logQuote(legs, fd){
           legs: legs.map(l => [l.player, l.stat, l.threshold, l.price, l.p, l.game])});
   S.sgpq = q.slice(-500); save();
 }
-const FD_SLIP = "https://sportsbook.fanduel.com/addToBetslip";
 function betFdHtml(legs){
+  const FD_SLIP = "https://sportsbook.fanduel.com/addToBetslip";
   legs = legs || [];
   if(!legs.length) return "";
   const ok = legs.filter(l => Array.isArray(l.fd) && l.fd[0] && l.fd[1]);
