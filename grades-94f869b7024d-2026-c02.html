@@ -429,6 +429,7 @@ sportsbook's price implies (vig removed). The model-vs-book score compares how c
 <div id="picksec" class="secw"><details class="sec" data-sec="picks"><summary><h2>Every pick</h2><span class="sline" id="picks-line"></span></summary>
 <div class="hint">Tap a pick to see its legs and the actual stats.</div>
 <div class="chips" id="tgt"></div>
+<div class="chips" id="stf"></div>
 <div class="picks" id="picks"></div></details></div>
 <div class="empty" id="seasonnote" hidden>Pick a week in the menu at the top to see every pick and its legs.</div>
 
@@ -573,7 +574,7 @@ const LABEL = {won: "Won", lost: "Lost", pending: "Pending", void: "Void"};
 const RES = {hit: ["Hit", "hit", "✓"], miss: ["Miss", "miss", "✕"], void: ["DNP", "pend", "–"],
              injury: ["Injury · Bet Protect", "inj", "✓"],
              pending: ["Pending", "pend", "○"], norecord: ["No record", "pend", "○"]};
-let WIN = "All windows", TGT = "All", SHOW = 12;
+let WIN = "All windows", TGT = "All", SHOW = 12, STF = "all";
 
 $("sub").textContent = DATA.sub;
 // The week menu: every week has its own page next to this one, named
@@ -1102,7 +1103,13 @@ function drawPicks(){
   { const c = k => PS.filter(p => p.status === k).length;
     $("picks-line").innerHTML = `<b>${PS.length}</b> picks · ${c("won")} won · ${c("lost")} lost${c("pending") ? ` · ${c("pending")} pending` : ""}`; }
   chips($("tgt"), ["All", ...tgts.map(String)], String(TGT), v => v === "All" ? "All targets" : fmt(+v), v => { TGT = v; SHOW = 12; drawPicks(); });
-  let ps = PS.filter(p => (WIN === "All windows" || p.win === WIN) && (TGT === "All" || p.target === +TGT));
+  // Won / Lost / Pending: void picks (every leg voided) count with pending -- no result either way.
+  const stOf = p => p.status === "won" ? "won" : p.status === "lost" ? "lost" : "pending";
+  const base = PS.filter(p => (WIN === "All windows" || p.win === WIN) && (TGT === "All" || p.target === +TGT));
+  const cnt = k => k === "all" ? base.length : base.filter(p => stOf(p) === k).length;
+  chips($("stf"), ["all", "won", "lost", "pending"], STF,
+    v => `${({all: "All results", won: "Won", lost: "Lost", pending: "Pending"})[v]} · ${cnt(v)}`, v => { STF = v; SHOW = 12; drawPicks(); });
+  let ps = base.filter(p => STF === "all" || stOf(p) === STF);
   const ORD = {won: 0, lost: 0, void: 1, pending: 2};
   ps.sort((a, b) => ORD[a.status] - ORD[b.status] || a.target - b.target || a.legs_n - b.legs_n || a.win.localeCompare(b.win));
   if(!ps.length){ $("picks").innerHTML = `<div class="empty">No picks for this filter.</div>`; return; }
