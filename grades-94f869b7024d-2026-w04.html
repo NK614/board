@@ -391,6 +391,9 @@ body.igfull{overflow:hidden}
 .trend .tk{display:flex;gap:12px;justify-content:center;margin:2px 0 4px;font-size:11px;color:var(--mut)}
 .trend .tk i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 .trend .tk i.ln{height:2px;border-radius:1px;vertical-align:3px;background:var(--acc)}
+.trend .tk i.ln.said{background:repeating-linear-gradient(90deg,var(--warn) 0 4px,transparent 4px 7px)}
+.trend .tr-read{text-align:center;font-size:12px;color:var(--mut);margin:0 0 6px;min-height:16px}
+.trend .tr-read b{color:var(--ink)}
 details.sec{margin-top:18px;border-top:1px solid var(--line)}
 details.sec > summary{list-style:none;cursor:pointer;padding:14px 26px 2px 0;position:relative}
 details.sec > summary::-webkit-details-marker{display:none}
@@ -403,6 +406,18 @@ details.sec[open] .sline{margin-bottom:12px}
 .info{appearance:none;border:0;background:transparent;color:var(--acc);font:600 12.5px/1 var(--ui);padding:2px 4px;cursor:pointer}
 .more-info{background:var(--card2);border-radius:10px;padding:9px 11px;margin:0 0 10px;line-height:1.5}
 .sub3{margin:16px 0 8px;font-size:12.5px;font-weight:700;color:var(--sec)}
+.ledq{width:100%;margin:4px 0 10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:500 15px/1.2 var(--ui)}
+.ledwrap{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.ledt{width:100%;border-collapse:collapse;table-layout:fixed}
+.ledt th{font:700 10.5px/1.15 var(--ui);color:var(--mut);text-align:right;padding:9px 4px 7px;cursor:pointer;user-select:none;-webkit-user-select:none;letter-spacing:.02em}
+.ledt th[aria-sort]{color:var(--acc)}
+.ledt th:first-child,.ledt td:first-child{text-align:left;padding-left:12px}
+.ledt th:last-child,.ledt td:last-child{padding-right:12px}
+.ledt td{text-align:right;padding:8px 4px;border-top:1px solid var(--line);font:600 12.5px/1.2 var(--num);white-space:nowrap}
+.ledt td:first-child{font:650 13px/1.25 var(--ui);white-space:normal;overflow-wrap:anywhere}
+.ledt td:first-child small{display:block;font:500 11px/1.3 var(--ui);color:var(--mut)}
+.ledt .hi{color:var(--goodt)}.ledt .lo{color:var(--badt)}
+.ledt .more td{text-align:center;color:var(--acc);font:650 13px/1 var(--ui);cursor:pointer;padding:12px}
 .row .r small.be{color:var(--mut)}
 .shop1{margin:0;font-size:12.5px;line-height:1.5;color:var(--sec)}
 .lrow .ex{font-size:11.5px;color:var(--mut);margin-top:3px}
@@ -449,6 +464,14 @@ details.sec[open] .sline{margin-bottom:12px}
 <div id="beatsum" hidden><h3 class="sub3">What kind of misses <button class="info" data-info="beat-hint" aria-label="What these mean">ⓘ</button></h3>
 <div class="hint more-info" id="beat-hint" hidden></div>
 <div class="kpis four" id="beat-kpis"></div></div></details></div>
+
+<div id="ledsec" class="secw" hidden><details class="sec" data-sec="ledger"><summary><h2>Player ledger</h2><span class="sline" id="led-line"></span></summary>
+<div class="hint">One row per player across the graded parlays on this page. Tap a column to sort. <button class="info" data-info="led-more" aria-label="What the columns mean">ⓘ</button></div>
+<div class="hint more-info" id="led-more" hidden><b>Parlays</b>: settled parlays he was in. <b>Legs</b>: his distinct legs that hit – missed (a leg in many parlays counts once; voids left out).
+<b>Hit</b>: how often those legs hit. <b>Priced</b>: what FanDuel's prices on those legs said (cut included). <b>Sank</b>: lost parlays where he was the ONLY missed leg.</div>
+<input class="ledq" id="ledq" type="search" placeholder="Search a player or team" aria-label="Search players" autocomplete="off">
+<div class="ledwrap"><table class="ledt" id="ledt"></table></div>
+<div class="hint" id="led-foot" style="margin-top:8px"></div></details></div>
 
 <div id="calsec" class="secw" hidden><details class="sec" data-sec="cal"><summary><h2>Leg check</h2><span class="sline" id="cal-line"></span></summary>
 <div class="hint">Each leg's predicted chance next to how often it hit. <button class="info" data-info="cal-more" aria-label="More about this">ⓘ</button></div>
@@ -754,7 +777,8 @@ function trendChart(TR){
   const bTop = 70, bBot = H - B - 4, room = (bBot - bTop) - 26;
   const mid = pos && neg ? bTop + 13 + room / 2 : pos ? bBot - 13 : bTop + 13;
   const ys = v => mid - v / mx * (pos && neg ? room / 2 : room);
-  const hits = ws.map(t => t.w / t.n), hmax = Math.max(...hits) + 0.03, hmin = Math.max(0, Math.min(...hits) - 0.03);
+  const hits = ws.map(t => t.w / t.n), said = ws.map(t => t.n ? t.pred / t.n : null), both = hits.concat(said.filter(v => v != null));
+  const hmax = Math.max(...both) + 0.03, hmin = Math.max(0, Math.min(...both) - 0.03);
   const yh = v => 20 + (1 - (v - hmin) / (hmax - hmin || 1)) * 34;
   const g = [`<line x1="${L}" x2="${W - R}" y1="${mid}" y2="${mid}" stroke="rgba(148,163,209,.25)"/>`];
   ws.forEach((t, i) => {
@@ -766,14 +790,28 @@ function trendChart(TR){
       `<text x="${x(i)}" y="${H - 5}" text-anchor="middle" font-size="10" font-weight="${t.suffix === DATA.me ? 800 : 600}" fill="${t.suffix === DATA.me ? "var(--acc)" : "var(--mut)"}">${
         esc(t.label.replace(/^College week /, "Wk ").replace(/^Week /, "Wk "))}${live ? "*" : ""}</text>`);
   });
+  // What the model said these parlays would hit (its own chance, averaged), dashed, under the actual hit rate.
+  const sp = ws.map((t, i) => said[i] == null ? null : `${x(i).toFixed(1)},${yh(said[i]).toFixed(1)}`).filter(Boolean);
+  if(sp.length > 1) g.push(`<polyline points="${sp.join(" ")}" fill="none" stroke="var(--warn)" stroke-width="1.6" stroke-dasharray="4 3"/>`);
+  ws.forEach((t, i) => { if(said[i] != null) g.push(`<circle cx="${x(i)}" cy="${yh(said[i])}" r="2.4" fill="var(--warn)"/>`); });
   g.push(`<polyline points="${ws.map((t, i) => `${x(i).toFixed(1)},${yh(hits[i]).toFixed(1)}`).join(" ")}" fill="none" stroke="var(--acc)" stroke-width="2"/>`);
   ws.forEach((t, i) => g.push(`<circle cx="${x(i)}" cy="${yh(hits[i])}" r="3.2" fill="var(--acc)"/>`,
-    `<text x="${x(i)}" y="${yh(hits[i]) - 7}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--acc)">${pctS(hits[i])}</text>`));
+    `<text x="${x(i)}" y="${Math.min(yh(hits[i]), said[i] == null ? 99 : yh(said[i])) - 7}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--acc)">${pctS(hits[i])}</text>`));
+  // Tap a week: both numbers under the chart.
+  ws.forEach((t, i) => g.push(`<rect class="tr-hit" data-i="${i}" x="${(L + i * (W - L - R) / ws.length).toFixed(1)}" y="0" width="${((W - L - R) / ws.length).toFixed(1)}" height="${H}" fill="transparent" style="cursor:pointer"/>`));
+  TREND_WS = ws;
   g.push(`<line x1="${L}" x2="${W - R}" y1="64" y2="64" stroke="rgba(148,163,209,.12)" stroke-dasharray="2 3"/>`);
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Money and hit rate by week" font-family="var(--ui)">${g.join("")}</svg>
-    <div class="tk"><span><i style="background:var(--good)"></i>$ at $10 a pick</span><span><i class="ln"></i>hit rate</span>${
-      ws.some(t => t.suffix === DATA.live) ? "<span>* still playing</span>" : ""}</div>`;
+    <div class="tk"><span><i style="background:var(--good)"></i>$ at $10 a pick</span><span><i class="ln"></i>Hit</span><span><i class="ln said"></i>Model said</span>${
+      ws.some(t => t.suffix === DATA.live) ? "<span>* still playing</span>" : ""}</div><div class="tr-read" id="tr-read">Tap a week to see what the model said next to what hit.</div>`;
 }
+let TREND_WS = [];
+document.addEventListener("click", e => {
+  const r = e.target.closest && e.target.closest(".tr-hit"); if(!r) return;
+  const t = TREND_WS[+r.dataset.i], el = document.getElementById("tr-read"); if(!t || !el) return;
+  document.querySelectorAll(".tr-hit").forEach(x => x.setAttribute("fill", x === r ? "rgba(45,226,255,.07)" : "transparent"));
+  el.innerHTML = `<b>${esc(t.label)}</b> · Model said <b style="color:var(--warn)">${pctS(t.pred / t.n)}</b> · Hit <b style="color:var(--acc)">${pctS(t.w / t.n)}</b> (${t.w} of ${t.n})`;
+});
 // A part that fails to draw says so on the page instead of breaking the rest.
 function safe(fn, what){
   try { return fn(); } catch(err) {
@@ -1241,9 +1279,64 @@ function drawTop5(){
   $("top5-picks").onclick = ev => { const c = ev.target.closest(".pick"); if(c) c.classList.toggle("open"); };
 }
 safe(drawRows, "Odds"); safe(drawTD, "ATD"); safe(drawTop5, "Top 5");
+// Player ledger: everyone in this page's graded parlays (same filter as the rest of the
+// page: green, not soft, not no-repeat; only parlays with every leg settled).
+let LSORT = "sank", LDIR = -1, LSHOW = 25;
+safe(function drawLedger(){
+  const LT = DATA.legtab || [], done = settled(PS).filter(p => p.results.every(r => OKR.includes(r)));
+  if(!LT.length || !done.length) return;
+  const by = new Map(), seen = new Set();
+  const dec = o => o > 0 ? 1 + o / 100 : 1 + 100 / -o;
+  for(const p of done){
+    const alone = p.status === "lost" && p.results.filter(r => r === "miss").length === 1;
+    const inP = new Set();
+    (p.lk || []).forEach((ix, k) => {
+      const L = LT[ix]; if(!L) return;
+      const id = L[0] + "|" + (L[1] || ""), r = p.results[k];
+      const e = by.get(id) || {name: L[0], team: L[1] || "", pos: L[2] || "", par: 0, hit: 0, miss: 0, imp: 0, nimp: 0, sank: 0};
+      by.set(id, e);
+      if(!inP.has(id)){ e.par++; inP.add(id); }
+      if(alone && r === "miss") e.sank++;
+      if(!seen.has(ix) && (r === "hit" || r === "miss")){        // each distinct leg once
+        seen.add(ix); e[r]++;
+        const pr = +L[5]; if(pr && (pr >= 100 || pr <= -100)){ e.imp += 1 / dec(pr); e.nimp++; }
+      }
+    });
+  }
+  const rows = [...by.values()].map(e => Object.assign(e, {legs: e.hit + e.miss, rate: e.hit + e.miss ? e.hit / (e.hit + e.miss) : null,
+    priced: e.nimp ? e.imp / e.nimp : null}));
+  if(!rows.length) return;
+  $("ledsec").hidden = false;
+  const top = rows.slice().sort((a, b) => b.sank - a.sank || b.par - a.par)[0];
+  $("led-line").innerHTML = `${rows.length} players${top && top.sank ? ` · most sunk: <b>${esc(top.name)}</b> (${top.sank})` : ""}`;
+  const COLS = [["name", "Player"], ["par", "Parlays"], ["legs", "Legs"], ["rate", "Hit"], ["priced", "Priced"], ["sank", "Sank"]];
+  const W = ["34%", "14%", "14%", "13%", "14%", "11%"];
+  const pc = x => x == null ? "—" : Math.round(100 * x) + "%";
+  function draw(){
+    const q = ($("ledq").value || "").trim().toLowerCase();
+    const list = rows.filter(r => !q || r.name.toLowerCase().includes(q) || r.team.toLowerCase() === q)
+      .sort((a, b) => { const x = a[LSORT], y = b[LSORT];
+        if(LSORT === "name") return LDIR * String(x).localeCompare(String(y));
+        return LDIR * ((x == null ? -1 : x) - (y == null ? -1 : y)) || b.sank - a.sank || b.par - a.par || a.name.localeCompare(b.name); });
+    const shown = q ? list : list.slice(0, LSHOW);
+    $("ledt").innerHTML = `<colgroup>${W.map(w => `<col style="width:${w}">`).join("")}</colgroup><thead><tr>${COLS.map(([k, t]) =>
+      `<th data-k="${k}"${k === LSORT ? ` aria-sort="${LDIR < 0 ? "descending" : "ascending"}"` : ""}>${t}${k === LSORT ? (LDIR < 0 ? " ▾" : " ▴") : ""}</th>`).join("")}</tr></thead><tbody>${
+      shown.map(r => { const d = r.rate != null && r.priced != null ? r.rate - r.priced : null;
+        return `<tr><td>${esc(r.name)}<small>${esc([r.pos, r.team].filter(Boolean).join(" · "))}</small></td><td>${r.par}</td><td>${r.hit}–${r.miss}</td>`
+          + `<td class="${d == null ? "" : d >= 0 ? "hi" : "lo"}">${pc(r.rate)}</td><td>${pc(r.priced)}</td><td class="${r.sank ? "lo" : ""}">${r.sank}</td></tr>`; }).join("")}${
+      !q && list.length > shown.length ? `<tr class="more"><td colspan="6">Show ${Math.min(25, list.length - shown.length)} more of ${list.length - shown.length}</td></tr>` : ""}</tbody>`;
+    $("led-foot").textContent = q ? `${list.length} match${list.length === 1 ? "" : "es"}.` : "Hit is green when his legs beat what their prices said, red when they fell short.";
+  }
+  $("ledt").onclick = e => {
+    if(e.target.closest(".more")){ LSHOW += 25; draw(); return; }
+    const th = e.target.closest("th[data-k]"); if(!th) return;
+    const k = th.dataset.k; if(k === LSORT) LDIR = -LDIR; else { LSORT = k; LDIR = k === "name" ? 1 : -1; } draw(); };
+  $("ledq").oninput = draw;
+  draw();
+}, "Player ledger");
 safe(function jumpLinks(){
   const mlb = (DATA.td || []).some(t => t.grp === "HR");
-  const S = [["oddwrap", "Odds"], ["top5sec", "Top 5"], ["lossec", "Losses"], ["calsec", "Leg check"], ["tdsec", mlb ? "Dinger" : "ATD"], ["picksec", "Every pick"]]
+  const S = [["oddwrap", "Odds"], ["top5sec", "Top 5"], ["lossec", "Losses"], ["ledsec", "Players"], ["calsec", "Leg check"], ["tdsec", mlb ? "Dinger" : "ATD"], ["picksec", "Every pick"]]
     .filter(([id]) => $(id) && !$(id).hidden);
   $("jump").innerHTML = S.length > 1 ? `<a href="#" data-j="top">Summary</a>` + S.map(([id, t]) => `<a href="#" data-j="${id}">${t}</a>`).join("") : "";
   $("jump").hidden = S.length < 2;
