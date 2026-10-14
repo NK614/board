@@ -194,10 +194,49 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
   color:var(--warn);font:700 10px/1.5 var(--ui);letter-spacing:.04em;text-transform:uppercase;vertical-align:1px}
 .foot{margin-top:24px;color:var(--mut);font-size:12px;line-height:1.55}
 .tabs{display:flex;gap:4px;margin:14px 0 4px;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:14px}
-.tabs button{flex:1;appearance:none;border:0;background:transparent;color:var(--mut);border-radius:10px;padding:10px 8px;
-  font:650 14px/1 var(--ui);cursor:pointer}
+.tabs button{flex:1 1 auto;appearance:none;border:0;background:transparent;color:var(--mut);border-radius:10px;padding:10px 6px;
+  font:650 13px/1 var(--ui);cursor:pointer;white-space:nowrap}
+@media (max-width:440px){.tabs{gap:2px;padding:3px}.tabs button{padding:10px 3px;font-size:12px;letter-spacing:-.01em}}
+@media (max-width:360px){.tabs button{font-size:11px;padding:10px 2px}}
 .tabs button[aria-selected="true"]{background:var(--card2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
 #ladview{--cyan:#3fd6ff;--violet:#a855f7}
+/* System + Experiments tabs */
+.sx-fail{margin:12px 0 0;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.45);border-radius:14px;padding:10px 12px}
+.sx-fail h3{margin:0 0 6px;font:800 12px/1.2 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--badt)}
+.sx-fail p{margin:6px 0 0;font-size:12.5px;line-height:1.45;color:var(--ink)}
+.sx-fail p b{color:var(--badt)}
+.sx-fail a,.sx-row a{color:var(--acc);text-decoration:none;font-weight:650}
+.sx-row{display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid var(--line)}
+.sx-row:first-child{border-top:0}
+.sx-row .nm{font-weight:700;font-size:14px}
+.sx-row .dt{font-size:11.5px;color:var(--mut);line-height:1.4;margin-top:2px}
+.sx-row .rt{text-align:right;font:600 12px/1.35 var(--num);color:var(--sec);white-space:nowrap}
+.sx-dot{width:10px;height:10px;border-radius:50%}
+.sx-dot.ok{background:var(--good);box-shadow:0 0 8px rgba(39,232,156,.6)}
+.sx-dot.failed{background:var(--bad);box-shadow:0 0 8px rgba(255,107,107,.6)}
+.sx-dot.skipped{background:var(--warn)}
+.sx-dot.never{background:rgba(148,163,209,.35)}
+.sx-dot.up{background:transparent;border:1.5px solid rgba(148,163,209,.5)}
+.kpi b.sm{font-size:19px}
+.xcard{margin:12px 0 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.xcard .xh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.xcard .xt{font-weight:750;font-size:15px;line-height:1.3}
+.xcard .xd{font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.4}
+.xcard code{font:500 11px/1.4 var(--num);color:var(--sec);background:rgba(148,163,209,.1);border-radius:6px;padding:1px 5px;word-break:break-word}
+.xchip{flex:none;font:800 10px/1 var(--ui);letter-spacing:.05em;text-transform:uppercase;border-radius:999px;padding:5px 8px;white-space:nowrap;border:1px solid}
+.xchip.shipped{color:var(--goodt);border-color:rgba(39,232,156,.5);background:rgba(39,232,156,.1)}
+.xchip.rejected{color:var(--badt);border-color:rgba(255,107,107,.5);background:rgba(255,107,107,.1)}
+.xchip.not-adopted{color:var(--sec);border-color:var(--line);background:rgba(148,163,209,.08)}
+.xchip.biased-retest{color:var(--warn);border-color:rgba(255,200,107,.55);background:rgba(255,200,107,.1)}
+.xtab{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}
+.xtab th{font:700 10.5px/1.2 var(--ui);color:var(--mut);text-align:right;padding:4px 0 4px 6px;letter-spacing:.03em}
+.xtab th:first-child,.xtab td:first-child{text-align:left;padding-left:0}
+.xtab td{text-align:right;padding:5px 0 5px 6px;border-top:1px solid var(--line);font:600 12.5px/1.25 var(--num)}
+.xtab td:first-child{font:600 12px/1.25 var(--ui);color:var(--sec)}
+.xtab .g{color:var(--goodt)}.xtab .r{color:var(--badt)}
+.xv{margin-top:9px;font-size:12.5px;line-height:1.45;color:var(--sec)}
+.xv b.pass{color:var(--goodt)}.xv b.fail{color:var(--badt)}.xv b.none{color:var(--warn)}
+.xnote{margin-top:7px;font-size:12px;line-height:1.45;color:var(--mut)}
 .ld-shell{margin-top:14px;border-radius:18px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #ldcard{display:block;width:100%;height:auto;-webkit-user-select:none;user-select:none}
 #ldcard text{font-family:-apple-system,"SF Pro Display",system-ui,Helvetica,Arial,sans-serif}
@@ -372,7 +411,7 @@ details.sec[open] .sline{margin-bottom:12px}
 <div class="eyebrow">Parlay Generator</div>
 <h1 id="pagetitle">Track record</h1>
 <div class="upd" id="upd" hidden></div>
-<div class="tabs" role="tablist"><button id="tab-rec" role="tab" aria-selected="true">Record</button><button id="tab-lad" role="tab" aria-selected="false">Ladder</button><button id="tab-ig" role="tab" aria-selected="false">Instagram</button></div>
+<div class="tabs" role="tablist"><button id="tab-rec" role="tab" aria-selected="true">Record</button><button id="tab-sys" role="tab" aria-selected="false">System</button><button id="tab-lad" role="tab" aria-selected="false">Ladder</button><button id="tab-ig" role="tab" aria-selected="false">Instagram</button><button id="tab-exp" role="tab" aria-selected="false">Experiments</button></div>
 <div id="recview">
 <div class="recbar" id="recbar">
 <div class="recbar-top"><div class="sport-sw" id="recsw" role="group" aria-label="Sport"><button data-rsport="nfl" aria-pressed="true">NFL</button><button data-rsport="cfb" aria-pressed="false">CFB</button><button data-rsport="mlb" aria-pressed="false">MLB</button><button data-rsport="nba" aria-pressed="false">NBA</button></div>
@@ -438,6 +477,29 @@ sportsbook's price implies (vig removed). The model-vs-book score compares how c
 prices, and graded with today's generator rules. Hit rates count settled picks only (every leg final); pending ones aren't counted.
 Money is $10 on each pick at FanDuel's posted price. Break-even is the hit rate those prices needed to make money.
 <span class="live">Live</span> marks a leg from a game already under way when the board was built.</div>
+</div>
+<div id="sysview" hidden>
+<div class="sub">Every workflow reports here when it finishes, failures included. Times are Eastern.</div>
+<div id="sys-fail"></div>
+<div class="kpis" id="sys-kpis"></div>
+<h2>Workflows <button class="info" data-info="sys-wf-more" aria-label="What these mean">ⓘ</button></h2>
+<div class="hint more-info" id="sys-wf-more" hidden>Green = the last run finished fine. Red = it failed (the reason is at the top). Grey = no run reported yet;
+runs only report from the day this tab went live. Amber = a timer ping with nothing to build (the slot was already built, or none was due), which spends nothing.</div>
+<div class="rows" id="sys-wf"></div>
+<h2>This week's NFL build slots</h2>
+<div class="rows" id="sys-slots"></div>
+<div class="hint" id="sys-note" style="margin-top:10px"></div>
+</div>
+<div id="expview" hidden>
+<div class="sub">Every lab result saved in the repo, newest first. Each one keeps its own card: a new test never overwrites an old one.</div>
+<div class="chips" id="exp-lab" style="margin-top:12px"></div>
+<div class="chips" id="exp-st"></div>
+<div id="exp-cards"></div>
+<p class="foot"><button class="info" data-info="exp-more" aria-label="How a test is judged">ⓘ How a test is judged</button></p>
+<div class="foot more-info" id="exp-more" hidden>The replay lab rebuilds every graded board twice — today's model (champion) and the change (challenger) — and grades both on the
+same box scores. The challenger wins only with more money, accuracy on every rated line no worse (lower score = better), and ahead in most weeks.
+Top 5 changes are judged on the Top 5 only. A result tested on the same weeks that gave the idea is biased: it needs new weeks before it can go live.
+Money is $10 a parlay.</div>
 </div>
 <div id="ladview" hidden>
 <div class="sport-sw" role="group" aria-label="Sport"><button data-sport="nfl" aria-pressed="true">NFL <small>navy</small></button><button data-sport="mlb" aria-pressed="false">MLB <small>white</small></button><button data-sport="nba" aria-pressed="false">NBA <small>slate</small></button></div>
@@ -1210,8 +1272,9 @@ safe(function jumpLinks(){
 (function(){
 const $ = id => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
-const VIEWS = {record: ["recview", "tab-rec", "Track record", ""], ladder: ["ladview", "tab-lad", "Ladder challenge", "#ladder"],
-               instagram: ["igview", "tab-ig", "Instagram posts", "#instagram"]};
+const VIEWS = {record: ["recview", "tab-rec", "Track record", ""], system: ["sysview", "tab-sys", "System", "#system"],
+               ladder: ["ladview", "tab-lad", "Ladder challenge", "#ladder"],
+               instagram: ["igview", "tab-ig", "Instagram posts", "#instagram"], experiments: ["expview", "tab-exp", "Experiments", "#experiments"]};
 function tab(which){
   if(!VIEWS[which]) which = "record";
   for(const [k, [view, btn]] of Object.entries(VIEWS)){
@@ -1223,10 +1286,14 @@ function tab(which){
   if(history.replaceState) history.replaceState(null, "", VIEWS[which][3] || location.pathname + location.search);
   if(which === "ladder"){ draw(); if(window.BET_SHOW) window.BET_SHOW(); }
   if(which === "instagram" && window.IG_SHOW) window.IG_SHOW();
+  if(which === "system" && window.SYS_SHOW) window.SYS_SHOW();
+  if(which === "experiments" && window.EXP_SHOW) window.EXP_SHOW();
 }
 $("tab-rec").onclick = () => tab("record");
 $("tab-lad").onclick = () => tab("ladder");
 $("tab-ig").onclick = () => tab("instagram");
+$("tab-sys").onclick = () => tab("system");
+$("tab-exp").onclick = () => tab("experiments");
 
 // ---- The ladder: saved in this browser only ----
 // You set the start, the goal and each bet's odds; every rung's dollar amount
@@ -1566,7 +1633,7 @@ $("ldsave").onclick = async () => {
 
 form(); rows();
 document.querySelectorAll(".sport-sw button[data-sport]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sport === SPORT));
-tab(location.hash === "#ladder" ? "ladder" : location.hash === "#instagram" ? "instagram" : "record");
+tab({"#ladder": "ladder", "#instagram": "instagram", "#system": "system", "#experiments": "experiments"}[location.hash] || "record");
 })();
 </script><script>
 // ---- Instagram tab: pick a day, build that day's post from the grades and the live board ----
@@ -3642,4 +3709,224 @@ render(true);
   setInterval(() => { if(document.visibilityState === "visible") check(); }, 10 * 60 * 1000);
   setTimeout(check, 4000);
 })();
+</script><script>
+// ---- System + Experiments tabs. hq_status.py publishes their files next to this
+// page (<page>-status-<workflow>.json, <page>-experiments.json) at the end of every
+// workflow run, failures included. Read-only, no tokens: plain fetches, like -live.json.
+(function(){
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+function base(){
+  const file = decodeURIComponent(location.pathname.split("/").pop() || "");
+  const b = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|cfb-season|season|other)$/, "");
+  return /^https?:$/.test(location.protocol) && b ? b : "";
+}
+const get = f => base() ? fetch(`${base()}-${f}`, {cache: "no-store"}).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null);
+const usd = x => x == null ? "—" : (x >= 0 ? "+$" : "−$") + Math.abs(Math.round(x)).toLocaleString("en-US");
+const pct = x => x == null ? "—" : (100 * x).toFixed(1) + "%";
+
+// Eastern wall-clock time as a plain number (ms), so slot arithmetic ignores the viewer's time zone.
+const ETF = new Intl.DateTimeFormat("en-US", {timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit",
+  hour: "2-digit", minute: "2-digit", hourCycle: "h23"});
+function etWall(d){
+  const p = {}; for(const x of ETF.formatToParts(d)) p[x.type] = x.value;
+  return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
+}
+const W = (ms, o) => new Date(ms).toLocaleString("en-US", Object.assign({timeZone: "UTC"}, o));
+const wallLabel = ms => W(ms, {weekday: "short", hour: "numeric", minute: "2-digit"});
+const when = iso => { if(!iso) return "—"; const d = new Date(iso); if(isNaN(d)) return "—";
+  return W(etWall(d), {weekday: "short", month: "short", day: "numeric"}) + ", " + W(etWall(d), {hour: "numeric", minute: "2-digit"}); };
+function ago(iso){
+  const d = new Date(iso); if(!iso || isNaN(d)) return "";
+  const m = Math.round((Date.now() - d) / 60000);
+  return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 48 * 60 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+}
+const until = ms => { const m = Math.round(ms / 60000); return m < 60 ? `in ${m} min` : m < 48 * 60 ? `in ${Math.floor(m / 60)} h ${m % 60} min` : `in ${Math.round(m / 1440)} days`; };
+
+// ---------------- SYSTEM ----------------
+const WFS = [["build", "Build board"], ["grade", "Grade picks"], ["atd", "ATD list"], ["republish", "Republish"],
+             ["model_lab", "Model lab"], ["alt_lab", "Alt lab"], ["nba_lab", "NBA lab"]];
+// Same as build_schedule.py (the build's own status file carries the live copy).
+const SLOTS0 = [[3, 11, 0, false], [3, 17, 15, false], [3, 18, 55, true], [4, 18, 0, false], [5, 18, 0, false],
+  [6, 9, 30, false], [6, 11, 40, true], [6, 15, 5, true], [6, 18, 55, true], [0, 12, 0, false], [0, 18, 55, true]];
+let SYS = null, SYS_AT = 0;
+function sysLoad(){
+  if(SYS && Date.now() - SYS_AT < 60000) return Promise.resolve(SYS);
+  return Promise.all(WFS.map(([k]) => get(`status-${k}.json`))).then(fs => {
+    SYS = {}; WFS.forEach(([k], i) => { SYS[k] = fs[i]; }); SYS_AT = Date.now(); return SYS; });
+}
+// This NFL week, Tuesday to Monday, as Eastern wall-clock slots.
+function weekSlots(slots, nowW){
+  const dow = new Date(nowW).getUTCDay();                       // 0 Sun .. 6 Sat
+  const tue = nowW - ((dow + 5) % 7) * 864e5;                   // back to Tuesday
+  const t0 = Date.UTC(new Date(tue).getUTCFullYear(), new Date(tue).getUTCMonth(), new Date(tue).getUTCDate());
+  return slots.map(([wd, h, m, final]) => {                     // build_schedule weekday: Mon=0 .. Sun=6
+    const off = (wd - 1 + 7) % 7;                               // days after Tuesday
+    const ms = t0 + off * 864e5 + (h * 60 + m) * 60000;
+    const d = new Date(ms), key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")} ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    return {ms, key, final, label: wallLabel(ms)};
+  }).sort((a, b) => a.ms - b.ms);
+}
+function drawSystem(S){
+  const all = [];
+  for(const [k, name] of WFS) for(const r of ((S[k] || {}).runs || [])) all.push(Object.assign({name}, r));
+  const have = WFS.some(([k]) => S[k]);
+  // Failed runs, newest first, last 7 days: at the top in red.
+  const fails = all.filter(r => r.result === "failed" && Date.now() - new Date(r.finished) < 7 * 864e5)
+    .sort((a, b) => new Date(b.finished) - new Date(a.finished));
+  $("sys-fail").innerHTML = fails.length ? `<div class="sx-fail"><h3>Failed runs · last 7 days (${fails.length})</h3>${fails.map(r =>
+    `<p><b>${esc(r.name)}</b> · ${esc(r.trigger || "")} · ${esc(when(r.finished))} (${esc(ago(r.finished))})<br>${esc(r.reason || "failed")}${
+      r.run ? ` · <a href="${esc(r.run)}" target="_blank" rel="noopener">log</a>` : ""}</p>`).join("")}</div>` : "";
+  // Headline tiles.
+  const b = S.build || {}, slots = Array.isArray(b.slots) && b.slots.length ? b.slots : SLOTS0, done = new Set(b.done || []);
+  const nowW = etWall(new Date());
+  const next = [...weekSlots(slots, nowW), ...weekSlots(slots, nowW + 7 * 864e5)].find(s => s.ms > nowW);
+  const grades = ((S.grade || {}).runs || []).filter(r => r.result === "ok");
+  const cr = WFS.map(([k]) => (S[k] || {}).credits).filter(Boolean).sort((a, c) => String(c.seen).localeCompare(String(a.seen)))[0];
+  const lastBuild = ((S.build || {}).runs || []).find(r => r.result !== "skipped");
+  $("sys-kpis").innerHTML = [
+    `<div class="kpi"><b class="sm">${next ? esc(next.label) : "—"}</b><span>Next NFL build slot${next ? ` · ${esc(until(next.ms - nowW))}${next.final ? " · final (logs picks)" : ""}` : ""}</span></div>`,
+    `<div class="kpi"><b class="sm">${grades[0] ? esc(ago(grades[0].finished)) : "—"}</b><span>Last grade${grades[0] ? ` · ${esc(when(grades[0].finished))}` : " · none reported yet"}</span></div>`,
+    `<div class="kpi"><b class="sm">${cr ? Math.round(cr.left).toLocaleString("en-US") : "—"}</b><span>Odds API credits left${cr ? ` · seen ${esc(when(cr.seen))}` : " · shows after the next build"}</span></div>`,
+    `<div class="kpi"><b class="sm">${lastBuild ? esc(ago(lastBuild.finished)) : "—"}</b><span>Last build${lastBuild ? ` · ${lastBuild.result === "ok" ? "ok" : "FAILED"} · ${esc(when(lastBuild.finished))}` : " · none reported yet"}</span></div>`].join("");
+  // One row per workflow: its last run.
+  $("sys-wf").innerHTML = WFS.map(([k, name]) => {
+    // A timer ping that had nothing to build doesn't hide the last real run.
+    const rs = (S[k] || {}).runs || [], r = rs.find(x => x.result !== "skipped") || rs[0], st = r ? r.result : "never";
+    const ping = rs[0] && rs[0] !== r ? ` · last ping ${ago(rs[0].finished)}: nothing due` : "";
+    const det = (!r ? "No run reported yet" : r.result === "failed" ? (r.reason || "failed") : r.result === "skipped" ? `${r.trigger} · nothing due` : `${r.trigger || ""} · ok`) + ping;
+    return `<div class="sx-row"><i class="sx-dot ${esc(st)}"></i><div><div class="nm">${esc(name)}</div><div class="dt">${esc(det)}${
+      r && r.run ? ` · <a href="${esc(r.run)}" target="_blank" rel="noopener">log</a>` : ""}</div></div><div class="rt">${r ? esc(ago(r.finished)) : "never"}${
+      r ? `<br>${esc(when(r.finished).split(", ").pop())}` : ""}</div></div>`;
+  }).join("");
+  // This week's slots: built, failed, missed or still to come.
+  const runs = (b.runs || []).filter(r => r.result !== "skipped");
+  const ws = weekSlots(slots, nowW);
+  $("sys-slots").innerHTML = ws.map(s => {
+    const lab = W(s.ms, {weekday: "short", hour: "numeric", minute: "2-digit"});
+    const run = runs.find(r => (r.trigger || "").includes(lab) && Math.abs(etWall(new Date(r.finished)) - s.ms) < 3 * 36e5);
+    let st, det;
+    if(done.has(s.key)){ st = "ok"; det = run ? `built ${W(etWall(new Date(run.finished)), {hour: "numeric", minute: "2-digit"})}` : "built"; }
+    else if(run && run.result === "failed"){ st = "failed"; det = run.reason || "failed"; }
+    else if(s.ms + 50 * 60000 < nowW){ st = "failed"; det = "no build recorded for this slot"; }
+    else { st = "up"; det = next && s.key === next.key ? "next" : "to come"; }
+    return `<div class="sx-row"><i class="sx-dot ${st}"></i><div><div class="nm">${esc(W(s.ms, {weekday: "short", month: "short", day: "numeric"}))} · ${esc(W(s.ms, {hour: "numeric", minute: "2-digit"}))}${
+      s.final ? ' <span style="color:var(--acc);font-size:11px;font-weight:800">FINAL</span>' : ""}</div><div class="dt">${esc(det)}</div></div><div class="rt"></div></div>`;
+  }).join("");
+  $("sys-note").textContent = have ? `Built slots come from slots_done.json; a slot with no build 50 min after its time shows red. Status files updated ${
+    when(WFS.map(([k]) => (S[k] || {}).updated).filter(Boolean).sort().pop())}.`
+    : base() ? "No workflow has reported yet. Each one reports when it next runs (the next build, grade, or lab)."
+    : "This tab loads its data when the page is opened from its web address.";
+}
+window.SYS_SHOW = () => { $("sys-kpis").innerHTML = '<div class="kpi wide"><span>Loading…</span></div>';
+  sysLoad().then(drawSystem).catch(err => { $("sys-note").textContent = "Couldn't draw the System tab: " + (err && err.message || err); }); };
+
+// ---------------- EXPERIMENTS ----------------
+let EXP = null, LAB = "all", ST = "all";
+const LABS = [["all", "All"], ["model", "Model lab"], ["nba", "NBA lab"], ["alt", "Alt lab"]];
+const STS = ["Shipped", "Rejected", "Not adopted", "Biased-retest"];
+const stCls = s => String(s || "none").toLowerCase().replace(/[^a-z]+/g, "-");
+function chipRow(el, list, cur, pick){
+  el.innerHTML = list.map(([v, l]) => `<button class="chip" data-v="${esc(v)}" aria-pressed="${v === cur}">${esc(l)}</button>`).join("");
+  el.onclick = ev => { const c = ev.target.closest(".chip"); if(c) pick(c.dataset.v); };
+}
+const weeksText = w => { const k = Object.keys(w || {}); if(!k.length) return "";
+  const nums = k.map(x => +(x.match(/\d+/) || [0])[0]).filter(Boolean);
+  const coll = k.some(x => /College/.test(x));
+  return (coll ? "College w" : "W") + (nums.length > 1 ? `eeks ${Math.min(...nums)}–${Math.max(...nums)}` : `eek ${nums[0] || ""}`); };
+const dateText = c => { const m = /^(\d{4})-(\d\d)-(\d\d)(?:_(\d\d)(\d\d))?/.exec(c.stamp || c.date || ""); if(!m) return "";
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 12), +(m[5] || 0)));
+  return W(+d, {weekday: "short", month: "short", day: "numeric"}) + (m[4] ? ", " + W(+d, {hour: "numeric", minute: "2-digit"}) : ""); };
+const cls = (a, b, better) => a == null || b == null || a === b ? "" : (better === "low" ? b < a : b > a) ? "g" : "r";
+function modelCard(c){
+  const A = c.champion, B = c.challenger, v = c.verdict || {}, t5 = v.on === "top5";
+  const hit = s => s.n ? `${s.won}/${s.n} · ${pct(s.won / s.n)}` : "—";
+  const rows = [
+    ["Money ($10 a parlay)", usd(A.usd), usd(B.usd), cls(A.usd, B.usd)],
+    ["Parlays hit", hit(A), hit(B), cls(A.n ? A.won / A.n : null, B.n ? B.won / B.n : null)],
+    ["Line accuracy (lower = better)", A.brier == null ? "—" : A.brier.toFixed(4), B.brier == null ? "—" : B.brier.toFixed(4), cls(A.brier, B.brier, "low")]];
+  if(A.top5 || B.top5) rows.push(["Top 5 money", usd((A.top5 || {}).usd), usd((B.top5 || {}).usd), cls((A.top5 || {}).usd, (B.top5 || {}).usd)]);
+  const vt = v.identical ? `<b class="none">Tested nothing</b> — the challenger made exactly the champion's picks.`
+    : v.pass ? `<b class="pass">Passed the lab's rule</b> — ${t5 ? "more Top 5 money" : "more money, accuracy no worse"}, ahead in ${v.ahead} of ${v.of} weeks.`
+    : `<b class="fail">Champion stays</b> — more ${t5 ? "Top 5 " : ""}money: ${v.more ? "yes" : "no"}${t5 ? "" : ` · accuracy no worse: ${v.sharper ? "yes" : "no"}`} · ahead in ${v.ahead} of ${v.of} weeks.`;
+  return {sub: [dateText(c), (c.sport || "").toUpperCase(), weeksText(A.weeks)].filter(Boolean).join(" · "),
+    body: `<div class="xd" style="margin-top:6px">Switches tested: <code>${esc(JSON.stringify(c.flags || {}))}</code></div>
+      <table class="xtab"><thead><tr><th></th><th>Champion</th><th>Challenger</th></tr></thead><tbody>${rows.map(([l, a, b, k]) =>
+        `<tr><td>${esc(l)}</td><td>${esc(a)}</td><td class="${k}">${esc(b)}</td></tr>`).join("")}</tbody></table><div class="xv">${vt}</div>`};
+}
+function nbaCard(c){
+  const R = c.result || {};
+  return {sub: [dateText(c), "NBA 2025-26", "4 test weeks"].join(" · "),
+    body: `<div class="xd" style="margin-top:6px">Switches: <code>${esc(JSON.stringify(c.flags || {}))}</code></div>
+      <table class="xtab"><tbody>
+      <tr><td>Money ($10 a parlay)</td><td class="${R.usd >= 0 ? "g" : "r"}">${esc(usd(R.usd))}</td></tr>
+      <tr><td>Parlays hit (model said)</td><td>${R.n ? `${R.won}/${R.n} · ${pct(R.won / R.n)} (${pct(R.pred)})` : "—"}</td></tr>
+      <tr><td>Legs hit (model said)</td><td>${esc(pct(R.leg_hit))} (${esc(pct(R.leg_pred))})</td></tr>
+      <tr><td>Line accuracy: model vs book</td><td class="${cls(R.brier_book, R.brier, "low")}">${R.brier == null ? "—" : R.brier.toFixed(4)} vs ${R.brier_book == null ? "—" : R.brier_book.toFixed(4)}</td></tr>
+      </tbody></table><div class="xv">${R.usd >= 0 ? '<b class="pass">Made money</b>' : '<b class="fail">Lost money</b>'} over ${(R.n || 0).toLocaleString("en-US")} parlays.</div>`};
+}
+function altCard(c){
+  return {sub: [dateText(c), `${c.season} Weeks ${(c.weeks || []).join(", ")}`, `${c.games} games`, `${(c.rungs || 0).toLocaleString("en-US")} rungs`].join(" · "),
+    body: `<table class="xtab"><thead><tr><th></th><th>FanDuel said</th><th>History</th><th>Hit</th></tr></thead><tbody>${(c.rows || []).map(r =>
+      `<tr><td>${esc(r.group)}</td><td>${esc(pct(r.fd))}</td><td>${esc(pct(r.hist))}</td><td>${esc(pct(r.hit))}</td></tr>`).join("")}</tbody></table>
+      <div class="xd" style="margin-top:6px">FanDuel's price includes its cut. History = how often that line cleared, 2015–25. Hit = this season.</div>`};
+}
+function mdTables(md){
+  const out = []; let tb = null;
+  for(const line of String(md || "").split("\n")){
+    if(/^\|/.test(line)){
+      const cells = line.replace(/^\||\|$/g, "").split("|").map(x => x.trim());
+      if(cells.every(x => /^-+$/.test(x))) continue;
+      if(!tb){ tb = []; out.push(tb); }
+      tb.push(cells);
+    } else {
+      tb = null;
+      if(line.trim()) out.push(line.replace(/^#+\s*/, "").replace(/\*\*|_/g, ""));
+    }
+  }
+  return out.map(x => typeof x === "string" ? `<div class="xd">${esc(x)}</div>`
+    : `<table class="xtab"><thead><tr>${x[0].map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${x.slice(1).map(r =>
+        `<tr>${r.map(v => `<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</tbody></table>`).join("");
+}
+function drawExp(){
+  const E = EXP || {cards: [], decisions: {}}, dec = E.decisions || {};
+  const cards = (E.cards || []).map(c => Object.assign({}, c, {dec: dec[c.key] || {}}));
+  chipRow($("exp-lab"), LABS.filter(([v]) => v === "all" || cards.some(c => c.lab === v)), LAB, v => { LAB = v; drawExp(); });
+  const inLab = cards.filter(c => LAB === "all" || c.lab === LAB);
+  const n = s => inLab.filter(c => (c.dec.status || "") === s).length;
+  chipRow($("exp-st"), [["all", `All ${inLab.length}`], ...STS.filter(s => n(s)).map(s => [s, `${s} ${n(s)}`])], ST, v => { ST = v; drawExp(); });
+  const show = inLab.filter(c => ST === "all" || c.dec.status === ST)
+    .sort((a, b) => String(b.stamp || b.date + "_0").localeCompare(String(a.stamp || a.date + "_0")));
+  if(!show.length){
+    $("exp-cards").innerHTML = `<div class="kpi wide note" style="margin-top:12px"><p>${!base() ? "This tab loads its data when the page is opened from its web address."
+      : EXP ? "No results match." : "No experiments file yet — it's published at the end of the next grade or lab run."}</p></div>`;
+    return;
+  }
+  $("exp-cards").innerHTML = show.map(c => {
+    const d = c.dec, st = d.status || "No decision yet";
+    let k = {sub: dateText(c), body: ""};
+    try {
+      k = c.manual ? {sub: dateText(c), body: c.key === "nba-floor" ? `<div id="exp-floor" class="xd" style="margin-top:6px">Looking for the published result…</div>` : ""}
+        : c.lab === "model" ? modelCard(c) : c.lab === "nba" ? nbaCard(c) : c.lab === "alt" ? altCard(c) : k;
+    } catch(err) { k.body = `<div class="xnote">Couldn't draw this card: ${esc(err && err.message || err)}</div>`; }
+    return `<div class="xcard"><div class="xh"><div><div class="xt">${esc(d.name || c.id || c.key)}</div><div class="xd">${esc(k.sub)}${
+      c.id && d.name ? ` · <span style="font-family:var(--num)">${esc(c.id)}</span>` : ""}</div></div><span class="xchip ${stCls(st)}">${esc(st)}</span></div>${
+      k.body}${d.note ? `<div class="xnote">${esc(d.note)}</div>` : ""}</div>`;
+  }).join("");
+  if($("exp-floor")) get("nbalab-floor.json").then(j => { const el = $("exp-floor"); if(!el) return;
+    el.outerHTML = j && j.card ? `<div style="margin-top:6px">${mdTables(j.card)}</div>` : `<div class="xd" style="margin-top:6px">Not on the site either: the result is lost. Re-run the floor research (free, prices are saved) to get it back.</div>`; });
+}
+window.EXP_SHOW = () => {
+  if(EXP){ drawExp(); return; }
+  $("exp-cards").innerHTML = '<div class="kpi wide note" style="margin-top:12px"><p>Loading…</p></div>';
+  get("experiments.json").then(j => { EXP = j; drawExp(); }).catch(err => {
+    $("exp-cards").innerHTML = `<div class="kpi wide note"><p>Couldn't draw the Experiments tab: ${esc(err && err.message || err)}</p></div>`; });
+};
+})();
+// The ⓘ buttons on these two tabs.
+for(const v of ["sysview", "expview"]) document.getElementById(v).addEventListener("click", e => { const b = e.target.closest("[data-info]"); if(!b) return;
+  e.preventDefault(); const t = document.getElementById(b.dataset.info); if(t) t.hidden = !t.hidden; });
+// Opened straight on one of these tabs (#system / #experiments): the tab switch ran before this script.
+if(location.hash === "#system" && window.SYS_SHOW) window.SYS_SHOW();
+if(location.hash === "#experiments" && window.EXP_SHOW) window.EXP_SHOW();
 </script></body></html>
