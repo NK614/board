@@ -200,6 +200,11 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
 @media (max-width:360px){.tabs button{font-size:11px;padding:10px 2px}}
 .tabs button[aria-selected="true"]{background:var(--card2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
 #ladview{--cyan:#3fd6ff;--violet:#a855f7}
+.pk-dots{display:inline-flex;gap:2.5px;vertical-align:1px;margin:0 2px}
+.pk-txt .pk-dots{display:flex;margin:5px 0 0}
+.pk-dots i{width:6px;height:6px;border-radius:50%;display:block;background:rgba(148,163,209,.35)}
+.pk-dots i.g{background:#27e89c}.pk-dots i.r{background:#ff6b6b}
+.pk-key{font-size:11.5px;color:var(--mut);margin:-2px 0 8px;line-height:1.4}
 /* System + Experiments tabs */
 .sx-fail{margin:12px 0 0;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.45);border-radius:14px;padding:10px 12px}
 .sx-fail h3{margin:0 0 6px;font:800 12px/1.2 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--badt)}
@@ -2399,7 +2404,7 @@ function cusPickList(){
   const total = rows.length, CAP = 150;
   rows = rows.slice().sort((a, b) => (b.p == null ? -1 : b.p) - (a.p == null ? -1 : a.p)).slice(0, CAP);
   const row = (l, on) => pickRow("data-cus", betKey(l), on, l);
-  return `<div class="ig-pick-h">${total} line${total === 1 ? "" : "s"}${total > CAP ? ` — showing the likeliest ${CAP}; pick a game or stat, or type a name` : ""}</div>`
+  return `<div class="ig-pick-h">${total} line${total === 1 ? "" : "s"}${total > CAP ? ` — showing the likeliest ${CAP}; pick a game or stat, or type a name` : ""}</div><div class="pk-key">${dotsDom("ggrx")} ${L10_TIP}</div>`
     + (rows.length ? rows.map(l => row(l, mine.has(betKey(l)))).join("") : `<p class="ig-note">No lines match.</p>`);
 }
 function cusChips(){
@@ -2595,7 +2600,13 @@ function atdTop10(){
       }
       T(grp, 130, mid + 28 * k, hide ? "XX · XXX @ XXX" : `${x.pos || ""} · ${shortGame(x.game)}`, {"font-size": 19 * k, fill: "#8e98b8", "font-weight": 700, "letter-spacing": 1});
       T(grp, 1010, mid + 14 * k, hide ? "XX%" : pct(x.p), {"text-anchor": "end", "font-size": 44 * k, "font-weight": 900, fill: hide ? "#8e98b8" : tone(x.p)});
+      if(!hide && x.l10) dotsSvg(s, 600, mid + 21 * k, x.l10, 8 * k, "");
     });
+    if(top.some(x => x.l10)){                          // the dots' key: a picture can't be tapped
+      const ky = H - 152;
+      dotsSvg(s, 70, ky - 7, "ggrx", 8, "");
+      T(s, 70 + 16 + 3 * 22 + 14, ky, "last 10 games: green = scored a TD, red = didn't, grey = didn't play", {"font-size": 21, fill: "#8e98b8", "font-weight": 600});
+    }
     if(blur && top.length > FREE){                     // the lock over spots 4–10
       const y0 = y + FREE * rowH, hgt = (top.length - FREE) * rowH, cy = y0 + hgt / 2;
       el("rect", {x: 250, y: cy - 58, width: 580, height: 116, rx: 30, fill: "rgba(11,17,36,.92)", stroke: "#3fd6ff", "stroke-opacity": .7, "stroke-width": 3}, s);
@@ -3182,7 +3193,7 @@ function linesOf(w){
   const a = w.all;
   if(!a || !a.r) return w.top || [];
   if(!ALL_CACHE.has(w)) ALL_CACHE.set(w, a.r.map(x => ({player: x[0], team: x[1], pos: x[2], game: a.g[x[3]], kick: a.k[x[3]],
-    stat: x[4], threshold: x[5], price: x[6], p: x[7] == null ? null : x[7], hits: x[8], n: x[9], why: x[10] || "", fd: x[11] || null})));
+    stat: x[4], threshold: x[5], price: x[6], p: x[7] == null ? null : x[7], hits: x[8], n: x[9], why: x[10] || "", fd: x[11] || null, l10: x[12] || ""})));
   return ALL_CACHE.get(w);
 }
 // The board's TV windows that haven't kicked off: on a Sunday night that's
@@ -3203,7 +3214,7 @@ function betPickList(){
   const total = rows.length, CAP = 150;
   rows = rows.slice(0, CAP);
   const row = (l, on) => pickRow("data-bet", betKey(l), on, l);
-  return `<div class="ig-pick-h">${total} line${total === 1 ? "" : "s"}${total > CAP ? ` — showing the likeliest ${CAP}; pick a game or type a name to narrow` : ""}</div>`
+  return `<div class="ig-pick-h">${total} line${total === 1 ? "" : "s"}${total > CAP ? ` — showing the likeliest ${CAP}; pick a game or type a name to narrow` : ""}</div><div class="pk-key">${dotsDom("ggrx")} ${L10_TIP}</div>`
     + (rows.length ? rows.map(l => row(l, mine.has(betKey(l)))).join("") : `<p class="ig-note">No lines match.</p>`);
 }
 /* PICK ROWS. Each line is one big tap target (a button), not a checkbox in a
@@ -3213,7 +3224,7 @@ function betPickList(){
    odds and the picture update. */
 function pickRow(attr, key, on, l){
   return `<button type="button" class="ig-pick pickrow${on ? " on" : ""}" ${attr}="${esc(key)}" aria-pressed="${on}">
-    <span class="pk-box" aria-hidden="true"></span><span class="pk-txt">${esc(l.player)} <small>${esc(propLong(l))} · ${odds(l.price)}${l.kick ? " · " + esc(kickTxt(l.kick)) : ""}${l.p == null ? ` · <i class="pk-nr">model doesn't rate it${l.why ? ` (${esc(l.why)})` : ""}</i>` : ""}</small></span><small>${pct(l.p)}</small></button>`;
+    <span class="pk-box" aria-hidden="true"></span><span class="pk-txt">${esc(l.player)} <small>${esc(propLong(l))} · ${odds(l.price)}${l.kick ? " · " + esc(kickTxt(l.kick)) : ""}${l.p == null ? ` · <i class="pk-nr">model doesn't rate it${l.why ? ` (${esc(l.why)})` : ""}</i>` : ""}</small>${dotsDom(l.l10)}</span><small>${pct(l.p)}</small></button>`;
 }
 // What's on the slip, above the scrolling list (so ticking never moves the rows).
 function betChips(){
@@ -3241,6 +3252,19 @@ function betLegs(){
   const pl = w.parlays.find(x => x.legs_n === +opt("bet", "legs", 3) && x.target === +opt("bet", "target", 100)) || w.parlays[0];
   return pl ? pl.legs : [];
 }
+// LAST-10 DOTS (from the board's feed: "ggrx…", g cleared this leg's line, r didn't,
+// x didn't play; for ATD, g = scored). Display only.
+const L10_TIP = "Last 10 games: green = cleared this line, red = didn't, grey = didn't play.";
+const dotsDom = l10 => l10 ? `<span class="pk-dots" title="${L10_TIP}">${String(l10).split("").map(c => `<i class="${c}"></i>`).join("")}</span>` : "";
+// In a picture nobody can tap, so it carries its own small caption.
+function dotsSvg(s, x, cy, l10, r, caption){
+  if(!l10) return x;
+  const m = String(l10).split(""), gap = r * 2.75;
+  m.forEach((c, i) => el("circle", {cx: x + r + i * gap, cy, r, fill: c === "g" ? "#27e89c" : c === "r" ? "#ff6b6b" : "#56607f"}, s));
+  const end = x + 2 * r + (m.length - 1) * gap;
+  if(caption) T(s, end + r * 1.4, cy + r * .75, caption, {"font-size": r * 2.2, fill: "#8e98b8", "font-weight": 600});
+  return end;
+}
 // The leg list with the model's hit rate (blue) and the historical x/y (gray)
 // on the right -- shared by the ladder's bet card and Thursday's parlay.
 function rateLegs(s, y, bottom, legs){
@@ -3261,6 +3285,10 @@ function rateLegs(s, y, bottom, legs){
     const pr = el("text", {x: 70, y: ty, "font-size": 27 * k, "font-weight": 600, fill: "#e6ebff"}, s);
     el("tspan", {}, pr, propLong(l) + "  ");
     el("tspan", {"font-weight": 800}, pr, (l.price > 0 ? "+" : "") + l.price);
+    if(l.l10){                                         // on the prop line, right side, caption under it
+      dotsSvg(s, 588, ty - 9 * k, l.l10, 10 * k, "");
+      T(s, 588, ty + 25 * k, "last 10 games vs this line", {"font-size": 22 * k, fill: "#8e98b8", "font-weight": 600});
+    }
     if(rowH > 120){ ty += 32 * k; T(s, 70, ty, `${l.game}${l.kick ? " · " + kickTxt(l.kick) : ""}`, {"font-size": 20 * k, fill: "#8e98b8", "font-weight": 600}); }
     const flags = (l.flags || []).slice(0, 3);
     if(flags.length && rowH > 140){
