@@ -193,6 +193,20 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
 .close{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:5px;background:rgba(255,200,107,.14);
   color:var(--warn);font:700 10px/1.5 var(--ui);letter-spacing:.04em;text-transform:uppercase;vertical-align:1px}
 .foot{margin-top:24px;color:var(--mut);font-size:12px;line-height:1.55}
+.hqref{display:flex;align-items:center;gap:10px;margin:2px 0 0;flex-wrap:wrap}
+.hqref-btn{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--acc);border-radius:999px;padding:8px 14px;font:650 13px/1 var(--ui);cursor:pointer}
+.hqref-btn[disabled]{opacity:.55;cursor:default}
+.hqref-msg{font-size:12px;color:var(--mut);line-height:1.4}
+.hqref-msg b{color:var(--ink)}.hqref-msg button{appearance:none;border:0;background:none;color:var(--acc);font:650 12px/1 var(--ui);padding:0;cursor:pointer}
+.hqref-btn.sm{color:var(--mut);padding:8px 11px}
+.hqref-btn.pri{background:var(--acc);border-color:var(--acc);color:#05070d}
+.hqref-setup{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.hqref-setup h3{margin:0 0 8px;font:800 12px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--sec)}
+.hqref-setup p{margin:8px 0 0;font-size:13px;line-height:1.5;color:var(--sec)}
+.hqref-setup p b{color:var(--ink)}.hqref-setup a{color:var(--acc)}
+.hqref-setup label{display:block;margin:12px 0 6px;font-size:12px;color:var(--mut)}
+.hqref-setup input{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 15px/1.2 var(--ui)}
+.hqref-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .tabs{display:flex;gap:4px;margin:14px 0 4px;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:14px}
 .tabs button{flex:1 1 auto;appearance:none;border:0;background:transparent;color:var(--mut);border-radius:10px;padding:10px 6px;
   font:650 13px/1 var(--ui);cursor:pointer;white-space:nowrap}
@@ -431,6 +445,18 @@ details.sec[open] .sline{margin-bottom:12px}
 <div class="eyebrow">Parlay Generator</div>
 <h1 id="pagetitle">Track record</h1>
 <div class="upd" id="upd" hidden></div>
+<div class="hqref"><button class="hqref-btn" id="hqref" type="button">↻ Refresh HQ</button><button class="hqref-btn sm" id="hqref-key" type="button" aria-label="Refresh button key">Key</button><span class="hqref-msg" id="hqref-msg"></span></div>
+<div class="hqref-setup" id="hqref-setup" hidden>
+  <h3>Refresh button: one-time setup</h3>
+  <p style="margin-top:0">The button starts <b>Grade picks</b>, then <b>Republish</b> once the grades are done, on GitHub (both free, about 7 minutes), the same as pressing Run workflow there. It needs a key, saved in this browser only.</p>
+  <p>1. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:#3fd6ff">Make a fine-grained GitHub token</a>. Name it "ALP HQ refresh" and pick an expiration.<br>
+  2. <b>Repository access</b>: Only select repositories → <b>board-builder</b>.<br>
+  3. <b>Permissions → Repository → Actions</b>: <b>Read and write</b>. Nothing else. Generate, copy it.<br>
+  4. Paste it here on <b>each</b> device and tap Save. It stays in this browser only and is never synced or published. Once saved, the Key button goes away; if the key ever stops working, this box opens again.</p>
+  <p>That key can start, re-run or cancel any workflow in board-builder (Build included, which spends credits), but it can't change code, read files or see your other keys.</p>
+  <label for="hqref-tok">GitHub token (Actions only)</label><input id="hqref-tok" type="password" autocomplete="off" placeholder="github_pat_…">
+  <div class="hqref-acts"><button class="hqref-btn pri" id="hqref-save" type="button">Save</button><button class="hqref-btn" id="hqref-off" type="button">Remove from this device</button><button class="hqref-btn" id="hqref-close" type="button">Close</button></div>
+</div>
 <div class="tabs" role="tablist"><button id="tab-rec" role="tab" aria-selected="true">Record</button><button id="tab-sys" role="tab" aria-selected="false">System</button><button id="tab-lad" role="tab" aria-selected="false">Ladder</button><button id="tab-ig" role="tab" aria-selected="false">Instagram</button><button id="tab-exp" role="tab" aria-selected="false">Experiments</button></div>
 <div id="recview">
 <div class="recbar" id="recbar">
@@ -4050,4 +4076,65 @@ for(const v of ["sysview", "expview"]) document.getElementById(v).addEventListen
 // Opened straight on one of these tabs (#system / #experiments): the tab switch ran before this script.
 if(location.hash === "#system" && window.SYS_SHOW) window.SYS_SHOW();
 if(location.hash === "#experiments" && window.EXP_SHOW) window.EXP_SHOW();
+</script><script>
+// ---- Refresh HQ: grades first, then the board. One tap starts Grade picks with
+// republish=true; when the grading works, the Grade run itself starts Republish
+// on GitHub (so closing the phone doesn't stop it). Both free. The key (Actions:
+// read and write on board-builder) lives only in this browser. The Key button
+// shows only until a key is saved; a refused key opens the setup again.
+(function(){
+const $ = id => document.getElementById(id), REPO = "NK614/board-builder", KEY = "alp-refresh-token";
+const ls = {get: k => { try { return localStorage.getItem(k); } catch(e) { return null; } },
+            set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch(e) {} }};
+let tok = ls.get(KEY), timer = 0, since = 0, gradeDone = 0;
+const msg = h => { $("hqref-msg").innerHTML = h; };
+const keyBtn = () => { $("hqref-key").hidden = !!tok; };
+const api = (path, opt) => fetch("https://api.github.com/repos/" + REPO + path, Object.assign({cache: "no-store",
+  headers: {"Authorization": "Bearer " + tok, "Accept": "application/vnd.github+json", "Content-Type": "application/json"}}, opt || {}));
+function stop(){ clearInterval(timer); timer = 0; $("hqref").disabled = false; }
+function refused(st){
+  stop();
+  if(st === 401 || st === 403 || st === 404) $("hqref-setup").hidden = false;
+  msg(st === 401 ? "The key was refused (expired or wrong). Make a new one and save it below."
+    : st === 403 || st === 404 ? "The key can't run workflows in board-builder. It needs Actions: Read and write on that repository."
+    : `GitHub answered ${st}. Try again in a minute.`);
+}
+const runs = async wf => { const r = await api(`/actions/workflows/${wf}/runs?per_page=5`); if(!r.ok) throw r.status; return (await r.json()).workflow_runs || []; };
+const word = run => !run ? "starting" : run.status !== "completed" ? (run.status === "queued" ? "queued" : "running") : run.conclusion === "success" ? "done" : "failed";
+async function poll(){
+  if(Date.now() - since > 30 * 60000){ stop(); msg("Still not finished after 30 minutes. Check the System tab."); return; }
+  try {
+    const g = (await runs("grade.yml")).find(x => new Date(x.created_at).getTime() >= since - 60000), gw = word(g);
+    if(gw === "failed"){ stop(); msg("Grades: <b>failed</b>, so the board wasn't republished. The System tab has the reason."); return; }
+    if(gw !== "done"){ msg(`1. Grades: <b>${gw}</b> · 2. Board: waiting · about 7 minutes`); return; }
+    gradeDone = gradeDone || new Date(g.updated_at || Date.now()).getTime();
+    const b = (await runs("republish.yml")).find(x => new Date(x.created_at).getTime() >= gradeDone - 5 * 60000), bw = word(b);
+    if(bw !== "done" && bw !== "failed"){ msg(`1. Grades: <b>done</b> · 2. Board: <b>${bw}</b>`); return; }
+    stop();
+    msg(bw === "done" ? `<b>Done</b>: grades, then the board. The site can take a few minutes to show it. <button type="button" id="hqref-reload">Reload now</button>`
+                      : "Grades: <b>done</b> · Board: <b>failed</b>. The System tab has the reason.");
+    const rl = $("hqref-reload"); if(rl) rl.onclick = () => location.reload();
+  } catch(e) { if(typeof e === "number") refused(e); else msg("Can't reach GitHub right now. It may still be running; check the System tab."); }
+}
+async function go(){
+  if(!tok){ $("hqref-setup").hidden = false; return; }
+  $("hqref").disabled = true; msg("Starting…");
+  try {
+    if((await runs("grade.yml")).some(x => x.status !== "completed")){
+      stop(); msg("A grade run is already going. Tap again when it finishes (the System tab shows it)."); return; }
+    const r = await api("/actions/workflows/grade.yml/dispatches", {method: "POST", body: JSON.stringify({ref: "main", inputs: {republish: "true"}})});
+    if(r.status !== 204){ refused(r.status); return; }
+    since = Date.now(); gradeDone = 0;
+    msg("Started: 1. grades, then 2. the board. About 7 minutes. You can close this; it finishes on GitHub.");
+    timer = setInterval(poll, 20000);
+  } catch(e) { if(typeof e === "number") refused(e); else { stop(); msg("Can't reach GitHub right now. Try again in a minute."); } }
+}
+$("hqref").onclick = go;
+$("hqref-key").onclick = () => { $("hqref-setup").hidden = !$("hqref-setup").hidden; };
+$("hqref-save").onclick = () => { const v = $("hqref-tok").value.trim(); if(!v) return;
+  tok = v; ls.set(KEY, v); $("hqref-tok").value = ""; $("hqref-setup").hidden = true; keyBtn(); msg("Key saved on this device. Tap Refresh HQ."); };
+$("hqref-off").onclick = () => { tok = null; ls.set(KEY, null); keyBtn(); msg("Key removed from this device."); };
+$("hqref-close").onclick = () => { $("hqref-setup").hidden = true; };
+keyBtn();
+})();
 </script></body></html>
