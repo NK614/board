@@ -3178,7 +3178,8 @@ $("igopts").addEventListener("click", e => {
   if(e.target.id === "cusclear"){ setOpt("custom", "mine", []); render(true); return; }
   const cpk = e.target.closest && e.target.closest("[data-cus]");
   if(cpk){
-    const key = cpk.dataset.cus, mine = (opt("custom", "mine", []) || []).slice(), on = mine.includes(key);
+    const live = new Set(cusPool().map(betKey));          // same as the ladder slip: only legs still on the board count
+    const key = cpk.dataset.cus, mine = (opt("custom", "mine", []) || []).filter(k => live.has(k)), on = mine.includes(key);
     if(!on && mine.length >= 10){ toast("10 legs max"); return; }
     setOpt("custom", "mine", on ? mine.filter(x => x !== key) : [...mine, key]); render(true); return;
   }
@@ -3585,7 +3586,11 @@ if($("betopts")){
     }
     const pk = e.target.closest && e.target.closest("[data-bet]");
     if(pk){
-      const key = pk.dataset.bet, mine = (opt("bet", "mine", []) || []).slice(), on = mine.includes(key);
+      // Only legs still on the board count: picks from games that have started
+      // (or from past weeks -- the slip isn't per week) are dropped here, or
+      // they'd fill the 10 while hidden from the chips.
+      const live = new Set((OPTS_EXTRA.betpool || []).map(betKey));
+      const key = pk.dataset.bet, mine = (opt("bet", "mine", []) || []).filter(k => live.has(k)), on = mine.includes(key);
       if(!on && mine.length >= 10){ toast("10 legs max"); return; }
       setOpt("bet", "mine", on ? mine.filter(x => x !== key) : [...mine, key]);
       pk.classList.toggle("on", !on); pk.setAttribute("aria-pressed", String(!on));
