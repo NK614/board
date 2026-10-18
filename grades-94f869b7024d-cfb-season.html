@@ -2636,7 +2636,9 @@ function atdTop10(){
       el("feGaussianBlur", {stdDeviation: 9}, f);
     }
     let y = frame(s, H, "ATD", words("head", head), sub);
-    const rowH = Math.min(92, (H - 140 - y - (gi === 0 ? 40 : 0)) / Math.max(1, top.length)), k = Math.min(1, rowH / 92);
+    // Room at the bottom for the dots' key (every slide) and the record line (first slide).
+    const foot = (gi === 0 ? 40 : 0) + (top.some(x => x.l10) ? 40 : 0);
+    const rowH = Math.min(92, (H - 140 - y - foot) / Math.max(1, top.length)), k = Math.min(1, rowH / 92);
     top.forEach((x, i) => {
       const mid = y + i * rowH + rowH / 2, hide = blur && i >= FREE;
       if(i) el("line", {x1: 70, y1: y + i * rowH, x2: 1010, y2: y + i * rowH, stroke: "#56607f", "stroke-opacity": .3, "stroke-width": 1.5}, s);
@@ -2657,7 +2659,7 @@ function atdTop10(){
       if(!hide && x.l10) dotsSvg(s, 600, mid + 21 * k, x.l10, 8 * k, "");
     });
     if(top.some(x => x.l10)){                          // the dots' key: a picture can't be tapped
-      const ky = H - 152;
+      const ky = H - (gi === 0 ? 152 : 118);
       dotsSvg(s, 70, ky - 7, "ggrx", 8, "");
       T(s, 70 + 16 + 3 * 22 + 14, ky, "last 10 games: green = scored a TD, red = didn't, grey = didn't play", {"font-size": 21, fill: "#8e98b8", "font-weight": 600});
     }
