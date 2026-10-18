@@ -543,6 +543,7 @@ runs only report from the day this tab went live. Amber = a timer ping with noth
 <h2>This week's NFL build slots</h2>
 <div class="rows" id="sys-slots"></div>
 <div class="hint" id="sys-note" style="margin-top:10px"></div>
+<p class="hint" style="margin-top:14px"><a href="?fdtest" style="color:var(--acc)">FanDuel link test</a>: which link form opens the FanDuel app with the slip filled.</p>
 </div>
 <div id="expview" hidden>
 <div class="sub">Every lab result saved in the repo, newest first. Each one keeps its own card: a new test never overwrites an old one.</div>
@@ -4136,5 +4137,47 @@ $("hqref-save").onclick = () => { const v = $("hqref-tok").value.trim(); if(!v) 
 $("hqref-off").onclick = () => { tok = null; ls.set(KEY, null); keyBtn(); msg("Key removed from this device."); };
 $("hqref-close").onclick = () => { $("hqref-setup").hidden = true; };
 keyBtn();
+})();
+</script><script>
+// ---- FanDuel link test (HQ address + ?fdtest). Not a tab: a diagnostic Nick
+// opens on his phone to see which link form opens the FanDuel APP with the
+// slip filled, from each place he taps (home-screen app, Safari, Instagram).
+(function(){
+if(!new URLSearchParams(location.search).has("fdtest")) return;     // the tab code clears #hashes, not ?queries
+const box = document.createElement("div");
+box.style.cssText = "position:fixed;inset:0;z-index:999;overflow:auto;background:var(--bg);padding:calc(16px + env(safe-area-inset-top)) 16px 40px";
+document.body.appendChild(box);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const ua = navigator.userAgent, where = navigator.standalone || matchMedia("(display-mode: standalone)").matches ? "the home-screen app (ALP HQ icon)"
+  : /Instagram/i.test(ua) ? "Instagram's built-in browser" : /CriOS|Chrome/i.test(ua) ? "Chrome" : /Safari/i.test(ua) ? "Safari" : "a browser";
+const file = decodeURIComponent(location.pathname.split("/").pop() || ""), base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|cfb-season|season|other)$/, "");
+box.innerHTML = `<h1 style="font-size:22px;margin:0 0 6px">FanDuel link test</h1><p class="sub">You're in <b style="color:var(--ink)">${esc(where)}</b>. Loading two real legs from the board…</p>`;
+fetch(`${base}-live.json`, {cache: "no-store"}).then(r => r.json()).then(F => {
+  const now = Date.now(), legs = [];
+  for(const w of F.windows || []) for(const r of (w.all && w.all.r) || []){
+    const kick = (w.all.k || [])[r[3]], fd = r[11];
+    if(fd && fd[0] && fd[1] && kick && new Date(kick).getTime() > now + 3600e3 && !legs.some(l => l.p === r[0])) legs.push({p: r[0], s: r[4], t: r[5], o: r[6], fd});
+    if(legs.length >= 2) break;
+  }
+  if(!legs.length){ box.innerHTML += "<p>No upcoming FanDuel legs on the board right now. Try after the next build.</p>"; return; }
+  const enc = legs.map((l, i) => `marketId%5B${i}%5D=${encodeURIComponent(l.fd[0])}&selectionId%5B${i}%5D=${encodeURIComponent(l.fd[1])}`).join("&");
+  const raw = legs.map((l, i) => `marketId[${i}]=${l.fd[0]}&selectionId[${i}]=${l.fd[1]}`).join("&");
+  const st = (localStorage.getItem("alp-test-state") || "oh");
+  const A = "https://sportsbook.fanduel.com/addToBetslip?" + enc;
+  const V = [
+    ["1", "Today's link (new tab)", A, true],
+    ["2", "Same link, same tab", A, false],
+    ["3", "Brackets not encoded", "https://sportsbook.fanduel.com/addToBetslip?" + raw, false],
+    ["4", `Your state's FanDuel address (${st.toUpperCase()})`, `https://${st}.sportsbook.fanduel.com/addToBetslip?` + enc, false],
+    ["5", "Hand it to Safari first (iPhone only)", "x-safari-https://sportsbook.fanduel.com/addToBetslip?" + enc, false]];
+  box.innerHTML += `<p class="sub">Legs: ${legs.map(l => `<b style="color:var(--ink)">${esc(l.p)}</b> ${esc(l.t)} ${esc(l.s)} (${l.o > 0 ? "+" : ""}${l.o})`).join(" · ")}</p>
+    <label class="sub">Your state <select id="fdst">${["az","co","ct","dc","ia","il","in","ks","ky","la","ma","md","mi","nc","nj","ny","oh","pa","tn","va","vt","wv","wy"].map(x =>
+      `<option${x === st ? " selected" : ""}>${x}</option>`).join("")}</select></label>
+    <p class="sub" style="margin-top:12px">Tap each one, then come back here. For each, note: <b style="color:var(--ink)">did the FanDuel app open, and were both legs on the slip?</b></p>
+    ${V.map(([n, label, url, blank]) => `<a href="${esc(url)}"${blank ? ' target="_blank" rel="noopener"' : ""} style="display:block;margin:10px 0;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--acc);text-decoration:none;font-weight:700">${n}. ${esc(label)}</a>`).join("")}
+    <p class="sub" style="margin-top:14px">Also try: <b style="color:var(--ink)">long-press link 2</b> and see if the menu offers "Open in FanDuel". If it does, tap it. iPhone remembers that choice for FanDuel links.</p>
+    <p class="sub">Then do the same from <b style="color:var(--ink)">Safari</b> (open this page's address in Safari, not the home-screen icon) and tell me the numbers that worked in each place.</p>`;
+  document.getElementById("fdst").onchange = e => { localStorage.setItem("alp-test-state", e.target.value); location.reload(); };
+}).catch(() => { box.innerHTML += "<p>Couldn't load the board's data. Open this from the HQ web address.</p>"; });
 })();
 </script></body></html>
