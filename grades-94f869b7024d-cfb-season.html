@@ -308,7 +308,7 @@ h2{margin:26px 0 10px;font-size:13px;letter-spacing:.14em;text-transform:upperca
 .ld-check input{width:18px;height:18px}
 .ld-hint{font-size:12.5px;color:var(--mut);line-height:1.45;margin:8px 0 0}
 .ld-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(13,18,32,.92);border:1px solid var(--line);
-  color:var(--sec);font-size:13px;padding:9px 14px;border-radius:999px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:10;white-space:nowrap}
+  color:var(--sec);font-size:13px;padding:9px 14px;border-radius:999px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:60;white-space:nowrap}
 .ld-toast.on{opacity:1}
 body.shot{background:#000}
 body.shot .wrap > *:not(#ladview){display:none}
@@ -360,7 +360,6 @@ body.igfull{overflow:hidden}
 #betpanel textarea{width:100%;min-height:220px;background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:15px;line-height:1.45;resize:vertical;box-sizing:border-box}
 #betpanel .bet-ov{display:grid;grid-template-columns:.7fr 1fr 1fr;gap:10px}
 #betpanel .ig-note{font-size:13px;color:var(--warn);line-height:1.45;margin:10px 0 0}
-#betpanel .ig-picks{max-height:420px;overflow-y:auto}
 .bet-filt{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-bottom:4px}
 .bet-chips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 8px}
 .bet-chip{appearance:none;border:1px solid var(--line);background:rgba(63,214,255,.08);color:var(--ink);border-radius:999px;
@@ -679,6 +678,34 @@ const DATA = {"sub": "Cumulative \u00b7 7 weeks \u00b7 1884 picks", "boards": 7,
 const PAUSED = ["mlb"];
 document.querySelectorAll(".sport-sw button").forEach(b => { if(PAUSED.includes(b.dataset.sport || b.dataset.rsport)) b.remove(); });
 const $ = id => document.getElementById(id);
+/* COPY TO CLIPBOARD, the same on the website and the home-screen app. The old
+   way (navigator.clipboard, then select-the-box) failed quietly on iPhone and
+   still said "copied". This copies from a hidden box first, while the tap is
+   still fresh (what iOS needs), then tries the clipboard API, and only says
+   "copied" when one of them worked. Resolves true / false. */
+function copyText(text){
+  if(!String(text || "").trim()) return Promise.resolve(false);
+  let ok = false;
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.contentEditable = "true";
+    ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px";
+    document.body.appendChild(ta);
+    const was = document.activeElement;
+    ta.focus({preventScroll: true}); ta.select();
+    const r = document.createRange(); r.selectNodeContents(ta);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    ta.setSelectionRange(0, text.length);
+    ok = document.execCommand("copy");
+    sel.removeAllRanges(); ta.remove();
+    if(was && was.focus) was.focus({preventScroll: true});
+  } catch(e) { ok = false; }
+  if(ok) return Promise.resolve(true);
+  return navigator.clipboard && navigator.clipboard.writeText
+    ? navigator.clipboard.writeText(text).then(() => true, () => false) : Promise.resolve(false);
+}
+// When nothing could copy: select the caption box so press-and-hold -> Copy works.
+function selectBox(box){ try { box.focus(); box.setSelectionRange(0, box.value.length); } catch(e) {} }
 const fmt = a => (a > 0 ? "+" : "") + a;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const shortScope = s => s.startsWith("MLB · ") ? s.slice(6) : s.replace(/^NFL · |^College · /, "").replace(/ · (?:[A-Z][a-z]{2} )?[A-Z][a-z]{2} \d{1,2}$/, "");
@@ -1075,7 +1102,7 @@ function drawLosses0(){
     if(ev.target.id === "kmore"){ KSHOW = KSHOW > 3 ? 3 : 10; drawLosses(); return; }
     const b = ev.target.closest("[data-copy]"); if(!b) return;
     const t = b.dataset.copy, ok = () => { const s = b.querySelector("small"); if(s){ s.textContent = "Copied"; setTimeout(() => s.textContent = "Tap to copy", 1500); } };
-    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(ok, ok);
+    copyText(t).then(y => { if(y) ok(); else prompt("Copy this:", t); });
   };
 }
 // Leg check: predicted vs actual, for the parlay legs or every line on the board.
@@ -1719,8 +1746,8 @@ $("ldhandle").oninput = e => { S.handle = e.target.value; save(); draw(); };
 $("ldsaved").textContent = ldSavedText();
 $("ldcopy").onclick = async () => {
   const url = ldUrl().toString(), b = $("ldcopy");
-  try { await navigator.clipboard.writeText(url); b.textContent = "Copied — paste it in Notes"; }
-  catch(e) { prompt("Copy this link:", url); }
+  if(await copyText(url)) b.textContent = "Copied — paste it in Notes";
+  else prompt("Copy this link:", url);
   setTimeout(() => { b.textContent = "Copy ladder link"; }, 2500);
 };
 $("ldnew").onclick = () => {
@@ -2950,7 +2977,7 @@ function drawTop(){
      : `<div class="ld-hint">Nothing on the board clears the bar right now — check back after the next build.</div>`);
   box.onclick = e => { const b = e.target.closest("[data-top]"); if(!b) return;
     const x = T[+b.dataset.top], t = `${x.legs.length === 1 ? "" : x.legs.length + "-leg parlay "}${am(x.odds)}\n` + x.legs.map(legTxt).join("\n");
-    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Picks copied"), () => toast("Couldn't copy")); };
+    copyText(t).then(y => y ? toast("Picks copied") : (prompt("Copy these picks:", t), 0)); };
 }
 // ---------- this week's posting plan (NFL): when each post is ready ----------
 // Ready times follow the scheduled builds (Eastern): a post's picks are final
@@ -3092,7 +3119,7 @@ function toPng(svg){
       document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
   };
 })();
-function toast(msg){ const t = $("igtoast"); t.textContent = msg; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 2600); }
+function toast(msg){ const t = $("igtoast"); if(t.parentNode !== document.body) document.body.appendChild(t); t.textContent = msg; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 2600); }
 
 $("igsave").onclick = () => {
   if(!FILES.length){ toast("Still drawing — tap again in a second"); prepFiles(); return; }
@@ -3105,8 +3132,7 @@ $("igsave").onclick = () => {
 };
 $("igcopy").onclick = () => {
   const t = $("igcap").value;
-  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Caption copied"),
-    () => { $("igcap").select(); document.execCommand && document.execCommand("copy"); toast("Caption copied"); });
+  copyText(t).then(y => { if(y) toast("Caption copied"); else { selectBox($("igcap")); toast("Press and hold the caption, then Copy"); } });
 };
 $("igbuild").onclick = () => { render(true); toast("Post built"); };
 $("ighook").onclick = () => { S.hooks[wk(DAY)] = (S.hooks[wk(DAY)] || 0) + 1; save(); render(true); };
@@ -3230,19 +3256,23 @@ function betWins(){
   const first = w => Math.min(...linesOf(w).map(l => l.kick ? new Date(l.kick).getTime() : Infinity), Infinity);
   return (FEED && FEED.windows || []).filter(w => first(w) > now);
 }
-let BET_Q = "", BET_G = "";
+let BET_Q = "", BET_G = "", BET_N = 25;
 function betPickList(){
   const pool = OPTS_EXTRA.betpool || [], mine = new Set(opt("bet", "mine", []) || []), q = BET_Q.trim().toLowerCase();
   const chosen = pool.filter(l => mine.has(betKey(l)));
   // Ticked legs STAY WHERE THEY ARE (checked) -- the list never reshuffles
   // under your finger, so the next tap lands on the line you meant. What's
   // on the slip is listed above as chips; tap one to take it off.
+  // No scroll box inside the page (the home-screen app wouldn't scroll it, so
+  // only the first 5 rows could be ticked): the list scrolls with the page,
+  // BET_N rows at a time.
   let rows = pool.filter(l => (!BET_G || l.game === BET_G) && (!q || l.player.toLowerCase().includes(q)));
-  const total = rows.length, CAP = 150;
+  const total = rows.length, CAP = Math.min(BET_N, 150);
   rows = rows.slice(0, CAP);
   const row = (l, on) => pickRow("data-bet", betKey(l), on, l);
   return `<div class="ig-pick-h">${total} line${total === 1 ? "" : "s"}${total > CAP ? ` — showing the likeliest ${CAP}; pick a game or type a name to narrow` : ""}</div><div class="pk-key">${dotsDom("ggrx")} ${L10_TIP}</div>`
-    + (rows.length ? rows.map(l => row(l, mine.has(betKey(l)))).join("") : `<p class="ig-note">No lines match.</p>`);
+    + (rows.length ? rows.map(l => row(l, mine.has(betKey(l)))).join("") : `<p class="ig-note">No lines match.</p>`)
+    + (total > CAP && CAP < 150 ? `<button type="button" class="ld-btn" id="betmore" style="margin-top:10px">Show ${Math.min(25, total - CAP)} more</button>` : "");
 }
 /* PICK ROWS. Each line is one big tap target (a button), not a checkbox in a
    label: iPhone Safari's label/checkbox handling, plus the list being redrawn
@@ -3521,12 +3551,12 @@ function renderBet(){
 if($("betopts")){
   $("betopts").addEventListener("input", e => {
     if(e.target.id !== "betq") return;
-    BET_Q = e.target.value; const box = $("betpicks"); if(box) box.innerHTML = betPickList();
+    BET_Q = e.target.value; BET_N = 25; const box = $("betpicks"); if(box) box.innerHTML = betPickList();
   });
   $("betopts").addEventListener("change", e => {
     const t = e.target;
     if(t.id === "betq") return;
-    if(t.id === "betgame"){ BET_G = t.value; const box = $("betpicks"); if(box) box.innerHTML = betPickList(); return; }
+    if(t.id === "betgame"){ BET_G = t.value; BET_N = 25; const box = $("betpicks"); if(box) box.innerHTML = betPickList(); return; }
     if(t.dataset.ov){
       const ov = Object.assign({}, opt("bet", "ov", {}) || {}), v = +String(t.value).replace(/[$,\s]/g, "");
       if(t.dataset.ov === "odds"){
@@ -3542,11 +3572,11 @@ if($("betopts")){
   $("bethook").onclick = () => { S.hooks[wk("bet")] = (S.hooks[wk("bet")] || 0) + 1; save(); $("betcap").value = betCaption(); };
   $("betcopy").onclick = () => {
     const t = $("betcap").value;
-    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Caption copied"),
-      () => { $("betcap").select(); document.execCommand && document.execCommand("copy"); toast("Caption copied"); });
+    copyText(t).then(y => { if(y) toast("Caption copied"); else { selectBox($("betcap")); toast("Press and hold the caption, then Copy"); } });
   };
   $("betopts").addEventListener("click", e => {
     if(e.target.id === "betovreset"){ setOpt("bet", "ov", {}); renderBet(); }
+    if(e.target.id === "betmore"){ BET_N += 25; const box = $("betpicks"); if(box) box.innerHTML = betPickList(); return; }
     if(e.target.id === "betuserung"){
       const legs = betLegs() || [], ov = opt("bet", "ov", {}) || {}, own = slipOwn(legs, ov), L = ladderNow();
       const rung = ov.rung > 0 ? Math.round(ov.rung) : L ? L.rung : 1;
