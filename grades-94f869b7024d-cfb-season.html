@@ -727,9 +727,9 @@ $("sub").textContent = DATA.sub;
   const nav = DATA.nav || [];
   if(nav.length < 2) return;
   const file = decodeURIComponent(location.pathname.split("/").pop() || "report.html");
-  const base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|cfb-season|season|other)$/, "");
-  // One sport's pages in the menu: NFL weeks + the NFL season, college weeks + the college season, the MLB page.
-  const sportOf = x => /mlb$/.test(x || "") ? "mlb" : /(^cfb-season$|-c\d{2}$)/.test(x || "") ? "cfb" : "nfl";
+  const base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb|nba)|cfb-season|season|other)$/, "");
+  // One sport's pages in the menu: NFL weeks + the NFL season, college weeks + the college season, the MLB page, the NBA page.
+  const sportOf = x => /mlb$/.test(x || "") ? "mlb" : /nba$/.test(x || "") ? "nba" : /(^cfb-season$|-c\d{2}$)/.test(x || "") ? "cfb" : "nfl";
   const mine = sportOf(DATA.me || "season");
   const list = nav.filter(n => sportOf(n.suffix) === mine);
   // The same menu on the Record, Ladder and Instagram tabs; picking a week
@@ -748,9 +748,10 @@ $("sub").textContent = DATA.sub;
     b.setAttribute("aria-pressed", String(sp === mine));
     if(sp !== "nba" && sp !== mine && !targetFor(sp)) b.remove();       // no graded picks for that sport yet
   });
+  window.NBA_PAGE = !!targetFor("nba");                                 // NBA graded: its button opens its page
   $("recsw").hidden = $("recsw").querySelectorAll("[data-rsport]").length < 2;
   $("recsw").onclick = e => {
-    const b = e.target.closest("[data-rsport]"); if(!b || b.dataset.rsport === "nba" || b.dataset.rsport === mine) return;
+    const b = e.target.closest("[data-rsport]"); if(!b || (b.dataset.rsport === "nba" && !window.NBA_PAGE) || b.dataset.rsport === mine) return;
     const target = targetFor(b.dataset.rsport); if(!target) return;
     try { localStorage.setItem("alp-sport", b.dataset.rsport === "cfb" ? "nfl" : b.dataset.rsport); } catch(err) {}
     location.href = `${base}-${target.suffix}.html`;
@@ -764,7 +765,7 @@ if((DATA.nav || []).length < 2) $("recsw").hidden = true;
   if(!lv || !me || lv === me || !$("ig-livenote")) return;
   $("ig-livenote").hidden = false;
   $("ig-livenote").innerHTML = `Recaps on this page are for ${esc(me.label)}. ${esc(lv.label)} is being played —
-    <a href="${esc(decodeURIComponent(location.pathname.split("/").pop() || "report.html").replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|cfb-season|season|other)$/, "") + "-" + lv.suffix + ".html")}#instagram" style="color:var(--acc)">open ${esc(lv.label)}</a>.`;
+    <a href="${esc(decodeURIComponent(location.pathname.split("/").pop() || "report.html").replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb|nba)|cfb-season|season|other)$/, "") + "-" + lv.suffix + ".html")}#instagram" style="color:var(--acc)">open ${esc(lv.label)}</a>.`;
 })();
 if(DATA.season){ $("picksec").hidden = true; $("seasonnote").hidden = false; }
 // LINE SHOPPING: the same picks, $10 each, at FanDuel's price vs the best of
@@ -790,9 +791,9 @@ function shopLine(done, word){
     same-game legs get repriced together on a real slip.</p></div>`;
 }
 // ---- The headline strip: Season · Last week · This week (live), from every week's numbers ----
-const PAGE_SP = /mlb$/.test(DATA.me || "") ? "mlb" : /(^cfb-season$|-c\d{2}$)/.test(DATA.me || "") ? "cfb" : "nfl";
+const PAGE_SP = /mlb$/.test(DATA.me || "") ? "mlb" : /nba$/.test(DATA.me || "") ? "nba" : /(^cfb-season$|-c\d{2}$)/.test(DATA.me || "") ? "cfb" : "nfl";
 const PAGE_BASE = decodeURIComponent(location.pathname.split("/").pop() || "report.html")
-  .replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|cfb-season|season|other)$/, "");
+  .replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb|nba)|cfb-season|season|other)$/, "");
 const pageHref = suffix => `${PAGE_BASE}-${suffix}.html`;
 const OKR = ["hit", "miss", "void", "injury"];
 function statOf(ps){
@@ -889,7 +890,7 @@ safe(function kpis(){
   const prevOf = t => { const i = TR.indexOf(t); return i > 0 ? TR[i - 1] : null; };
   const short = l => l.replace(/^College week /, "Week ");
   const tiles = [];
-  if(TR.length && PAGE_SP !== "mlb"){
+  if(TR.length && PAGE_SP !== "mlb" && PAGE_SP !== "nba"){
     tiles.push(htile(addUp(TR), "Season", PAGE_SP === "cfb" ? "cfb-season" : "season"));
     if(lastT) tiles.push(htile(lastT, esc(short(lastT.label)), lastT.suffix, {prev: prevOf(lastT)}));
     if(liveT) tiles.push(htile(liveT, `<span class="lv">●</span> ${esc(short(liveT.label))}`, liveT.suffix, {live: true}));
@@ -898,7 +899,7 @@ safe(function kpis(){
   $("hstrip").hidden = !tiles.length;
   $("hstrip").className = "hstrip" + (tiles.length === 2 || tiles.length === 4 ? " two" : "");
   $("hstrip").innerHTML = tiles.join("");
-  const tc = TR.length && PAGE_SP !== "mlb" ? trendChart(TR) : "";
+  const tc = TR.length && PAGE_SP !== "mlb" && PAGE_SP !== "nba" ? trendChart(TR) : "";
   $("trend").hidden = !tc; $("trend").innerHTML = tc;
   // No weekly numbers (the MLB page): this page's own tiles.
   const own = tiles.length ? "" : htile(statOf(PS), DATA.season ? "Season" : "This page", me, {live: true});
@@ -1559,7 +1560,7 @@ function nbaSoon(btn){
 }
 document.addEventListener("click", e => {
   const nb = e.target.closest(".sport-sw button[data-rsport=nba]");
-  if(nb){ nbaSoon(nb); return; }
+  if(nb){ if(!window.NBA_PAGE) nbaSoon(nb); return; }
   const b = e.target.closest(".sport-sw button[data-sport]");
   if(b && b.dataset.sport !== SPORT) setSport(b.dataset.sport);
 });
@@ -1838,7 +1839,7 @@ function pickFeed(){
 }
 function loadFeed(){
   const file = decodeURIComponent(location.pathname.split("/").pop() || "");
-  const base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|season|other)$/, "");
+  const base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb|nba)|cfb-season|season|other)$/, "");
   if(!/^https?:$/.test(location.protocol) || !base){ FEED_ERR0 = "The board's data loads when this page is opened from its web address."; pickFeed(); return Promise.resolve(); }
   return fetch(`${base}-live.json`, {cache: "no-store"}).then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(j => { FEED_ALL = j; }).catch(() => { FEED_ERR0 = "No board data yet — it appears after the next Build (scheduled or manual)."; })
@@ -2015,10 +2016,10 @@ const DAYS_NBA = [
 ];
 let DAYS = DAYS_NFL;
 // The grades on this page belong to one sport: the MLB playoffs page, or a football one.
-const PAGE_SPORT = /mlb$/.test(D.me || "") ? "mlb" : "nfl";
+const PAGE_SPORT = /mlb$/.test(D.me || "") ? "mlb" : /nba$/.test(D.me || "") ? "nba" : "nfl";
 function pageMismatch(){
-  if(NBA()) return "No NBA picks graded yet — NBA results get their own page once the NBA board is live.";
   if(SPORT() === PAGE_SPORT) return "";
+  if(NBA()) return "NBA results live on the NBA page — pick NBA in the Track record tab.";
   return MLB() ? "MLB results live on the MLB playoffs page — pick it from the week menu in the Track record tab."
                : "This is the MLB playoffs page — pick a football week in the Track record tab, or switch to MLB above.";
 }
@@ -3903,7 +3904,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 function base(){
   const file = decodeURIComponent(location.pathname.split("/").pop() || "");
-  const b = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|cfb-season|season|other)$/, "");
+  const b = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb|nba)|cfb-season|season|other)$/, "");
   return /^https?:$/.test(location.protocol) && b ? b : "";
 }
 const get = f => base() ? fetch(`${base()}-${f}`, {cache: "no-store"}).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null);
@@ -4187,7 +4188,7 @@ document.body.appendChild(box);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const ua = navigator.userAgent, where = navigator.standalone || matchMedia("(display-mode: standalone)").matches ? "the home-screen app (ALP HQ icon)"
   : /Instagram/i.test(ua) ? "Instagram's built-in browser" : /CriOS|Chrome/i.test(ua) ? "Chrome" : /Safari/i.test(ua) ? "Safari" : "a browser";
-const file = decodeURIComponent(location.pathname.split("/").pop() || ""), base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb)|cfb-season|season|other)$/, "");
+const file = decodeURIComponent(location.pathname.split("/").pop() || ""), base = file.replace(/\.html$/, "").replace(/-(\d{4}-(?:[wc]\d{2}|mlb|nba)|cfb-season|season|other)$/, "");
 box.innerHTML = `<h1 style="font-size:22px;margin:0 0 6px">FanDuel link test</h1><p class="sub">You're in <b style="color:var(--ink)">${esc(where)}</b>. Loading two real legs from the board…</p>`;
 fetch(`${base}-live.json`, {cache: "no-store"}).then(r => r.json()).then(F => {
   const now = Date.now(), legs = [];
